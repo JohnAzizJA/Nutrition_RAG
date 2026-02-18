@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+langchain
+langchain-community
+langgraph
+chromadb
+sentence-transformers
+python-dotenv
+pydantic
+httpx
