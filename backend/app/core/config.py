@@ -13,7 +13,7 @@ class Settings(BaseSettings):
         embedding_model: str = "text-embedding-3-small"
     
     # ChromaDB
-    chroma_persist_dir: str = "../chroma_db"
+    chroma_persist_dir: str = "./chroma_db"
     
     class Config:
         env_file = ".env"
