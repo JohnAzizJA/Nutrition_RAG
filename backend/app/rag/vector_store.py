@@ -34,7 +34,7 @@ class VectorStore:
         )
         return results["documents"][0] if results["documents"] else []
     
-    def ingest_from_directory(self, data_dir: str = "data/raw"):
+    def ingest(self, data_dir: str = "data/raw"):
         dir_path = Path(data_dir)
         
         if not dir_path.exists():

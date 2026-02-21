@@ -1,6 +1,9 @@
 from backend.app.rag.graph import RAGGraph
+from backend.app.rag.vector_store import VectorStore
 
 def main():
+    vector_store = VectorStore()
+    vector_store.ingest("data/raw")
     print("=== Nutrition RAG System ===")
     print("Type 'exit' or 'quit' to stop\n")
     
