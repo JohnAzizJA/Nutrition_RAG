@@ -17,4 +17,8 @@ class LLMClient:
             )
     
     def generate(self, prompt: str) -> str:
-        return self.llm.invoke(prompt)
+        response = self.llm.invoke(prompt)
+        # Handle different return types
+        if hasattr(response, 'content'):
+            return response.content
+        return str(response)
