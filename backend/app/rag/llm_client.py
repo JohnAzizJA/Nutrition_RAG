@@ -12,7 +12,8 @@ class LLMClient:
         elif settings.llm_provider == "openai":
             self.llm = ChatOpenAI(
                 api_key=settings.openai_api_key,
-                model=settings.openai_model
+                model=settings.openai_model,
+                temperature=0,
             )
     
     def generate(self, prompt: str) -> str:
