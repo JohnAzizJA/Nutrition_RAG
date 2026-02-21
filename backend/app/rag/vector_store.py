@@ -35,7 +35,6 @@ class VectorStore:
         return results["documents"][0] if results["documents"] else []
     
     def ingest_from_directory(self, data_dir: str = "data/raw"):
-        """Load all documents from directory into ChromaDB"""
         dir_path = Path(data_dir)
         
         if not dir_path.exists():
@@ -62,10 +61,10 @@ class VectorStore:
                 
                 self.add_documents(texts, metadatas, ids)
                 
-                print(f"  ✓ Ingested {len(chunks)} chunks")
+                print(f"Ingested {len(chunks)} chunks")
                 total_chunks += len(chunks)
                 
             except Exception as e:
-                print(f"  ✗ Error processing {file_path.name}: {e}")
+                print(f"Error processing {file_path.name}: {e}")
         
         print(f"\nTotal: {total_chunks} chunks from {len(files)} files")
