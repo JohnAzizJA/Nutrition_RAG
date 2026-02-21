@@ -10,14 +10,12 @@ class RAGGraph:
         self.graph = self._build_graph()
     
     def _retrieve_node(self, state: GraphState) -> GraphState:
-        """Retrieve relevant documents from vector store"""
         query = state["query"]
         retrieved_docs = self.vector_store.query(query, n_results=3)
         state["retrieved_docs"] = retrieved_docs
         return state
     
     def _generate_node(self, state: GraphState) -> GraphState:
-        """Generate response using LLM with retrieved context"""
         query = state["query"]
         context = "\n\n".join(state["retrieved_docs"])
         
@@ -35,7 +33,6 @@ Answer:"""
         return state
     
     def _build_graph(self) -> StateGraph:
-        """Build the Langgraph workflow"""
         workflow = StateGraph(GraphState)
         
         # Add nodes
@@ -50,7 +47,6 @@ Answer:"""
         return workflow.compile()
     
     def run(self, query: str) -> str:
-        """Execute the RAG workflow"""
         initial_state = {
             "query": query,
             "retrieved_docs": [],
