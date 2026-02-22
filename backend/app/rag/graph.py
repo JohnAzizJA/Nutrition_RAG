@@ -1,6 +1,4 @@
 from langgraph.graph import StateGraph, END
-from langgraph.store.memory import InMemoryStore
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from models.schemas import GraphState
 from rag.vector_store import VectorStore
 from rag.llm_client import LLMClient
@@ -9,7 +7,6 @@ class RAGGraph:
     def __init__(self):
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
-        self.store = InMemoryStore()
         self.graph = self._build_graph()
         self.system_prompt = """You are an expert nutrition assistant specializing in dietary habits. Your role is to provide accurate, evidence-based nutrition advice grounded in the provided context from WHO guidelines, food databases, and scientific research.
 
@@ -32,41 +29,23 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
     def _generate_node(self, state: GraphState) -> GraphState:
         query = state["query"]
         docs = state["retrieved_docs"]
-        thread_id = state["thread_id"]
         
         if not docs:
             context = "No relevant information found."
         else:
             context = "\n\n".join(docs)
         
-        # Retrieve chat history from store
-        namespace = ("chat_history", thread_id)
-        existing = self.store.get(namespace, "history")
-        past_messages = existing.value.get("messages", []) if existing else []
+        prompt = f"""{self.system_prompt}
+
+Context:
+{context}
+
+Question: {query}
+
+Answer:"""
         
-        # Build message list: system prompt + history + current query
-        messages = [SystemMessage(content=self.system_prompt)]
-        
-        # Add past conversation
-        for msg in past_messages:
-            if msg["role"] == "human":
-                messages.append(HumanMessage(content=msg["content"]))
-            else:
-                messages.append(AIMessage(content=msg["content"]))
-        
-        # Add current user query with retrieved context
-        user_content = f"Context from knowledge base:\n{context}\n\nQuestion: {query}"
-        messages.append(HumanMessage(content=user_content))
-        
-        # Generate response
-        response = self.llm_client.generate(messages)
+        response = self.llm_client.generate(prompt)
         state["response"] = response
-        
-        # Save updated history to store (raw query without context, to keep history clean)
-        past_messages.append({"role": "human", "content": query})
-        past_messages.append({"role": "ai", "content": response})
-        self.store.put(namespace, "history", {"messages": past_messages})
-        
         return state
     
     def _build_graph(self) -> StateGraph:
@@ -83,12 +62,11 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
         
         return workflow.compile()
     
-    def run(self, query: str, thread_id: str = "default") -> str:
+    def run(self, query: str) -> str:
         initial_state = {
             "query": query,
             "retrieved_docs": [],
-            "response": "",
-            "thread_id": thread_id,
+            "response": ""
         }
         
         result = self.graph.invoke(initial_state)
