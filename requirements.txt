@@ -2,10 +2,13 @@ fastapi
 uvicorn
 langchain
 langchain-community
+langchain-openai
 langgraph
 chromadb
 sentence-transformers
 python-dotenv
 pydantic
+pydantic-settings
 httpx
 pypdf
+langchain-ollama

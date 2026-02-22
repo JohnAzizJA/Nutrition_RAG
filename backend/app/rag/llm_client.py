@@ -1,13 +1,14 @@
-from langchain_community.llms import Ollama
-from langchain_community.chat_models import ChatOpenAI
-from backend.app.core.config import settings
+from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
+from core.config import settings
 
 class LLMClient:
     def __init__(self):
         if settings.llm_provider == "ollama":
-            self.llm = Ollama(
+            self.llm = ChatOllama(
                 base_url=settings.ollama_base_url,
-                model=settings.ollama_model
+                model=settings.ollama_model,
+                temperature=0,
             )
         elif settings.llm_provider == "openai":
             self.llm = ChatOpenAI(

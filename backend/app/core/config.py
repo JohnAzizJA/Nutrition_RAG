@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # LLM
-    llm_provider: str = "openai"
+    llm_provider: str = "ollama"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
     ollama_base_url: str = "http://localhost:11434"

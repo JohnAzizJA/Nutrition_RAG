@@ -2,8 +2,8 @@ import chromadb
 from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
-from backend.app.core.config import settings
-from backend.app.rag.document_processor import DocumentProcessor
+from core.config import settings
+from rag.document_processor import DocumentProcessor
 
 class VectorStore:
     def __init__(self):

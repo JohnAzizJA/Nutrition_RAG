@@ -1,5 +1,5 @@
-from backend.app.rag.graph import RAGGraph
-from backend.app.rag.vector_store import VectorStore
+from rag.graph import RAGGraph
+from rag.vector_store import VectorStore
 
 def main():
     vector_store = VectorStore()

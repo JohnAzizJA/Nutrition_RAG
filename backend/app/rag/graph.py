@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END
-from backend.app.models.schemas import GraphState
-from backend.app.rag.vector_store import VectorStore
-from backend.app.rag.llm_client import LLMClient
+from models.schemas import GraphState
+from rag.vector_store import VectorStore
+from rag.llm_client import LLMClient
 
 class RAGGraph:
     def __init__(self):
