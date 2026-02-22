@@ -18,7 +18,7 @@ def main():
         
         try:
             print("\nAssistant: ", end="")
-            response = rag_graph.run(query)
+            response = rag_graph.run(query, thread_id="test-session")
             print(response)
             print()
         except Exception as e:

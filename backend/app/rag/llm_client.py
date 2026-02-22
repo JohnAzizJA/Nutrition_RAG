@@ -9,9 +9,8 @@ class LLMClient:
             temperature=0,
         )
     
-    def generate(self, prompt: str) -> str:
-        response = self.llm.invoke(prompt)
-        # Extract content from AIMessage object
+    def generate(self, messages) -> str:
+        response = self.llm.invoke(messages)
         if hasattr(response, 'content'):
             return response.content
         return str(response)

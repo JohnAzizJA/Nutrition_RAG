@@ -1,4 +1,6 @@
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from models.schemas import GraphState
 from rag.vector_store import VectorStore
 from rag.llm_client import LLMClient
@@ -7,6 +9,7 @@ class RAGGraph:
     def __init__(self):
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
+        self.memory = MemorySaver()
         self.graph = self._build_graph()
         self.system_prompt = """You are an expert nutrition assistant specializing in Egyptian cuisine and dietary habits. Your role is to provide accurate, evidence-based nutrition advice grounded in the provided context from WHO guidelines, Egyptian food databases, and scientific research.
 
@@ -35,17 +38,27 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
         else:
             context = "\n\n".join(docs)
         
-        prompt = f"""{self.system_prompt}
-
-Context:
-{context}
-
-Question: {query}
-
-Answer:"""
+        # Build the message list with history
+        messages = [SystemMessage(content=self.system_prompt)]
         
-        response = self.llm_client.generate(prompt)
+        # Add previous conversation history
+        for msg in state.get("chat_history", []):
+            messages.append(msg)
+        
+        # Add current user query with retrieved context
+        user_content = f"Context from knowledge base:\n{context}\n\nQuestion: {query}"
+        messages.append(HumanMessage(content=user_content))
+        
+        # Generate response using message list
+        response = self.llm_client.generate(messages)
         state["response"] = response
+        
+        # Append this turn to chat_history (the reducer will accumulate it)
+        state["chat_history"] = [
+            HumanMessage(content=query),
+            AIMessage(content=response),
+        ]
+        
         return state
     
     def _build_graph(self) -> StateGraph:
@@ -60,14 +73,16 @@ Answer:"""
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", END)
         
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.memory)
     
-    def run(self, query: str) -> str:
+    def run(self, query: str, thread_id: str = "default") -> str:
         initial_state = {
             "query": query,
             "retrieved_docs": [],
-            "response": ""
+            "response": "",
+            "chat_history": [],
         }
         
-        result = self.graph.invoke(initial_state)
+        config = {"configurable": {"thread_id": thread_id}}
+        result = self.graph.invoke(initial_state, config=config)
         return result["response"]
