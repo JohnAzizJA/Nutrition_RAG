@@ -21,7 +21,17 @@ copy .env.example .env
 # Edit .env with your settings
 ```
 
-4. **Run locally** (coming in next steps)
+4. **Add sample documents**
+```bash
+# Add .txt or .pdf files to data/raw/
+```
+
+5. **Ingest documents**
+```bash
+python ingest.py
+```
+
+6. **Test RAG (coming with frontend)**
 
 ## Project Structure
 ```
@@ -34,4 +44,15 @@ data/
 chroma_db/        # Vector database (auto-created)
 ```
 
-## Phase 1: Core RAG with Langgraph ✓ Step 1 Complete
+## Phase 1: Core RAG with Langgraph ✓ Backend Complete
+
+### Components
+- RAG pipeline with Langgraph (retrieve → generate)
+- VectorStore (ChromaDB + embeddings)
+- LLM integration (GPT-4o)
+- Document processor
+
+### Scripts
+- `python ingest.py` - Load documents from data/raw/
+
+### Next: FastAPI endpoints (with frontend in Phase 4)
