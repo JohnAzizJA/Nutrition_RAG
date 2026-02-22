@@ -8,6 +8,17 @@ class RAGGraph:
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
         self.graph = self._build_graph()
+        self.system_prompt = """You are an expert nutrition assistant specializing in Egyptian cuisine and dietary habits. Your role is to provide accurate, evidence-based nutrition advice grounded in the provided context from WHO guidelines, Egyptian food databases, and scientific research.
+
+Guidelines:
+- Use the provided context to answer questions accurately
+- If the context doesn't contain relevant information, politely say so and offer to help with related nutrition topics
+- Provide practical, actionable advice for dietary patterns
+- Include calorie counts and macronutrients when available in the context
+- Be concise but informative
+- If asked about medical conditions, remind users to consult healthcare professionals
+
+Respond in a friendly, helpful tone while maintaining scientific accuracy."""
     
     def _retrieve_node(self, state: GraphState) -> GraphState:
         query = state["query"]
@@ -17,9 +28,14 @@ class RAGGraph:
     
     def _generate_node(self, state: GraphState) -> GraphState:
         query = state["query"]
-        context = "\n\n".join(state["retrieved_docs"])
+        docs = state["retrieved_docs"]
         
-        prompt = f"""You are a nutrition expert. Use the following context to answer the question.
+        if not docs:
+            context = "No relevant information found."
+        else:
+            context = "\n\n".join(docs)
+        
+        prompt = f"""{self.system_prompt}
 
 Context:
 {context}
