@@ -1,13 +1,10 @@
 from rag.graph import RAGGraph
-from rag.vector_store import VectorStore
 
 def main():
-    vector_store = VectorStore()
-    vector_store.ingest("data/raw")
+    rag_graph = RAGGraph()
+    rag_graph.vector_store.ingest()
     print("=== Nutrition RAG System ===")
     print("Type 'exit' or 'quit' to stop\n")
-    
-    rag_graph = RAGGraph()
     
     while True:
         query = input("You: ").strip()
