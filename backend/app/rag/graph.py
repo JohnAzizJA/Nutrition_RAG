@@ -42,11 +42,12 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
         # Retrieve chat history from store
         namespace = ("chat_history", thread_id)
         existing = self.store.get(namespace, "history")
-        past_messages = list(existing.value["messages"]) if existing else []
+        past_messages = existing.value.get("messages", []) if existing else []
         
         # Build message list: system prompt + history + current query
         messages = [SystemMessage(content=self.system_prompt)]
         
+        # Add past conversation
         for msg in past_messages:
             if msg["role"] == "human":
                 messages.append(HumanMessage(content=msg["content"]))
