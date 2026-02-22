@@ -1,20 +1,17 @@
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
-from core.config import settings
 from rag.document_processor import DocumentProcessor
 
 class VectorStore:
     def __init__(self):
         self.client = chromadb.PersistentClient(
-            path=settings.chroma_persist_dir,
-            settings=ChromaSettings(anonymized_telemetry=False)
+            path="./chroma_db",
         )
         self.collection = self.client.get_or_create_collection(
             name="nutrition_docs"
         )
-        self.embedding_model = SentenceTransformer(settings.embedding_model)
+        self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         self.doc_processor = DocumentProcessor()
     
     def add_documents(self, texts: list[str], metadatas: list[dict], ids: list[str]):
@@ -34,7 +31,7 @@ class VectorStore:
         )
         return results["documents"][0] if results["documents"] else []
     
-    def ingest(self, data_dir: str = "backend/app/data/raw"):
+    def ingest(self, data_dir: str):
         dir_path = Path(data_dir)
         
         if not dir_path.exists():
