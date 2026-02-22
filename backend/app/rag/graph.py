@@ -11,7 +11,7 @@ class RAGGraph:
         self.llm_client = LLMClient()
         self.store = InMemoryStore()
         self.graph = self._build_graph()
-        self.system_prompt = """You are an expert nutrition assistant specializing in Egyptian cuisine and dietary habits. Your role is to provide accurate, evidence-based nutrition advice grounded in the provided context from WHO guidelines, Egyptian food databases, and scientific research.
+        self.system_prompt = """You are an expert nutrition assistant specializing in dietary habits. Your role is to provide accurate, evidence-based nutrition advice grounded in the provided context from WHO guidelines, food databases, and scientific research.
 
 Guidelines:
 - Use the provided context to answer questions accurately
