@@ -25,6 +25,15 @@ PROTEIN_TARGETS = {
 
 @tool
 def calculate_bmi(weight_kg: float, height_cm: float) -> dict:
+    """Calculate Body Mass Index (BMI) from weight and height.
+    
+    Args:
+        weight_kg: Weight in kilograms
+        height_cm: Height in centimeters
+    
+    Returns:
+        Dictionary with BMI value and category
+    """
     height_m = height_cm / 100
     bmi = weight_kg / (height_m ** 2)
     
@@ -48,6 +57,17 @@ def calculate_bmi(weight_kg: float, height_cm: float) -> dict:
 
 @tool
 def calculate_bmr(weight_kg: float, height_cm: float, age: int, gender: str) -> float:
+    """Calculate Basal Metabolic Rate (BMR) using Mifflin-St Jeor equation.
+    
+    Args:
+        weight_kg: Weight in kilograms
+        height_cm: Height in centimeters
+        age: Age in years
+        gender: Either 'male' or 'female'
+    
+    Returns:
+        BMR value in calories per day
+    """
     if gender.lower() == "male":
         return 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
     else:
@@ -55,11 +75,33 @@ def calculate_bmr(weight_kg: float, height_cm: float, age: int, gender: str) -> 
 
 @tool
 def calculate_tdee(bmr: float, activity_level: str) -> float:
+    """Calculate Total Daily Energy Expenditure (TDEE) from BMR and activity level.
+    
+    Args:
+        bmr: Basal Metabolic Rate in calories
+        activity_level: One of 'sedentary', 'light', 'moderate', 'very_active', 'extra_active'
+    
+    Returns:
+        TDEE value in calories per day
+    """
     multiplier = ACTIVITY_MULTIPLIERS.get(activity_level, 1.2)
     return bmr * multiplier
 
 @tool
 def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str, goal: str, activity_level: str) -> dict:
+    """Calculate complete nutrition targets based on user profile.
+    
+    Args:
+        weight_kg: Weight in kilograms
+        height_cm: Height in centimeters
+        age: Age in years
+        gender: Either 'male' or 'female'
+        goal: One of 'aggressive_weight_loss', 'weight_loss', 'muscle_gain', 'maintenance', 'endurance'
+        activity_level: One of 'sedentary', 'light', 'moderate', 'very_active', 'extra_active'
+    
+    Returns:
+        Dictionary with bmr, tdee, target_calories, and macro targets
+    """
     bmr = calculate_bmr(weight_kg, height_cm, age, gender)
     tdee = calculate_tdee(bmr, activity_level)
     
