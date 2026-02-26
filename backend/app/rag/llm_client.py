@@ -6,7 +6,7 @@ class LLMClient:
     def __init__(self):
         self.llm = ChatOllama(
             base_url="http://localhost:11434",
-            model="llama2",
+            model="llama3.1",
             temperature=0,
         )
         # Bind tools to LLM
