@@ -109,7 +109,7 @@ User Question: {query}
 Provide a helpful answer based on the context above.""")
         ]
         
-        response = self.llm_client.invoke(messages)
+        response = self.llm_client.generate(messages)  # Use generate() not invoke()
         
         # Extract content
         if hasattr(response, 'content'):
