@@ -59,19 +59,8 @@ def calculate_tdee(bmr: float, activity_level: str) -> float:
     return bmr * multiplier
 
 @tool
-def calculate_targets(
-    weight_kg: float,
-    height_cm: float,
-    age: int,
-    sex: str,
-    goal: str,
-    activity_level: str,
-) -> dict:
-    """
-    Calculate all nutrition targets based on user profile.
-    Returns dict with bmr, tdee, target_calories, and macro targets.
-    """
-    bmr = calculate_bmr(weight_kg, height_cm, age, sex)
+def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str, goal: str, activity_level: str) -> dict:
+    bmr = calculate_bmr(weight_kg, height_cm, age, gender)
     tdee = calculate_tdee(bmr, activity_level)
     
     calorie_adjustment = GOAL_CALORIE_ADJUSTMENTS.get(goal, 0)
