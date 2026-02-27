@@ -22,4 +22,3 @@ chroma_db/
 data/raw/*
 !data/raw/.gitkeep
 .env
-docs/
