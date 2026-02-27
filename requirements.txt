@@ -5,6 +5,7 @@ langchain-community
 langchain-text-splitters
 langchain-openai
 langgraph
+chromadb
 sentence-transformers
 python-dotenv
 pydantic
@@ -14,4 +15,3 @@ pypdf
 langchain-groq
 sqlalchemy
 psycopg2-binary
-pgvector
