@@ -23,6 +23,7 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user")
     weight_logs = relationship("WeightLog", back_populates="user")
     meal_logs = relationship("MealLog", back_populates="user")
+    workout_routines = relationship("WorkoutRoutine", back_populates="user")
     following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
     followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
 
@@ -78,6 +79,33 @@ class MealLog(Base):
     logged_at = Column(DateTime, default=utc_now)
     
     user = relationship("User", back_populates="meal_logs")
+
+class WorkoutRoutine(Base):
+    __tablename__ = "workout_routines"
+    __table_args__ = {'schema': 'public'}
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+    
+    user = relationship("User", back_populates="workout_routines")
+    exercises = relationship("Exercise", back_populates="routine")
+
+class Exercise(Base):
+    __tablename__ = "exercises"
+    __table_args__ = {'schema': 'public'}
+    
+    id = Column(Integer, primary_key=True, index=True)
+    routine_id = Column(Integer, ForeignKey("public.workout_routines.id"), nullable=False)
+    name = Column(String, nullable=False)
+    sets = Column(Integer, nullable=False)
+    reps = Column(Integer, nullable=False)
+    weight_kg = Column(Float, nullable=True)
+    rest_time_seconds = Column(Integer, nullable=True)
+    
+    routine = relationship("WorkoutRoutine", back_populates="exercises")
 
 class Follow(Base):
     __tablename__ = "follows"
