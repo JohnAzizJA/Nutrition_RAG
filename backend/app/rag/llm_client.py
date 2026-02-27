@@ -9,7 +9,7 @@ class LLMClient:
     def __init__(self):
         # Base LLM for generation (no tools)
         self.llm = ChatGroq(
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
             temperature=0,
             api_key=os.getenv("GROQ_API_KEY")
         )
