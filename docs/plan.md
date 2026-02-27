@@ -1,12 +1,12 @@
 # Development Roadmap
 
-## Phase 1: Core RAG Backend with LangGraph (✅ Mostly Complete)
+## Phase 1: Core RAG Backend with LangGraph (✅ Complete)
 * [x] Set up Python project structure and dependencies.
 * [x] Ingest pipeline for documents (chunk, embed).
 * [x] LangGraph workflow (Agent, Tools, Retrieve, Generate nodes).
 * [x] Implement calculation tools (BMI, BMR, TDEE, Macros).
-* [ ] **Migration:** Transition LLM client from `Ollama` to `Groq` for faster inference.
-* [ ] **Migration:** Move vector storage from `ChromaDB` to `Supabase pgvector`.
+* [x] **Migration:** Transition LLM client from `Ollama` to `Groq` for faster inference.
+* [x] **Migration:** Move vector storage from `ChromaDB` to `Supabase pgvector`.
 
 ## Phase 2: FastAPI, User Memory & Structured Data (Current Focus)
 * [ ] Implement conversational memory (checkpointer) in LangGraph using Supabase/PostgreSQL to store thread states.

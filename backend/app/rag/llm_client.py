@@ -1,14 +1,17 @@
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from rag.tools import calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class LLMClient:
     def __init__(self):
         # Base LLM for generation (no tools)
-        self.llm = ChatOllama(
-            base_url="http://localhost:11434",
-            model="llama3.1",
+        self.llm = ChatGroq(
+            model="llama-3.1-70b-versatile",
             temperature=0,
+            api_key=os.getenv("GROQ_API_KEY")
         )
         
         # LLM with tools for agent decisions

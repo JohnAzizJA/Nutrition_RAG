@@ -14,7 +14,7 @@ A comprehensive mobile app tailored for the Egyptian market to track nutrition, 
 * **Frontend:** React Native (Expo)
 * **Backend:** FastAPI (Python)
 * **Database & Auth:** Supabase (PostgreSQL)
-* **Vector Store:** Supabase pgvector (migrating from ChromaDB)
+* **Vector Store:** Supabase pgvector
 * **AI Orchestration:** LangGraph + LangChain
-* **LLM Provider:** Groq (migrating from local Ollama for speed/production)
+* **LLM Provider:** Groq (llama-3.1-70b)
 

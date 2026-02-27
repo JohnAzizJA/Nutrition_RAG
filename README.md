@@ -18,7 +18,9 @@ pip install -r requirements.txt
 3. **Configure environment**
 ```bash
 copy .env.example .env
-# Edit .env with your settings
+# Edit .env with:
+# - DATABASE_URL (Supabase PostgreSQL)
+# - GROQ_API_KEY (Get from https://console.groq.com)
 ```
 
 4. **Add sample documents**
@@ -39,18 +41,19 @@ backend/
   app/
     api/          # FastAPI endpoints
     rag/          # RAG pipeline + Langgraph
+    db/           # Database models & connection
 data/
   raw/            # Documents to ingest
-chroma_db/        # Vector database (auto-created)
 ```
 
-## Phase 1: Core RAG with Langgraph ✓ Backend Complete
+## Phase 1: Core RAG with Langgraph ✓ Complete
 
 ### Components
 - RAG pipeline with Langgraph (retrieve → generate)
-- VectorStore (ChromaDB + embeddings)
-- LLM integration (GPT-4o)
+- VectorStore (Supabase pgvector + embeddings)
+- LLM integration (Groq/llama-3.1-70b)
 - Document processor
+- Calculation tools (BMI, BMR, TDEE, Macros)
 
 ### Scripts
 - `python ingest.py` - Load documents from data/raw/
