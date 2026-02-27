@@ -13,3 +13,5 @@ pydantic-settings
 httpx
 pypdf
 langchain-ollama
+sqlalchemy
+psycopg2-binary
