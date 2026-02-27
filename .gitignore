@@ -21,6 +21,5 @@ chroma_db/
 # Data
 data/raw/*
 !data/raw/.gitkeep
-plan.md
-
 .env
+docs/
