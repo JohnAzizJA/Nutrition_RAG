@@ -1,21 +1,14 @@
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.postgres import PostgresSaver
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from models.schemas import GraphState
 from rag.vector_store import VectorStore
 from rag.llm_client import LLMClient
 from rag.tools import calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class RAGGraph:
     def __init__(self):
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
-        self.checkpointer = PostgresSaver.from_conn_string(os.getenv("DATABASE_URL"))
-        self.checkpointer.setup()
         self.graph = self._build_graph()
         self.system_prompt = """You are an expert nutrition assistant specializing in dietary habits.
 
@@ -160,10 +153,10 @@ Provide a helpful answer based on the context above.""")
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", END)
         
-        return workflow.compile(checkpointer=self.checkpointer)
+        return workflow.compile()
     
-    def run(self, query: str, thread_id: str = "default") -> str:
-        """Run the RAG pipeline with conversation memory"""
+    def run(self, query: str) -> str:
+        """Run the RAG pipeline"""
         initial_state = {
             "query": query,
             "retrieved_docs": [],
@@ -173,6 +166,5 @@ Provide a helpful answer based on the context above.""")
             "response": ""
         }
         
-        config = {"configurable": {"thread_id": thread_id}}
-        result = self.graph.invoke(initial_state, config=config)
+        result = self.graph.invoke(initial_state)
         return result["response"]

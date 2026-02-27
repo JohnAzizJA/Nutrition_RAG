@@ -9,7 +9,7 @@
 * [ ] **Migration:** Move vector storage from `ChromaDB` to `Supabase pgvector`.
 
 ## Phase 2: User Memory & Structured Data, FastAPI (Current Focus)
-* [x] Implement conversational memory (checkpointer) in LangGraph using Supabase/PostgreSQL to store thread states.
+* [ ] Implement conversational memory (checkpointer) in LangGraph using Supabase/PostgreSQL to store thread states.
 * [x] Finalize Supabase relational schema (Users, Meals, Progress, Follows).
 * [ ] Update the LangGraph flow to fetch the user profile (stats, goals) from the database *before* generating responses to ensure highly personalized advice.
 * [ ] Expose LangGraph pipeline via FastAPI endpoints (`/chat`, `/ingest`).
