@@ -1,5 +1,5 @@
 from database import Base, engine
-from models import User, Conversation
+from models import User, Conversation, WeightLog, FoodItem, MealLog, Follow
 
 def init_db():
     print("Dropping existing tables...")
