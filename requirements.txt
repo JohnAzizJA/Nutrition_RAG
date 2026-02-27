@@ -15,3 +15,5 @@ pypdf
 langchain-ollama
 sqlalchemy
 psycopg2-binary
+groq
+langchain-groq
