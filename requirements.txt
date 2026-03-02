@@ -3,8 +3,8 @@ uvicorn
 langchain
 langchain-community
 langchain-text-splitters
-langchain-openai
 langgraph
+langgraph-checkpoint-postgres
 chromadb
 sentence-transformers
 python-dotenv
@@ -12,4 +12,6 @@ pydantic
 pydantic-settings
 httpx
 pypdf
-langchain-ollama
+langchain-groq
+sqlalchemy
+psycopg2-binary

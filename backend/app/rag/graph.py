@@ -1,14 +1,33 @@
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.store.postgres import PostgresStore
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from models.schemas import GraphState
 from rag.vector_store import VectorStore
 from rag.llm_client import LLMClient
 from rag.tools import calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class RAGGraph:
     def __init__(self):
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
+        
+        # Get database URL
+        db_url = os.getenv("DATABASE_URL")
+        
+        self._checkpointer_cm = PostgresSaver.from_conn_string(db_url)
+        self.checkpointer = self._checkpointer_cm.__enter__()
+
+        self._store_cm = PostgresStore.from_conn_string(db_url)
+        self.store = self._store_cm.__enter__()
+
+        self.checkpointer.setup()
+        self.store.setup()
+        
         self.graph = self._build_graph()
         self.system_prompt = """You are an expert nutrition assistant specializing in dietary habits.
 
@@ -32,13 +51,12 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
     
     def _agent_node(self, state: GraphState) -> GraphState:
         query = state["query"]
+        messages = state.get("messages", [])
         
-        messages = [
-            SystemMessage(content=self.system_prompt),
-            HumanMessage(content=query)
-        ]
+        # Build messages with system prompt and conversation history
+        all_messages = [SystemMessage(content=self.system_prompt)] + messages + [HumanMessage(content=query)]
         
-        response = self.llm_client.invoke(messages)
+        response = self.llm_client.invoke(all_messages)
         
         # Check if LLM wants to use tools
         if hasattr(response, 'tool_calls') and response.tool_calls:
@@ -48,7 +66,10 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
             # No tools needed, retrieve docs for knowledge questions
             state["next_action"] = "retrieve"
         
-        return state
+        return {
+            **state,
+            "messages": [HumanMessage(content=query)]
+        }
     
     def _tool_node(self, state: GraphState) -> GraphState:
         tool_map = {
@@ -101,6 +122,7 @@ Respond in a friendly, helpful tone while maintaining scientific accuracy."""
         # Build messages properly
         messages = [
             SystemMessage(content=self.system_prompt),
+            *state.get("messages", []),
             HumanMessage(content=f"""Context:
 {context}
 
@@ -109,16 +131,21 @@ User Question: {query}
 Provide a helpful answer based on the context above.""")
         ]
         
-        response = self.llm_client.generate(messages)  # Use generate() not invoke()
+        response = self.llm_client.generate(messages)
         
         # Extract content
         if hasattr(response, 'content'):
-            state["response"] = response.content
+            response_text = response.content
         else:
-            state["response"] = str(response)
+            response_text = str(response)
         
         state["next_action"] = "end"
-        return state
+        
+        return {
+            **state,
+            "messages": [AIMessage(content=response_text)],
+            "response": response_text,
+        }
     
     def _route_after_agent(self, state: GraphState) -> str:
         next_action = state.get("next_action", "retrieve")
@@ -153,18 +180,20 @@ Provide a helpful answer based on the context above.""")
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", END)
         
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.checkpointer, store=self.store)
     
-    def run(self, query: str) -> str:
-        """Run the RAG pipeline"""
+    def run(self, query: str, user_id: int = 1, thread_id: str = "default") -> str:
+        """Run the RAG pipeline with conversation memory and long-term storage"""
         initial_state = {
             "query": query,
-            "retrieved_docs": [],
-            "tool_calls": [],
-            "tool_results": "",
-            "next_action": "",
-            "response": ""
         }
         
-        result = self.graph.invoke(initial_state)
+        config = {
+            "configurable": {
+                "thread_id": thread_id,
+                "user_id": str(user_id)
+            }
+        }
+        
+        result = self.graph.invoke(initial_state, config=config)
         return result["response"]
