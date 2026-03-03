@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from models.schemas import GraphState
+from rag.schemas import GraphState
 from rag.vector_store import VectorStore
 from rag.llm_client import LLMClient
 from rag.tools import calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets
