@@ -7,6 +7,7 @@ You are an expert full-stack developer assisting in building a FastAPI + React N
 * **Database:** We use Supabase. Use SQLAlchemy for relational data. For vector embeddings, prioritize `pgvector` over ChromaDB.
 * **LLM:** We are transitioning from local `Ollama` to `Groq` for faster inference.
 * **Language & Culture:** Assume the user base is Egyptian. When generating prompts, tests, or seed data, account for Egyptian Arabic, Franco-Arabic, and local Egyptian cuisine.
+* **During Implementation:** Implementation must be step by step, Always state what will be implemented next and wait for my confirmation.
 
 ## Backend (Python/FastAPI) Guidelines
 * Use asynchronous programming (`async def`) for all FastAPI endpoints and database calls where possible.

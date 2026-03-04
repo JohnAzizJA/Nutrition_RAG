@@ -18,6 +18,10 @@ class RegisterRequest(BaseModel):
     activity_level: Literal["sedentary", "lightly_active", "moderately_active", "very_active", "extra_active"]
     goal: Literal["lose_weight", "maintain_weight", "gain_weight", "gain_muscle"]
 
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=100)
+    password: str = Field(..., min_length=6, max_length=100)
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -50,3 +54,17 @@ async def register(request: RegisterRequest):
         return user
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
+
+@router.post("/login", response_model=UserResponse)
+async def login(request: LoginRequest):
+    """Login user"""
+    user = user_repo.get_by_email(request.email)
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Simple password check (in production, use hashed passwords)
+    if user.password != request.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    return user

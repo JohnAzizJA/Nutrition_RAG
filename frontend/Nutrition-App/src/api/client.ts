@@ -12,6 +12,11 @@ export interface RegisterRequest {
   goal: 'lose_weight' | 'maintain_weight' | 'gain_weight' | 'gain_muscle';
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
 export interface UserResponse {
   id: number;
   email: string;
@@ -37,6 +42,23 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Registration failed');
+    }
+
+    return response.json();
+  },
+
+  async login(data: LoginRequest): Promise<UserResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Login failed');
     }
 
     return response.json();
