@@ -25,10 +25,9 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "Nutrition RAG API"}
 
-# Router imports will be added here
-# from api import auth, chat, users, meals, workouts
-# app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-# app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+# Router imports
+from api import auth
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
 if __name__ == "__main__":
     import uvicorn

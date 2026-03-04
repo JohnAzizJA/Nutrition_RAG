@@ -18,14 +18,14 @@ You are an expert full-stack developer assisting in building a FastAPI + React N
 * Create modular, reusable functional components.
 * Use React Navigation for routing.
 * Handle state efficiently (e.g., Zustand or Redux Toolkit, depending on project scale).
+* Use this color palette: #F9F7F7, #DBE2EF, #3F72AF, #112D4E
 
 # AI Agent Instructions
 
 ## 🛑 What NOT to do
 1. **No Hardcoding:** Do not hardcode credentials or local file paths (e.g., `./chroma_db`) if a cloud alternative like Supabase is available.
 2. **No Linear Logic:** Do not replace LangGraph nodes with simple `if/else` LLM calls. All complex reasoning must happen within `graph.py`.
-3. **No Vanilla Prompting:** Do not create generic nutrition prompts. Every system message must include instructions to be culturally relevant to Egypt.
-4. **No Direct DB Mutations in Graph:** The AI should not directly write to the database; use a dedicated `tool` or a `SaveNode` to maintain data integrity.
+3. **No Direct DB Mutations in Graph:** The AI should not directly write to the database; use a dedicated `tool` or a `SaveNode` to maintain data integrity.
 
 ## ✅ What TO do
 1. **Type Safety:** Always use `TypedDict` for LangGraph `State` and Pydantic for FastAPI schemas.
