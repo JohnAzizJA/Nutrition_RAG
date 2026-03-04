@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/src/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { api } from '@/src/api/client';
+import { authStorage } from '@/src/utils/authStorage';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -19,8 +20,9 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const user = await api.login({ email, password });
-      Alert.alert('Success!', `Welcome back ${user.name}!`);
+      const response = await api.login({ email, password });
+      await authStorage.saveToken(response.access_token);
+      Alert.alert('Success!', `Welcome back ${response.user.name}!`);
       router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');

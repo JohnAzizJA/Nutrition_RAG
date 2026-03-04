@@ -29,8 +29,14 @@ export interface UserResponse {
   goal: string;
 }
 
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
 export const api = {
-  async register(data: RegisterRequest): Promise<UserResponse> {
+  async register(data: RegisterRequest): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
@@ -47,7 +53,7 @@ export const api = {
     return response.json();
   },
 
-  async login(data: LoginRequest): Promise<UserResponse> {
+  async login(data: LoginRequest): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {

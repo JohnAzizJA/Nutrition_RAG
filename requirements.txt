@@ -15,3 +15,5 @@ pypdf
 langchain-groq
 sqlalchemy
 psycopg2-binary
+pwdlib[argon2]
+pyjwt

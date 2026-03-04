@@ -5,6 +5,7 @@ import Slider from '@react-native-community/slider';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { api } from '@/src/api/client';
+import { authStorage } from '@/src/utils/authStorage';
 import { Colors } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -52,8 +53,9 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const user = await api.register(formData);
-      Alert.alert('Success!', `Welcome ${user.name}! Your account has been created.`);
+      const response = await api.register(formData);
+      await authStorage.saveToken(response.access_token);
+      Alert.alert('Success!', `Welcome ${response.user.name}! Your account has been created.`);
       router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Registration failed');

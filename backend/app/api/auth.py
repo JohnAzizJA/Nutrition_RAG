@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from db.repositories import UserRepository
+from auth.utils import hash_password, verify_password, create_access_token
 from typing import Literal
 
 router = APIRouter()
@@ -36,13 +37,26 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post("/register", response_model=UserResponse)
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
+
+@router.post("/register", response_model=AuthResponse)
 async def register(request: RegisterRequest):
     """Register a new user"""
+    # Check if email already exists
+    existing_user = user_repo.get_by_email(request.email)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
     try:
+        # Hash password before storing
+        hashed_password = hash_password(request.password)
+        
         user = user_repo.create(
             email=request.email,
-            password=request.password,
+            password=hashed_password,
             name=request.name,
             age=request.age,
             gender=request.gender,
@@ -51,11 +65,19 @@ async def register(request: RegisterRequest):
             activity_level=request.activity_level,
             goal=request.goal
         )
-        return user
+        
+        # Generate JWT token
+        access_token = create_access_token(data={"sub": user.id})
+        
+        return AuthResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(user)
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login", response_model=AuthResponse)
 async def login(request: LoginRequest):
     """Login user"""
     user = user_repo.get_by_email(request.email)
@@ -63,8 +85,15 @@ async def login(request: LoginRequest):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    # Simple password check (in production, use hashed passwords)
-    if user.password != request.password:
+    # Verify password using bcrypt
+    if not verify_password(request.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    return user
+    # Generate JWT token
+    access_token = create_access_token(data={"sub": user.id})
+    
+    return AuthResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
