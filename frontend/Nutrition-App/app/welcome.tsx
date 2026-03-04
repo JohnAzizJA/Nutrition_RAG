@@ -10,7 +10,7 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Image
-          source={require('@/assets/images/icon.png')}
+          source={require('@/assets/images/nibbles.png')}
           style={styles.logo}
         />
         <ThemedText style={styles.appName}>Nutrition App</ThemedText>
@@ -51,13 +51,14 @@ const styles = StyleSheet.create({
   logo: {
     width: 120,
     height: 120,
-    marginBottom: 24,
+    marginBottom: 30,
   },
   appName: {
     fontSize: 32,
     fontWeight: 'bold',
     color: Colors.dark,
     marginBottom: 8,
+    lineHeight: 36,
   },
   tagline: {
     fontSize: 16,
