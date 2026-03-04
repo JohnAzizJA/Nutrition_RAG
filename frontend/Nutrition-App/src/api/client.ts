@@ -1,6 +1,8 @@
 const API_BASE_URL = 'http://localhost:8000';
 
 export interface RegisterRequest {
+  email: string;
+  password: string;
   name: string;
   age: number;
   gender: 'male' | 'female';
@@ -12,6 +14,7 @@ export interface RegisterRequest {
 
 export interface UserResponse {
   id: number;
+  email: string;
   name: string;
   age: number;
   gender: string;

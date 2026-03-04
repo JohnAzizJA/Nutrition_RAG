@@ -19,6 +19,7 @@ You are an expert full-stack developer assisting in building a FastAPI + React N
 * Use React Navigation for routing.
 * Handle state efficiently (e.g., Zustand or Redux Toolkit, depending on project scale).
 * Use this color palette: #F9F7F7, #DBE2EF, #3F72AF, #112D4E
+* Maintain consistency between screens.
 
 # AI Agent Instructions
 

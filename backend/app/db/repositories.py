@@ -11,11 +11,13 @@ class UserRepository:
         with get_db() as db:
             return db.query(User).filter(User.id == user_id).first()
     
-    def create(self, name: str, age: int, gender: str, weight_kg: float, 
+    def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float, 
                height_cm: float, activity_level: str, goal: str) -> User:
         """Create new user"""
         with get_db() as db:
             user = User(
+                email=email,
+                password=password,
                 name=name,
                 age=age,
                 gender=gender,

@@ -8,6 +8,8 @@ user_repo = UserRepository()
 
 # Request/Response Schemas
 class RegisterRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=100)
+    password: str = Field(..., min_length=6, max_length=100)
     name: str = Field(..., min_length=2, max_length=100)
     age: int = Field(..., ge=13, le=120)
     gender: Literal["male", "female"]
@@ -18,6 +20,7 @@ class RegisterRequest(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    email: str
     name: str
     age: int
     gender: str
@@ -34,6 +37,8 @@ async def register(request: RegisterRequest):
     """Register a new user"""
     try:
         user = user_repo.create(
+            email=request.email,
+            password=request.password,
             name=request.name,
             age=request.age,
             gender=request.gender,
