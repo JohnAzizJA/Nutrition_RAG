@@ -1,7 +1,7 @@
-# Project Overview: Egyptian Nutrition & Fitness Tracker
+# Project Overview: Nutrition & Fitness Tracker
 
 ## Vision
-A comprehensive mobile app to track nutrition, calories, and workouts. The app goes beyond standard tracking by integrating an intelligent, LLM-powered RAG system capable of understanding Egyptian Arabic, Franco-Arabic, and specific Egyptian cultural diets. It should also contain global nutrition facts, not only egyptian.
+A comprehensive mobile app to track nutrition, calories, and workouts. The app goes beyond standard tracking by integrating an intelligent, LLM-powered RAG system capable of alson understanding Egyptian Arabic, Franco-Arabic, and specific Egyptian cultural diets. It is for global nutrition but should have support for Egyptian lifestyle too.
 
 ## Core Features
 1. **Dashboard:** Visualizes stats, daily calorie intake/limits, and calories burned.
@@ -14,7 +14,7 @@ A comprehensive mobile app to track nutrition, calories, and workouts. The app g
 * **Frontend:** React Native (Expo)
 * **Backend:** FastAPI (Python)
 * **Database & Auth:** Supabase (PostgreSQL)
-* **Vector Store:** Supabase pgvector
+* **Vector Store:** ChromaDB --> pgvector (Supabase)
 * **AI Orchestration:** LangGraph + LangChain
 * **LLM Provider:** Groq (llama-3.1-70b)
 

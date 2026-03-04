@@ -31,6 +31,7 @@ export interface UserResponse {
 
 export interface AuthResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
   user: UserResponse;
 }
@@ -68,5 +69,27 @@ export const api = {
     }
 
     return response.json();
+  },
+
+  async refresh(refreshToken: string): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Token refresh failed');
+    }
+
+    return response.json();
+  },
+
+  async logout(): Promise<void> {
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+    });
   },
 };

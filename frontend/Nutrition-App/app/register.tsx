@@ -55,6 +55,7 @@ export default function RegisterScreen() {
     try {
       const response = await api.register(formData);
       await authStorage.saveToken(response.access_token);
+      await authStorage.saveRefreshToken(response.refresh_token);
       Alert.alert('Success!', `Welcome ${response.user.name}! Your account has been created.`);
       router.replace('/(tabs)');
     } catch (error) {

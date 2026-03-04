@@ -22,6 +22,7 @@ export default function LoginScreen() {
     try {
       const response = await api.login({ email, password });
       await authStorage.saveToken(response.access_token);
+      await authStorage.saveRefreshToken(response.refresh_token);
       Alert.alert('Success!', `Welcome back ${response.user.name}!`);
       router.replace('/(tabs)');
     } catch (error) {

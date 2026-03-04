@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from db.repositories import UserRepository
-from auth.utils import hash_password, verify_password, create_access_token
+from auth.utils import hash_password, verify_password, create_access_token, create_refresh_token, decode_refresh_token
 from typing import Literal
 
 router = APIRouter()
@@ -39,6 +39,7 @@ class UserResponse(BaseModel):
 
 class AuthResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
     user: UserResponse
 
@@ -66,11 +67,13 @@ async def register(request: RegisterRequest):
             goal=request.goal
         )
         
-        # Generate JWT token
+        # Generate JWT tokens
         access_token = create_access_token(data={"sub": user.id})
+        refresh_token = create_refresh_token(data={"sub": user.id})
         
         return AuthResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             user=UserResponse.model_validate(user)
         )
@@ -89,11 +92,46 @@ async def login(request: LoginRequest):
     if not verify_password(request.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    # Generate JWT token
+    # Generate JWT tokens
     access_token = create_access_token(data={"sub": user.id})
+    refresh_token = create_refresh_token(data={"sub": user.id})
     
     return AuthResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
         user=UserResponse.model_validate(user)
     )
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+@router.post("/refresh", response_model=AuthResponse)
+async def refresh_access_token(request: RefreshRequest):
+    """Refresh access token using refresh token"""
+    payload = decode_refresh_token(request.refresh_token)
+    
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    
+    user_id = payload.get("sub")
+    user = user_repo.get_by_id(user_id)
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    # Generate new tokens
+    new_access_token = create_access_token(data={"sub": user.id})
+    new_refresh_token = create_refresh_token(data={"sub": user.id})
+    
+    return AuthResponse(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+@router.post("/logout")
+async def logout():
+    """Logout user (client should clear tokens)"""
+    return {"message": "Logged out successfully"}
