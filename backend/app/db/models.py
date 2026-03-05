@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
-from database import Base
+from db.database import Base
 
 def utc_now():
     return datetime.now(timezone.utc)
@@ -11,6 +11,8 @@ class User(Base):
     __table_args__ = {'schema': 'public'}
     
     id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password = Column(String, nullable=False)
     name = Column(String, nullable=False)
     age = Column(Integer, nullable=False)
     gender = Column(String, nullable=False)
