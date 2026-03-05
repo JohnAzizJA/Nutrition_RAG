@@ -363,6 +363,7 @@ const styles = StyleSheet.create({
   },
   pickerColumn: {
     gap: 8,
+    marginBottom: 50
   },
   pickerButton: {
     flex: 1,
@@ -370,21 +371,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.secondary,
     borderRadius: 8,
-    padding: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    minHeight: 56,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   pickerButtonActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
   pickerText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.dark,
+    lineHeight: 20,
   },
   pickerTextActive: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#fff',
     fontWeight: '600',
+    lineHeight: 20,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -423,7 +429,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 20,
   },
   registerButtonText: {
     color: '#fff',
