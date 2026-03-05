@@ -4,8 +4,7 @@ import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
-import { api } from '@/src/api/client';
-import { authStorage } from '@/src/utils/authStorage';
+import { useAuth } from '@/src/contexts/AuthContext';
 import { Colors } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -24,6 +23,7 @@ interface FormData {
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -53,10 +53,8 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const response = await api.register(formData);
-      await authStorage.saveToken(response.access_token);
-      await authStorage.saveRefreshToken(response.refresh_token);
-      Alert.alert('Success!', `Welcome ${response.user.name}! Your account has been created.`);
+      await register(formData);
+      Alert.alert('Success!', 'Your account has been created.');
       router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Registration failed');

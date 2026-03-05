@@ -3,11 +3,11 @@ import { StyleSheet, View, TextInput, TouchableOpacity, Alert } from 'react-nati
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/src/components/themed-text';
 import { Colors } from '@/constants/theme';
-import { api } from '@/src/api/client';
-import { authStorage } from '@/src/utils/authStorage';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,10 +20,8 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await api.login({ email, password });
-      await authStorage.saveToken(response.access_token);
-      await authStorage.saveRefreshToken(response.refresh_token);
-      Alert.alert('Success!', `Welcome back ${response.user.name}!`);
+      await login(email, password);
+      Alert.alert('Success!', 'Welcome back!');
       router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');
