@@ -59,14 +59,12 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     position: 'absolute',
-    bottom: 10,
-    left: 10,
-    width: '75%',
+    bottom: 8,
+    width: '80%',
     backgroundColor: 'transparent',
     borderTopWidth: 0,
     elevation: 0,
     height: 60,
-    paddingRight: 0,
   },
   addButton: {
     position: 'absolute',
