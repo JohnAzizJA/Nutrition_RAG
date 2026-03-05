@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { authStorage } from '@/src/utils/authStorage';
 
-const API_BASE_URL = 'http://localhost:8000';
+// Replace with your computer's IP address (find with ipconfig on Windows)
+const API_BASE_URL = 'http://192.168.100.79:8000'; // Change this to your IP
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
