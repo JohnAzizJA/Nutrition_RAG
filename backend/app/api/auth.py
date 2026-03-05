@@ -68,8 +68,8 @@ async def register(request: RegisterRequest):
         )
         
         # Generate JWT tokens
-        access_token = create_access_token(data={"sub": user.id})
-        refresh_token = create_refresh_token(data={"sub": user.id})
+        access_token = create_access_token(data={"sub": str(user.id)})
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
         
         return AuthResponse(
             access_token=access_token,
@@ -93,8 +93,8 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     # Generate JWT tokens
-    access_token = create_access_token(data={"sub": user.id})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
     return AuthResponse(
         access_token=access_token,
@@ -121,8 +121,8 @@ async def refresh_access_token(request: RefreshRequest):
         raise HTTPException(status_code=401, detail="User not found")
     
     # Generate new tokens
-    new_access_token = create_access_token(data={"sub": user.id})
-    new_refresh_token = create_refresh_token(data={"sub": user.id})
+    new_access_token = create_access_token(data={"sub": str(user.id)})
+    new_refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
     return AuthResponse(
         access_token=new_access_token,
