@@ -17,6 +17,7 @@ export const ENDPOINTS = {
   CHAT: {
     SEND: '/api/chat',
     CONVERSATIONS: '/api/conversations',
+    CONVERSATION: (threadId: string) => `/api/conversations/${threadId}`,
   },
   
   // Meals

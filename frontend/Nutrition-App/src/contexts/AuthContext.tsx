@@ -26,12 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await authStorage.getToken();
       if (token) {
-        // Token exists, user is authenticated
-        // You could decode JWT to get user info or fetch from API
-        setUser({} as UserResponse); // Placeholder
+        // Decode token to get user info (basic implementation)
+        // In production, you'd fetch user profile from API
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({ id: payload.sub } as UserResponse);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      await authStorage.clearAll();
     } finally {
       setIsLoading(false);
     }
