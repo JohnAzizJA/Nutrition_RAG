@@ -13,11 +13,17 @@
 * [x] Finalize Supabase relational schema (Users, Meals, Progress, Follows).
 * [x] Create repository layer for database access.
 * [ ] Expose LangGraph pipeline via FastAPI endpoints (`/chat`, `/conversations`).
-* [ ] Implement user authentication endpoints (`/register`, `/login`).
+* [x] Implement user authentication endpoints (`/register`, `/login`).
+* [x] Implement JWT authentication with refresh tokens.
+* [x] Implement secure password hashing (Argon2).
 
 ## Phase 3: React Native Frontend MVP + Backend Integration
-* [ ] Setup React Native/Expo project.
-* [ ] Implement Supabase Authentication (Sign up, Log in).
+* [x] Setup React Native/Expo project.
+* [x] Implement Authentication (Sign up, Log in).
+* [x] Create tab navigation structure (Workouts, Calories, Home, Chat).
+* [x] Implement AuthContext for state management.
+* [x] Setup axios with interceptors for API calls.
+* [x] Create service layer architecture (authService, userService).
 * [ ] Build Chat UI to interface with the FastAPI `/chat` endpoint.
 * [ ] Build Dashboard UI (progress rings, calorie counters) and create it's FastAPI endpoints.
 * [ ] Build Manual Meal Logging & Workout Creation tabs and create it's FastAPI endpoints.
