@@ -3,11 +3,11 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 
-export default function HomeScreen() {
+export default function CaloriesScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Dashboard</ThemedText>
-      <ThemedText style={styles.subtitle}>Your nutrition journey starts here</ThemedText>
+      <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
+      <ThemedText style={styles.subtitle}>Monitor your daily nutrition</ThemedText>
     </ThemedView>
   );
 }

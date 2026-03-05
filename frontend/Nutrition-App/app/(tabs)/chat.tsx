@@ -3,11 +3,11 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 
-export default function HomeScreen() {
+export default function ChatScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Dashboard</ThemedText>
-      <ThemedText style={styles.subtitle}>Your nutrition journey starts here</ThemedText>
+      <ThemedText type="title" style={styles.title}>AI Coach</ThemedText>
+      <ThemedText style={styles.subtitle}>Chat with your nutrition assistant</ThemedText>
     </ThemedView>
   );
 }
