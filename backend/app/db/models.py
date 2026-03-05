@@ -35,7 +35,7 @@ class Conversation(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
-    thread_id = Column(String, unique=True, nullable=False, index=True)
+    thread_id = Column(String, nullable=False, index=True)
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=utc_now)

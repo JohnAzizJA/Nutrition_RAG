@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
@@ -14,11 +15,13 @@ export default function ChatScreen() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading) {
-      loadConversations();
-    }
-  }, [authLoading]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!authLoading) {
+        loadConversations();
+      }
+    }, [authLoading])
+  );
 
   const loadConversations = async () => {
     try {

@@ -100,10 +100,27 @@ async def chat(
         # Generate new thread_id if not provided (new chat)
         thread_id = request.thread_id or f"chat_{uuid.uuid4().hex[:12]}"
         
+        # Save user message to conversations table
+        conversation_repo.create(
+            user_id=current_user.id,
+            thread_id=thread_id,
+            role="user",
+            content=request.message
+        )
+        
+        # Get AI response
         response = rag_graph.run(
             query=request.message,
             user_id=current_user.id,
             thread_id=thread_id
+        )
+        
+        # Save AI response to conversations table
+        conversation_repo.create(
+            user_id=current_user.id,
+            thread_id=thread_id,
+            role="assistant",
+            content=response
         )
         
         return ChatResponse(
