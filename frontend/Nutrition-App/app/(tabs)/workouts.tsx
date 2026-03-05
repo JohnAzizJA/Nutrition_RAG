@@ -1,12 +1,28 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function WorkoutsScreen() {
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/welcome');
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Workouts</ThemedText>
+      <View style={styles.header}>
+        <ThemedText type="title" style={styles.title}>Workouts</ThemedText>
+        <TouchableOpacity onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color={Colors.dark} />
+        </TouchableOpacity>
+      </View>
       <ThemedText style={styles.subtitle}>Track your workout routines</ThemedText>
     </ThemedView>
   );
@@ -15,16 +31,20 @@ export default function WorkoutsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    paddingTop: 60,
     backgroundColor: Colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: Colors.dark,
-    marginBottom: 16,
   },
   subtitle: {
     fontSize: 16,

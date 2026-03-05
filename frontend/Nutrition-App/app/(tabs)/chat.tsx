@@ -11,7 +11,7 @@ import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, logout } = useAuth();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,6 +54,12 @@ export default function ChatScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>Chats</ThemedText>
+        <TouchableOpacity onPress={async () => {
+          await logout();
+          router.replace('/welcome');
+        }}>
+          <Ionicons name="log-out-outline" size={24} color={Colors.dark} />
+        </TouchableOpacity>
       </View>
 
       {conversations.length === 0 ? (
@@ -96,6 +102,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
     paddingTop: 60,
   },
