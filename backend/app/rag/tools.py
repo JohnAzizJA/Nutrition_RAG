@@ -9,11 +9,10 @@ ACTIVITY_MULTIPLIERS = {
 }
 
 GOAL_CALORIE_ADJUSTMENTS = {
-    "aggressive_weight_loss": -800,
-    "weight_loss": -500,
-    "muscle_gain": 300,
-    "maintenance": 0,
-    "endurance": 200,
+    "lose_weight": -500,
+    "maintain_weight": 0,
+    "gain_weight": 300,
+    "gain_muscle": 300,
 }
 
 PROTEIN_TARGETS = {
