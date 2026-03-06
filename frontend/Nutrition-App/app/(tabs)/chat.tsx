@@ -54,11 +54,8 @@ export default function ChatScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>Chats</ThemedText>
-        <TouchableOpacity onPress={async () => {
-          await logout();
-          router.replace('/welcome');
-        }}>
-          <Ionicons name="log-out-outline" size={24} color={Colors.dark} />
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
       </View>
 

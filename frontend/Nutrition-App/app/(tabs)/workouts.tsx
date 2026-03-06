@@ -19,8 +19,8 @@ export default function WorkoutsScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>Workouts</ThemedText>
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color={Colors.dark} />
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
       </View>
       <ThemedText style={styles.subtitle}>Track your workout routines</ThemedText>

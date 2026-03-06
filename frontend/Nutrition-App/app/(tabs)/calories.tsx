@@ -19,8 +19,8 @@ export default function CaloriesScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color={Colors.dark} />
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
       </View>
       <ThemedText style={styles.subtitle}>Monitor your daily nutrition</ThemedText>
