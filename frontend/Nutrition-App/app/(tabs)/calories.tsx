@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
@@ -15,15 +15,48 @@ export default function CaloriesScreen() {
   const [targets, setTargets] = useState<any>(null);
   const [nutrition, setNutrition] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [])
+    }, [selectedDate])
   );
+
+  const getWeekDays = () => {
+    const days = [];
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+    
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getDayAbbr = (date: Date) => {
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const isSelected = (date: Date) => {
+    return date.toDateString() === selectedDate.toDateString();
+  };
 
   const fetchData = async () => {
     try {
+      const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
       const [targetsResponse, nutritionResponse] = await Promise.all([
         axios.post('/api/calculate-targets', {
           weight_kg: user?.weight_kg,
@@ -33,7 +66,7 @@ export default function CaloriesScreen() {
           activity_level: user?.activity_level,
           goal: user?.goal,
         }),
-        axios.get('/api/daily-nutrition')
+        axios.get(`/api/daily-nutrition?date=${dateStr}`)
       ]);
       setTargets(targetsResponse.data);
       setNutrition(nutritionResponse.data);
@@ -74,6 +107,32 @@ export default function CaloriesScreen() {
         </TouchableOpacity>
       </View>
       
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* Date Selector */}
+        <View style={styles.dateContainer}>
+          <ThemedText style={styles.dateText}>{formatDate(selectedDate)}</ThemedText>
+          <View style={styles.weekContainer}>
+            {getWeekDays().map((day, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.dayCircle,
+                  isSelected(day) && styles.dayCircleSelected,
+                  isToday(day) && styles.dayCircleToday
+                ]}
+                onPress={() => setSelectedDate(day)}
+              >
+                <ThemedText style={[
+                  styles.dayText,
+                  isSelected(day) && styles.dayTextSelected
+                ]}>
+                  {getDayAbbr(day)}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      
       <View style={styles.macroGrid}>
         <View style={styles.macroBox}>
           <ThemedText style={styles.macroValue}>{nutrition?.totals?.calories || 0}</ThemedText>
@@ -100,9 +159,9 @@ export default function CaloriesScreen() {
         </View>
       </View>
       
-      {nutrition?.meals?.length > 0 && (
+      {nutrition?.meals?.length > 0 ? (
         <View style={styles.mealsSection}>
-          <ThemedText style={styles.sectionTitle}>Today's Foods</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Foods Logged</ThemedText>
           {nutrition.meals.map((meal: any) => (
             <View key={meal.id} style={styles.mealItem}>
               <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
@@ -112,7 +171,15 @@ export default function CaloriesScreen() {
             </View>
           ))}
         </View>
+      ) : (
+        <View style={styles.mealsSection}>
+          <ThemedText style={styles.sectionTitle}>Foods Logged</ThemedText>
+          <View style={styles.emptyState}>
+            <ThemedText style={styles.emptyText}>No foods logged</ThemedText>
+          </View>
+        </View>
       )}
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -120,15 +187,19 @@ export default function CaloriesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 60,
     backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 30,
+    padding: 20,
+    paddingTop: 60,
+    backgroundColor: Colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 32,
@@ -196,5 +267,59 @@ const styles = StyleSheet.create({
   mealNutrients: {
     fontSize: 14,
     color: Colors.secondary,
+  },
+  dateContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  dateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.dark,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  weekContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 2,
+  },
+  dayCircleSelected: {
+    backgroundColor: Colors.primary,
+  },
+  dayCircleToday: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  dayText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.dark,
+  },
+  dayTextSelected: {
+    color: Colors.white,
+  },
+  emptyState: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: Colors.secondary,
+    fontStyle: 'italic',
   },
 });

@@ -2,8 +2,8 @@ from langchain_core.tools import tool
 
 ACTIVITY_MULTIPLIERS = {
     "sedentary": 1.2,
-    "light": 1.375,
-    "moderate": 1.55,
+    "lightly_active": 1.375,
+    "moderately_active": 1.55,
     "very_active": 1.725,
     "extra_active": 1.9,
 }
@@ -78,7 +78,7 @@ def calculate_tdee(bmr: float, activity_level: str) -> float:
     
     Args:
         bmr: Basal Metabolic Rate in calories
-        activity_level: One of 'sedentary', 'light', 'moderate', 'very_active', 'extra_active'
+        activity_level: One of 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'
     
     Returns:
         TDEE value in calories per day
@@ -96,7 +96,7 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
         age: Age in years
         gender: Either 'male' or 'female'
         goal: One of 'aggressive_weight_loss', 'weight_loss', 'muscle_gain', 'maintenance', 'endurance'
-        activity_level: One of 'sedentary', 'light', 'moderate', 'very_active', 'extra_active'
+        activity_level: One of 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'
     
     Returns:
         Dictionary with bmr, tdee, target_calories, and macro targets

@@ -62,22 +62,26 @@ async def log_food(
         raise HTTPException(status_code=500, detail=f"Failed to log food: {str(e)}")
 
 @router.get("/daily-nutrition")
-async def get_daily_nutrition(current_user: User = Depends(get_current_user)):
-    """Get today's nutrition totals and logged foods"""
+async def get_daily_nutrition(date: str = None, current_user: User = Depends(get_current_user)):
+    """Get nutrition totals and logged foods for a specific date"""
     from datetime import datetime, timezone
     
     try:
-        today = datetime.now(timezone.utc).date()
+        if date:
+            target_date = datetime.fromisoformat(date).date()
+        else:
+            target_date = datetime.now(timezone.utc).date()
+            
         meals = meal_repo.get_user_logs(current_user.id)
         
-        # Filter today's meals
-        today_meals = [meal for meal in meals if meal.logged_at.date() == today]
+        # Filter meals for target date
+        target_meals = [meal for meal in meals if meal.logged_at.date() == target_date]
         
         # Calculate totals
-        total_calories = sum(meal.calories for meal in today_meals)
-        total_protein = sum(meal.protein_g for meal in today_meals)
-        total_carbs = sum(meal.carbs_g for meal in today_meals)
-        total_fat = sum(meal.fat_g for meal in today_meals)
+        total_calories = sum(meal.calories for meal in target_meals)
+        total_protein = sum(meal.protein_g for meal in target_meals)
+        total_carbs = sum(meal.carbs_g for meal in target_meals)
+        total_fat = sum(meal.fat_g for meal in target_meals)
         
         return {
             "totals": {
@@ -96,7 +100,7 @@ async def get_daily_nutrition(current_user: User = Depends(get_current_user)):
                     "fat_g": meal.fat_g,
                     "logged_at": meal.logged_at
                 }
-                for meal in today_meals
+                for meal in target_meals
             ]
         }
     except Exception as e:
