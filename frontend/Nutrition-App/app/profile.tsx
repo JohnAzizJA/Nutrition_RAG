@@ -38,7 +38,7 @@ export default function ProfileScreen() {
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/goals')}>
             <View style={styles.menuItemLeft}>
               <Ionicons name="flag-outline" size={22} color={Colors.dark} />
               <ThemedText style={styles.menuItemText}>My Goals</ThemedText>
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/metrics')}>
             <View style={styles.menuItemLeft}>
               <Ionicons name="stats-chart-outline" size={22} color={Colors.dark} />
               <ThemedText style={styles.menuItemText}>My Metrics</ThemedText>

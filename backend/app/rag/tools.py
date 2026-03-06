@@ -102,8 +102,8 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
     Returns:
         Dictionary with bmr, tdee, target_calories, and macro targets
     """
-    bmr = calculate_bmr(weight_kg, height_cm, age, gender)
-    tdee = calculate_tdee(bmr, activity_level)
+    bmr = calculate_bmr.invoke({"weight_kg": weight_kg, "height_cm": height_cm, "age": age, "gender": gender})
+    tdee = calculate_tdee.invoke({"bmr": bmr, "activity_level": activity_level})
     
     calorie_adjustment = GOAL_CALORIE_ADJUSTMENTS.get(goal, 0)
     target_calories = max(1200, tdee + calorie_adjustment)  # Never below 1200

@@ -18,6 +18,8 @@ export default function RootLayout() {
           <Stack.Screen name="register" />
           <Stack.Screen name="login" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="metrics" />
+          <Stack.Screen name="goals" />
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
         </Stack>
         <StatusBar style="auto" />
