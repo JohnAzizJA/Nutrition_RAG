@@ -20,6 +20,7 @@ export default function RootLayout() {
           <Stack.Screen name="profile" />
           <Stack.Screen name="metrics" />
           <Stack.Screen name="goals" />
+          <Stack.Screen name="log-food" />
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
         </Stack>
         <StatusBar style="auto" />
