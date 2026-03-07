@@ -63,7 +63,7 @@ export default function TabLayout() {
       
       <TouchableOpacity 
         style={styles.addButton}
-        onLongPress={() => setShowMenu(true)}
+        onPress={() => setShowMenu(true)}
       >
         <Ionicons name="add" size={28} color={Colors.white} />
       </TouchableOpacity>
