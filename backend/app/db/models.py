@@ -20,6 +20,8 @@ class User(Base):
     height_cm = Column(Float, nullable=False)
     activity_level = Column(String, nullable=False)
     goal = Column(String, nullable=False)
+    goal_weight_kg = Column(Float, nullable=False)
+    weight_loss_per_week = Column(Float, nullable=True)
     created_at = Column(DateTime, default=utc_now)
     
     conversations = relationship("Conversation", back_populates="user")

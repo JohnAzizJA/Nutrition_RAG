@@ -17,7 +17,7 @@ class UserRepository:
             return db.query(User).filter(User.email == email).first()
     
     def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float, 
-               height_cm: float, activity_level: str, goal: str) -> User:
+               height_cm: float, activity_level: str, goal: str, goal_weight_kg: float, weight_loss_per_week: float = None) -> User:
         """Create new user"""
         with get_db() as db:
             user = User(
@@ -29,7 +29,9 @@ class UserRepository:
                 weight_kg=weight_kg,
                 height_cm=height_cm,
                 activity_level=activity_level,
-                goal=goal
+                goal=goal,
+                goal_weight_kg=goal_weight_kg,
+                weight_loss_per_week=weight_loss_per_week
             )
             db.add(user)
             db.commit()

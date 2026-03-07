@@ -18,6 +18,8 @@ class RegisterRequest(BaseModel):
     height_cm: float = Field(..., gt=0, le=300)
     activity_level: Literal["sedentary", "lightly_active", "moderately_active", "very_active", "extra_active"]
     goal: Literal["lose_weight", "maintain_weight", "gain_weight", "gain_muscle"]
+    goal_weight_kg: float = Field(..., gt=0, le=500)
+    weight_loss_per_week: float = Field(default=0.5, ge=0.25, le=1.0)
 
 class LoginRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=100)
@@ -64,7 +66,9 @@ async def register(request: RegisterRequest):
             weight_kg=request.weight_kg,
             height_cm=request.height_cm,
             activity_level=request.activity_level,
-            goal=request.goal
+            goal=request.goal,
+            goal_weight_kg=request.goal_weight_kg,
+            weight_loss_per_week=request.weight_loss_per_week
         )
         
         # Generate JWT tokens

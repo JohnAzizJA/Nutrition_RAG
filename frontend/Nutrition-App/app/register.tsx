@@ -19,6 +19,8 @@ interface FormData {
   height_cm: number;
   activity_level: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extra_active';
   goal: 'lose_weight' | 'maintain_weight' | 'gain_weight' | 'gain_muscle';
+  goal_weight_kg: number;
+  weight_loss_per_week: number;
 }
 
 export default function RegisterScreen() {
@@ -37,6 +39,8 @@ export default function RegisterScreen() {
     height_cm: 170,
     activity_level: 'moderately_active',
     goal: 'maintain_weight',
+    goal_weight_kg: 70,
+    weight_loss_per_week: 0.5,
   });
 
   const handleScroll = (event: any) => {
@@ -258,6 +262,43 @@ export default function RegisterScreen() {
               ))}
             </View>
           </View>
+        </View>
+
+        {/* Step 6: Goal Weight */}
+        <View style={styles.stepContainer}>
+          <ThemedText type="title" style={styles.title}>Target Weight</ThemedText>
+          
+          <View style={styles.inputGroup}>
+            <ThemedText style={styles.label}>Goal Weight: {formData.goal_weight_kg} kg</ThemedText>
+            <Slider
+              style={styles.slider}
+              minimumValue={30}
+              maximumValue={200}
+              step={1}
+              value={formData.goal_weight_kg}
+              onValueChange={(value) => setFormData({ ...formData, goal_weight_kg: value })}
+              minimumTrackTintColor={Colors.primary}
+              maximumTrackTintColor={Colors.secondary}
+              thumbTintColor={Colors.primary}
+            />
+          </View>
+
+          {formData.goal === 'lose_weight' && (
+            <View style={styles.inputGroup}>
+              <ThemedText style={styles.label}>Weight Loss Per Week: {formData.weight_loss_per_week} kg</ThemedText>
+              <Slider
+                style={styles.slider}
+                minimumValue={0.25}
+                maximumValue={1}
+                step={0.25}
+                value={formData.weight_loss_per_week}
+                onValueChange={(value) => setFormData({ ...formData, weight_loss_per_week: value })}
+                minimumTrackTintColor={Colors.primary}
+                maximumTrackTintColor={Colors.secondary}
+                thumbTintColor={Colors.primary}
+              />
+            </View>
+          )}
 
           <TouchableOpacity
             style={[styles.registerButton, loading && styles.buttonDisabled]}
@@ -273,7 +314,7 @@ export default function RegisterScreen() {
 
       {/* Progress Indicator */}
       <View style={styles.progressContainer}>
-        {[0, 1, 2, 3, 4].map((step) => (
+        {[0, 1, 2, 3, 4, 5].map((step) => (
           <View
             key={step}
             style={[

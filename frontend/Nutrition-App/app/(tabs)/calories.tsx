@@ -65,6 +65,7 @@ export default function CaloriesScreen() {
           gender: user?.gender,
           activity_level: user?.activity_level,
           goal: user?.goal,
+          weight_loss_per_week: user?.weight_loss_per_week || 0.5,
         }),
         axios.get(`/api/daily-nutrition?date=${dateStr}`)
       ]);

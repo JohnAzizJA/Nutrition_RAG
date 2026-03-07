@@ -87,7 +87,7 @@ def calculate_tdee(bmr: float, activity_level: str) -> float:
     return bmr * multiplier
 
 @tool
-def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str, goal: str, activity_level: str) -> dict:
+def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str, goal: str, activity_level: str, weight_loss_per_week: float = 0.5) -> dict:
     """Calculate complete nutrition targets based on user profile.
     
     Args:
@@ -95,8 +95,9 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
         height_cm: Height in centimeters
         age: Age in years
         gender: Either 'male' or 'female'
-        goal: One of 'aggressive_weight_loss', 'weight_loss', 'muscle_gain', 'maintenance', 'endurance'
+        goal: One of 'lose_weight', 'maintain_weight', 'gain_weight', 'gain_muscle'
         activity_level: One of 'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'
+        weight_loss_per_week: Weight loss rate in kg per week (for lose_weight goal)
     
     Returns:
         Dictionary with bmr, tdee, target_calories, and macro targets
@@ -104,8 +105,13 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
     bmr = calculate_bmr.invoke({"weight_kg": weight_kg, "height_cm": height_cm, "age": age, "gender": gender})
     tdee = calculate_tdee.invoke({"bmr": bmr, "activity_level": activity_level})
     
-    calorie_adjustment = GOAL_CALORIE_ADJUSTMENTS.get(goal, 0)
-    target_calories = max(1200, tdee + calorie_adjustment)  # Never below 1200
+    if goal == "lose_weight":
+        # 1 kg fat = ~7700 calories, so daily deficit = (kg_per_week * 7700) / 7
+        daily_deficit = (weight_loss_per_week * 7700) / 7
+        target_calories = max(1200, tdee - daily_deficit)
+    else:
+        calorie_adjustment = GOAL_CALORIE_ADJUSTMENTS.get(goal, 0)
+        target_calories = max(1200, tdee + calorie_adjustment)
     
     # Protein target
     protein_per_kg = PROTEIN_TARGETS.get(goal, 1.6)
