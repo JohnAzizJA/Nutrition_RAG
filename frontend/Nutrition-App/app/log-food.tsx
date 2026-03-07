@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
@@ -18,6 +18,7 @@ interface FoodItem {
 
 export default function LogFoodScreen() {
   const router = useRouter();
+  const { mealType } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,6 +74,7 @@ export default function LogFoodScreen() {
     try {
       await axios.post('/api/log-food', {
         food_name: food.description,
+        meal_type: mealType || 'snack',
         grams: grams,
         calories: nutrients.calories,
         protein_g: nutrients.protein,
@@ -134,7 +136,7 @@ export default function LogFoodScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Log Food</ThemedText>
+        <ThemedText style={styles.headerTitle}>Log {mealType ? mealType.charAt(0).toUpperCase() + mealType.slice(1) : 'Food'}</ThemedText>
         <View style={{ width: 24 }} />
       </View>
 

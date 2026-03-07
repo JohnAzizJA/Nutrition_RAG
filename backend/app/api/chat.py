@@ -129,3 +129,19 @@ async def chat(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+@router.delete("/conversations/{thread_id}")
+async def delete_conversation(
+    thread_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a conversation thread"""
+    try:
+        success = conversation_repo.delete_thread(thread_id, current_user.id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        return {"message": "Conversation deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")

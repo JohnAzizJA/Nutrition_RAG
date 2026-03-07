@@ -25,8 +25,15 @@
 * [x] Setup axios with interceptors for API calls.
 * [x] Create service layer architecture (authService, userService).
 * [x] Build Chat UI to interface with the FastAPI `/chat` endpoint.
-* [ ] Build Dashboard UI (progress rings, calorie counters) and create it's FastAPI endpoints.
-* [ ] Build Manual Meal Logging & Workout Creation tabs and create it's FastAPI endpoints.
+* [x] Build Dashboard UI (progress rings, calorie counters) and create it's FastAPI endpoints.
+* [x] Build Manual Meal Logging and create it's FastAPI endpoints.
+* [x] Implement USDA API integration for food search and logging.
+* [x] Create calorie tracker with daily/weekly navigation and macro progress display.
+* [x] Implement water intake tracking with database storage.
+* [x] Add user profile management with metrics, goals, and account deletion.
+* [x] Implement logging streak calculation and dashboard metrics.
+* [x] Implement Workout Routine creation.
+* [ ] Implement Workout Tracking.
 
 ## Phase 4: User Profile Integration in RAG
 * [ ] Update the LangGraph flow to fetch the user profile (stats, goals) from the database *before* generating responses to ensure highly personalized advice.

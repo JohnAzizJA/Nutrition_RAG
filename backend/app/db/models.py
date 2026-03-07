@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db.database import Base
@@ -27,6 +27,7 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user")
     weight_logs = relationship("WeightLog", back_populates="user")
     meal_logs = relationship("MealLog", back_populates="user")
+    water_logs = relationship("WaterLog", back_populates="user")
     workout_routines = relationship("WorkoutRoutine", back_populates="user")
     following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
     followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
@@ -54,6 +55,18 @@ class WeightLog(Base):
     logged_at = Column(DateTime, default=utc_now)
     
     user = relationship("User", back_populates="weight_logs")
+
+class WaterLog(Base):
+    __tablename__ = "water_logs"
+    __table_args__ = {'schema': 'public'}
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    glasses = Column(Integer, nullable=False)
+    date = Column(Date, nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+    
+    user = relationship("User", back_populates="water_logs")
 
 class FoodItem(Base):
     __tablename__ = "food_items"

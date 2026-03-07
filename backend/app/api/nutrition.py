@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import httpx
 import os
+from typing import Optional
 from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import MealLogRepository
@@ -11,6 +12,7 @@ meal_repo = MealLogRepository()
 
 class LogFoodRequest(BaseModel):
     food_name: str
+    meal_type: Optional[str] = None
     grams: float
     calories: float
     protein_g: float
@@ -51,6 +53,7 @@ async def log_food(
         meal_log = meal_repo.create(
             user_id=current_user.id,
             food_name=request.food_name,
+            meal_type=request.meal_type,
             calories=request.calories,
             protein_g=request.protein_g,
             carbs_g=request.carbs_g,
@@ -94,6 +97,7 @@ async def get_daily_nutrition(date: str = None, current_user: User = Depends(get
                 {
                     "id": meal.id,
                     "food_name": meal.food_name,
+                    "meal_type": meal.meal_type,
                     "calories": meal.calories,
                     "protein_g": meal.protein_g,
                     "carbs_g": meal.carbs_g,
@@ -105,3 +109,19 @@ async def get_daily_nutrition(date: str = None, current_user: User = Depends(get
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get daily nutrition: {str(e)}")
+
+@router.delete("/meals/{meal_id}")
+async def delete_meal(
+    meal_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a meal log"""
+    try:
+        success = meal_repo.delete_meal(meal_id, current_user.id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Meal not found")
+        return {"message": "Meal deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete meal: {str(e)}")

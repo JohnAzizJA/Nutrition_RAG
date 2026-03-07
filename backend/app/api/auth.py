@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from db.repositories import UserRepository
 from auth.utils import hash_password, verify_password, create_access_token, create_refresh_token, decode_refresh_token
+from auth.middleware import get_current_user
+from db.models import User
 from typing import Literal
 
 router = APIRouter()
@@ -25,6 +27,16 @@ class LoginRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=100)
     password: str = Field(..., min_length=6, max_length=100)
 
+class UpdateProfileRequest(BaseModel):
+    age: int = Field(..., ge=13, le=120)
+    gender: Literal["male", "female"]
+    weight_kg: float = Field(..., gt=0, le=500)
+    height_cm: float = Field(..., gt=0, le=300)
+    activity_level: Literal["sedentary", "lightly_active", "moderately_active", "very_active", "extra_active"]
+    goal: Literal["lose_weight", "maintain_weight", "gain_weight", "gain_muscle"]
+    goal_weight_kg: float = Field(..., gt=0, le=500)
+    weight_loss_per_week: float = Field(default=0.5, ge=0.25, le=1.0)
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -35,6 +47,8 @@ class UserResponse(BaseModel):
     height_cm: float
     activity_level: str
     goal: str
+    goal_weight_kg: float
+    weight_loss_per_week: float
 
     class Config:
         from_attributes = True
@@ -139,3 +153,32 @@ async def refresh_access_token(request: RefreshRequest):
 async def logout():
     """Logout user (client should clear tokens)"""
     return {"message": "Logged out successfully"}
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(request: UpdateProfileRequest, current_user: User = Depends(get_current_user)):
+    """Update user profile"""
+    try:
+        updated_user = user_repo.update(
+            current_user.id,
+            age=request.age,
+            gender=request.gender,
+            weight_kg=request.weight_kg,
+            height_cm=request.height_cm,
+            activity_level=request.activity_level,
+            goal=request.goal,
+            goal_weight_kg=request.goal_weight_kg,
+            weight_loss_per_week=request.weight_loss_per_week
+        )
+        return UserResponse.model_validate(updated_user)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Profile update failed: {str(e)}")
+
+@router.delete("/delete-account")
+async def delete_account(current_user: User = Depends(get_current_user)):
+    """Delete user account and all associated data"""
+    try:
+        # Delete user (cascade will handle related data)
+        user_repo.delete(current_user.id)
+        return {"message": "Account deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")

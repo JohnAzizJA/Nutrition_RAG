@@ -1,7 +1,7 @@
 from db.database import get_db
-from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow
+from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 
 class UserRepository:
     """Repository for User database operations"""
@@ -38,6 +38,18 @@ class UserRepository:
             db.refresh(user)
             return user
     
+    def update(self, user_id: int, **kwargs) -> Optional[User]:
+        """Update user profile"""
+        with get_db() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                for key, value in kwargs.items():
+                    if hasattr(user, key):
+                        setattr(user, key, value)
+                db.commit()
+                db.refresh(user)
+            return user
+    
     def update_weight(self, user_id: int, weight_kg: float) -> Optional[User]:
         """Update user weight"""
         with get_db() as db:
@@ -47,6 +59,31 @@ class UserRepository:
                 db.commit()
                 db.refresh(user)
             return user
+    
+    def delete(self, user_id: int) -> bool:
+        """Delete user and all associated data"""
+        with get_db() as db:
+            try:
+                # Delete related data first
+                from db.models import Conversation, WeightLog, MealLog, WorkoutRoutine, Follow
+                
+                db.query(Conversation).filter(Conversation.user_id == user_id).delete()
+                db.query(WeightLog).filter(WeightLog.user_id == user_id).delete()
+                db.query(MealLog).filter(MealLog.user_id == user_id).delete()
+                db.query(WaterLog).filter(WaterLog.user_id == user_id).delete()
+                db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
+                db.query(Follow).filter((Follow.follower_id == user_id) | (Follow.following_id == user_id)).delete()
+                
+                # Delete user
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    db.delete(user)
+                    db.commit()
+                    return True
+                return False
+            except Exception as e:
+                db.rollback()
+                raise e
 
 class ConversationRepository:
     """Repository for Conversation database operations"""
@@ -79,6 +116,20 @@ class ConversationRepository:
                 Conversation.user_id == user_id
             ).distinct().all()
             return [t[0] for t in threads]
+    
+    def delete_thread(self, thread_id: str, user_id: int) -> bool:
+        """Delete all messages in a thread for specific user"""
+        with get_db() as db:
+            messages = db.query(Conversation).filter(
+                Conversation.thread_id == thread_id,
+                Conversation.user_id == user_id
+            ).all()
+            if messages:
+                for message in messages:
+                    db.delete(message)
+                db.commit()
+                return True
+            return False
 
 class WeightLogRepository:
     """Repository for WeightLog database operations"""
@@ -131,6 +182,19 @@ class MealLogRepository:
             if date:
                 query = query.filter(MealLog.logged_at >= date)
             return query.order_by(MealLog.logged_at.desc()).all()
+    
+    def delete_meal(self, meal_id: int, user_id: int) -> bool:
+        """Delete a meal log for specific user"""
+        with get_db() as db:
+            meal = db.query(MealLog).filter(
+                MealLog.id == meal_id,
+                MealLog.user_id == user_id
+            ).first()
+            if meal:
+                db.delete(meal)
+                db.commit()
+                return True
+            return False
 
 class WorkoutRepository:
     """Repository for WorkoutRoutine and Exercise operations"""
@@ -167,11 +231,72 @@ class WorkoutRepository:
             return exercise
     
     def get_user_routines(self, user_id: int) -> List[WorkoutRoutine]:
-        """Get all routines for a user"""
+        """Get all routines for a user with exercises loaded"""
         with get_db() as db:
-            return db.query(WorkoutRoutine).filter(
+            from sqlalchemy.orm import joinedload
+            return db.query(WorkoutRoutine).options(
+                joinedload(WorkoutRoutine.exercises)
+            ).filter(
                 WorkoutRoutine.user_id == user_id
             ).all()
+    
+    def get_routine_by_id(self, routine_id: int, user_id: int) -> Optional[WorkoutRoutine]:
+        """Get routine by ID for specific user with exercises loaded"""
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return db.query(WorkoutRoutine).options(
+                joinedload(WorkoutRoutine.exercises)
+            ).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+    
+    def update_routine(self, routine_id: int, user_id: int, name: str, description: Optional[str] = None) -> Optional[WorkoutRoutine]:
+        """Update workout routine"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if routine:
+                routine.name = name
+                if description is not None:
+                    routine.description = description
+                db.commit()
+                db.refresh(routine)
+            return routine
+    
+    def delete_routine(self, routine_id: int, user_id: int) -> bool:
+        """Delete workout routine and its exercises"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if routine:
+                db.query(Exercise).filter(Exercise.routine_id == routine_id).delete()
+                db.delete(routine)
+                db.commit()
+                return True
+            return False
+    
+    def delete_exercise(self, exercise_id: int, routine_id: int, user_id: int) -> bool:
+        """Delete exercise from routine"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if routine:
+                exercise = db.query(Exercise).filter(
+                    Exercise.id == exercise_id,
+                    Exercise.routine_id == routine_id
+                ).first()
+                if exercise:
+                    db.delete(exercise)
+                    db.commit()
+                    return True
+            return False
 
 class FoodItemRepository:
     """Repository for FoodItem database operations"""
@@ -257,3 +382,36 @@ class FollowRepository:
                 Follow.following_id == following_id
             ).first()
             return follow is not None
+
+class WaterLogRepository:
+    """Repository for WaterLog database operations"""
+    
+    def create_or_update(self, user_id: int, glasses: int, target_date: date) -> WaterLog:
+        """Create or update water log for a specific date"""
+        with get_db() as db:
+            log = db.query(WaterLog).filter(
+                WaterLog.user_id == user_id,
+                WaterLog.date == target_date
+            ).first()
+            
+            if log:
+                log.glasses += glasses  # Add to existing amount
+            else:
+                log = WaterLog(
+                    user_id=user_id,
+                    glasses=glasses,
+                    date=target_date
+                )
+                db.add(log)
+            
+            db.commit()
+            db.refresh(log)
+            return log
+    
+    def get_by_date(self, user_id: int, target_date: date) -> Optional[WaterLog]:
+        """Get water log for a specific date"""
+        with get_db() as db:
+            return db.query(WaterLog).filter(
+                WaterLog.user_id == user_id,
+                WaterLog.date == target_date
+            ).first()
