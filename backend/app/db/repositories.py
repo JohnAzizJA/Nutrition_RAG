@@ -192,11 +192,72 @@ class WorkoutRepository:
             return exercise
     
     def get_user_routines(self, user_id: int) -> List[WorkoutRoutine]:
-        """Get all routines for a user"""
+        """Get all routines for a user with exercises loaded"""
         with get_db() as db:
-            return db.query(WorkoutRoutine).filter(
+            from sqlalchemy.orm import joinedload
+            return db.query(WorkoutRoutine).options(
+                joinedload(WorkoutRoutine.exercises)
+            ).filter(
                 WorkoutRoutine.user_id == user_id
             ).all()
+    
+    def get_routine_by_id(self, routine_id: int, user_id: int) -> Optional[WorkoutRoutine]:
+        """Get routine by ID for specific user with exercises loaded"""
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return db.query(WorkoutRoutine).options(
+                joinedload(WorkoutRoutine.exercises)
+            ).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+    
+    def update_routine(self, routine_id: int, user_id: int, name: str, description: Optional[str] = None) -> Optional[WorkoutRoutine]:
+        """Update workout routine"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if routine:
+                routine.name = name
+                if description is not None:
+                    routine.description = description
+                db.commit()
+                db.refresh(routine)
+            return routine
+    
+    def delete_routine(self, routine_id: int, user_id: int) -> bool:
+        """Delete workout routine and its exercises"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if routine:
+                db.query(Exercise).filter(Exercise.routine_id == routine_id).delete()
+                db.delete(routine)
+                db.commit()
+                return True
+            return False
+    
+    def delete_exercise(self, exercise_id: int, routine_id: int, user_id: int) -> bool:
+        """Delete exercise from routine"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if routine:
+                exercise = db.query(Exercise).filter(
+                    Exercise.id == exercise_id,
+                    Exercise.routine_id == routine_id
+                ).first()
+                if exercise:
+                    db.delete(exercise)
+                    db.commit()
+                    return True
+            return False
 
 class FoodItemRepository:
     """Repository for FoodItem database operations"""
