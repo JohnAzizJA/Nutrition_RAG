@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Date
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Date, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db.database import Base
@@ -14,6 +14,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password = Column(String, nullable=False)
     name = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String, nullable=True)
     age = Column(Integer, nullable=False)
     gender = Column(String, nullable=False)
     weight_kg = Column(Float, nullable=False)
