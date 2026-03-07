@@ -1,10 +1,11 @@
-import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
+import axios from '@/src/api/axios';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -13,6 +14,30 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     await logout();
     router.replace('/welcome');
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete('/api/auth/delete-account');
+              Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+              await logout();
+              router.replace('/welcome');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete account. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -59,6 +84,12 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
           <ThemedText style={styles.logoutText}>Logout</ThemedText>
+        </TouchableOpacity>
+
+        {/* Delete Account Button */}
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+          <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+          <ThemedText style={styles.deleteText}>Delete Account</ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </ThemedView>
@@ -146,6 +177,24 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF3B30',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    backgroundColor: Colors.white,
+    marginHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 40,
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  deleteText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FF3B30',

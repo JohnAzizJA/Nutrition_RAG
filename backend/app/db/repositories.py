@@ -47,6 +47,30 @@ class UserRepository:
                 db.commit()
                 db.refresh(user)
             return user
+    
+    def delete(self, user_id: int) -> bool:
+        """Delete user and all associated data"""
+        with get_db() as db:
+            try:
+                # Delete related data first
+                from db.models import Conversation, WeightLog, MealLog, WorkoutRoutine, Follow
+                
+                db.query(Conversation).filter(Conversation.user_id == user_id).delete()
+                db.query(WeightLog).filter(WeightLog.user_id == user_id).delete()
+                db.query(MealLog).filter(MealLog.user_id == user_id).delete()
+                db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
+                db.query(Follow).filter((Follow.follower_id == user_id) | (Follow.following_id == user_id)).delete()
+                
+                # Delete user
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    db.delete(user)
+                    db.commit()
+                    return True
+                return False
+            except Exception as e:
+                db.rollback()
+                raise e
 
 class ConversationRepository:
     """Repository for Conversation database operations"""

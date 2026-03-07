@@ -12,6 +12,7 @@ export default function TabLayout() {
   const menuItems = [
     { label: 'New Chat', icon: 'chatbubble-outline', action: () => router.push('/conversation?new=true') },
     { label: 'Log Food', icon: 'restaurant-outline', action: () => router.push('/log-food') },
+    { label: 'Add Water', icon: 'water-outline', action: () => router.push('/add-water') },
     { label: 'New Workout', icon: 'barbell-outline', action: () => console.log('New Workout') },
   ];
 
