@@ -264,4 +264,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginVertical: 1,
   },
+  macroBreakdown: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
 });
