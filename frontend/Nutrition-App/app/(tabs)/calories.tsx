@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
@@ -8,6 +8,7 @@ import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import axios from '@/src/api/axios';
+import { Swipeable } from 'react-native-gesture-handler';
 
 export default function CaloriesScreen() {
   const router = useRouter();
@@ -79,10 +80,23 @@ export default function CaloriesScreen() {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/welcome');
+  const deleteMeal = async (mealId: number) => {
+    try {
+      await axios.delete(`/api/meals/${mealId}`);
+      fetchData();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete meal');
+    }
   };
+
+  const renderDeleteAction = (mealId: number) => (
+    <TouchableOpacity 
+      style={styles.deleteAction}
+      onPress={() => deleteMeal(mealId)}
+    >
+      <Ionicons name="trash" size={20} color={Colors.white} />
+    </TouchableOpacity>
+  );
 
   if (loading) {
     return (
@@ -191,12 +205,17 @@ export default function CaloriesScreen() {
         <View style={styles.mealsSection}>
           <ThemedText style={styles.sectionTitle}>Foods Logged</ThemedText>
           {nutrition.meals.map((meal: any) => (
-            <View key={meal.id} style={styles.mealItem}>
-              <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
-              <ThemedText style={styles.mealNutrients}>
-                {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
-              </ThemedText>
-            </View>
+            <Swipeable
+              key={meal.id}
+              renderRightActions={() => renderDeleteAction(meal.id)}
+            >
+              <View style={styles.mealItem}>
+                <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
+                <ThemedText style={styles.mealNutrients}>
+                  {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+                </ThemedText>
+              </View>
+            </Swipeable>
           ))}
         </View>
       ) : (
@@ -354,5 +373,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.secondary,
     fontStyle: 'italic',
+  },
+  deleteAction: {
+    backgroundColor: '#EF5350',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 12,
+    marginBottom: 8,
   },
 });

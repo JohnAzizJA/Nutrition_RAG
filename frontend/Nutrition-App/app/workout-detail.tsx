@@ -6,6 +6,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import axios from '@/src/api/axios';
+import { Swipeable } from 'react-native-gesture-handler';
 
 interface Exercise {
   id: number;
@@ -78,57 +79,56 @@ export default function WorkoutDetailScreen() {
     }
   };
 
-  const handleDeleteExercise = (exerciseId: number, exerciseName: string) => {
-    Alert.alert(
-      'Delete Exercise',
-      `Are you sure you want to remove "${exerciseName}" from this routine?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteExercise(exerciseId) }
-      ]
-    );
-  };
-
   const deleteExercise = async (exerciseId: number) => {
     try {
       await axios.delete(`/api/workouts/${id}/exercises/${exerciseId}`);
-      fetchRoutine(); // Refresh the routine
+      fetchRoutine();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete exercise');
     }
   };
 
+  const renderExerciseDeleteAction = (exerciseId: number) => (
+    <TouchableOpacity 
+      style={styles.deleteAction}
+      onPress={() => deleteExercise(exerciseId)}
+    >
+      <Ionicons name="trash" size={20} color={Colors.white} />
+    </TouchableOpacity>
+  );
+
   const renderExercise = ({ item }: { item: Exercise }) => (
-    <View style={styles.exerciseCard}>
-      <View style={styles.exerciseHeader}>
-        <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
-        <TouchableOpacity onPress={() => handleDeleteExercise(item.id, item.name)}>
-          <Ionicons name="trash-outline" size={20} color="#EF5350" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.exerciseDetails}>
-        <View style={styles.detailItem}>
-          <ThemedText style={styles.detailLabel}>Sets:</ThemedText>
-          <ThemedText style={styles.detailValue}>{item.sets}</ThemedText>
+    <Swipeable
+      renderRightActions={() => renderExerciseDeleteAction(item.id)}
+    >
+      <View style={styles.exerciseCard}>
+        <View style={styles.exerciseHeader}>
+          <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
         </View>
-        <View style={styles.detailItem}>
-          <ThemedText style={styles.detailLabel}>Reps:</ThemedText>
-          <ThemedText style={styles.detailValue}>{item.reps}</ThemedText>
+        <View style={styles.exerciseDetails}>
+          <View style={styles.detailItem}>
+            <ThemedText style={styles.detailLabel}>Sets:</ThemedText>
+            <ThemedText style={styles.detailValue}>{item.sets}</ThemedText>
+          </View>
+          <View style={styles.detailItem}>
+            <ThemedText style={styles.detailLabel}>Reps:</ThemedText>
+            <ThemedText style={styles.detailValue}>{item.reps}</ThemedText>
+          </View>
+          {item.weight_kg && (
+            <View style={styles.detailItem}>
+              <ThemedText style={styles.detailLabel}>Weight:</ThemedText>
+              <ThemedText style={styles.detailValue}>{item.weight_kg} kg</ThemedText>
+            </View>
+          )}
+          {item.rest_time_seconds && (
+            <View style={styles.detailItem}>
+              <ThemedText style={styles.detailLabel}>Rest:</ThemedText>
+              <ThemedText style={styles.detailValue}>{Math.floor(item.rest_time_seconds / 60)}:{(item.rest_time_seconds % 60).toString().padStart(2, '0')}</ThemedText>
+            </View>
+          )}
         </View>
-        {item.weight_kg && (
-          <View style={styles.detailItem}>
-            <ThemedText style={styles.detailLabel}>Weight:</ThemedText>
-            <ThemedText style={styles.detailValue}>{item.weight_kg} kg</ThemedText>
-          </View>
-        )}
-        {item.rest_time_seconds && (
-          <View style={styles.detailItem}>
-            <ThemedText style={styles.detailLabel}>Rest:</ThemedText>
-            <ThemedText style={styles.detailValue}>{Math.floor(item.rest_time_seconds / 60)}:{(item.rest_time_seconds % 60).toString().padStart(2, '0')}</ThemedText>
-          </View>
-        )}
       </View>
-    </View>
+    </Swipeable>
   );
 
   if (loading) {
@@ -342,5 +342,13 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     color: Colors.secondary,
+  },
+  deleteAction: {
+    backgroundColor: '#EF5350',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 12,
+    marginBottom: 12,
   },
 });

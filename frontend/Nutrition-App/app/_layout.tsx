@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { AuthProvider } from '@/src/contexts/AuthContext';
@@ -10,22 +11,24 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false}}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="welcome" />
-          <Stack.Screen name="register" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="metrics" />
-          <Stack.Screen name="goals" />
-          <Stack.Screen name="log-food" />
-          <Stack.Screen name="add-water" />
-          <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false}}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="metrics" />
+            <Stack.Screen name="goals" />
+            <Stack.Screen name="log-food" />
+            <Stack.Screen name="add-water" />
+            <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, FlatList } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, FlatList, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
@@ -8,6 +8,7 @@ import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import axios from '@/src/api/axios';
+import { Swipeable } from 'react-native-gesture-handler';
 
 interface WorkoutRoutine {
   id: number;
@@ -40,25 +41,47 @@ export default function WorkoutsScreen() {
     }
   };
 
-  const renderRoutine = ({ item }: { item: WorkoutRoutine }) => (
+  const deleteRoutine = async (routineId: number) => {
+    try {
+      await axios.delete(`/api/workouts/${routineId}`);
+      fetchRoutines();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete routine');
+    }
+  };
+
+  const renderDeleteAction = (routineId: number) => (
     <TouchableOpacity 
-      style={styles.routineCard}
-      onPress={() => router.push(`/workout-detail?id=${item.id}`)}
+      style={styles.deleteAction}
+      onPress={() => deleteRoutine(routineId)}
     >
-      <View style={styles.routineHeader}>
-        <ThemedText style={styles.routineName}>{item.name}</ThemedText>
-        <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
-      </View>
-      {item.description && (
-        <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
-      )}
-      <View style={styles.routineStats}>
-        <View style={styles.statItem}>
-          <Ionicons name="fitness" size={16} color={Colors.primary} />
-          <ThemedText style={styles.statText}>{item.exercise_count} exercises</ThemedText>
-        </View>
-      </View>
+      <Ionicons name="trash" size={20} color={Colors.white} />
     </TouchableOpacity>
+  );
+
+  const renderRoutine = ({ item }: { item: WorkoutRoutine }) => (
+    <Swipeable
+      renderRightActions={() => renderDeleteAction(item.id)}
+    >
+      <TouchableOpacity 
+        style={styles.routineCard}
+        onPress={() => router.push(`/workout-detail?id=${item.id}`)}
+      >
+        <View style={styles.routineHeader}>
+          <ThemedText style={styles.routineName}>{item.name}</ThemedText>
+          <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
+        </View>
+        {item.description && (
+          <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
+        )}
+        <View style={styles.routineStats}>
+          <View style={styles.statItem}>
+            <Ionicons name="fitness" size={16} color={Colors.primary} />
+            <ThemedText style={styles.statText}>{item.exercise_count} exercises</ThemedText>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
   );
 
   if (loading) {
@@ -87,27 +110,36 @@ export default function WorkoutsScreen() {
       </View>
       
       <View style={styles.content}>
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={() => router.push('/create-workout')}
-        >
-          <Ionicons name="add" size={24} color={Colors.white} />
-          <ThemedText style={styles.createButtonText}>Create New Routine</ThemedText>
-        </TouchableOpacity>
-        
         {routines.length > 0 ? (
-          <FlatList
-            data={routines}
-            renderItem={renderRoutine}
-            keyExtractor={(item) => item.id.toString()}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContainer}
-          />
+          <>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => router.push('/create-workout')}
+            >
+              <Ionicons name="add" size={24} color={Colors.white} />
+              <ThemedText style={styles.createButtonText}>Create New Routine</ThemedText>
+            </TouchableOpacity>
+            
+            <FlatList
+              data={routines}
+              renderItem={renderRoutine}
+              keyExtractor={(item) => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContainer}
+            />
+          </>
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="barbell-outline" size={64} color={Colors.secondary} />
             <ThemedText style={styles.emptyTitle}>No Workout Routines</ThemedText>
             <ThemedText style={styles.emptyText}>Create your first workout routine to get started</ThemedText>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => router.push('/create-workout')}
+            >
+              <Ionicons name="add" size={24} color={Colors.white} />
+              <ThemedText style={styles.createButtonText}>Create New Routine</ThemedText>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -214,5 +246,14 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: 24,
+  },
+  deleteAction: {
+    backgroundColor: '#EF5350',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 12,
+    marginBottom: 12,
   },
 });

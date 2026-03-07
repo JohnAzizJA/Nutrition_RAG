@@ -105,3 +105,19 @@ async def get_daily_nutrition(date: str = None, current_user: User = Depends(get
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get daily nutrition: {str(e)}")
+
+@router.delete("/meals/{meal_id}")
+async def delete_meal(
+    meal_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a meal log"""
+    try:
+        success = meal_repo.delete_meal(meal_id, current_user.id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Meal not found")
+        return {"message": "Meal deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete meal: {str(e)}")

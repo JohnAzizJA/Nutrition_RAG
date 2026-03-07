@@ -156,6 +156,19 @@ class MealLogRepository:
             if date:
                 query = query.filter(MealLog.logged_at >= date)
             return query.order_by(MealLog.logged_at.desc()).all()
+    
+    def delete_meal(self, meal_id: int, user_id: int) -> bool:
+        """Delete a meal log for specific user"""
+        with get_db() as db:
+            meal = db.query(MealLog).filter(
+                MealLog.id == meal_id,
+                MealLog.user_id == user_id
+            ).first()
+            if meal:
+                db.delete(meal)
+                db.commit()
+                return True
+            return False
 
 class WorkoutRepository:
     """Repository for WorkoutRoutine and Exercise operations"""
