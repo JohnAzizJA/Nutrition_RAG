@@ -32,7 +32,8 @@
 * [x] Implement water intake tracking with database storage.
 * [x] Add user profile management with metrics, goals, and account deletion.
 * [x] Implement logging streak calculation and dashboard metrics.
-* [ ] Implement Workout Routine creation and tracking (Frontend and Backend)
+* [x] Implement Workout Routine creation.
+* [ ] Implement Workout Tracking.
 
 ## Phase 4: User Profile Integration in RAG
 * [ ] Update the LangGraph flow to fetch the user profile (stats, goals) from the database *before* generating responses to ensure highly personalized advice.
