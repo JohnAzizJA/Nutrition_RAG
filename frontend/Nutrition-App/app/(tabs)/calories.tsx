@@ -7,7 +7,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
-import axios from '@/src/api/axios';
+import { calculationService, nutritionService } from '@/src/services';
 import { Swipeable } from 'react-native-gesture-handler';
 
 export default function CaloriesScreen() {
@@ -58,21 +58,21 @@ export default function CaloriesScreen() {
 
   const fetchData = async () => {
     try {
-      const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-      const [targetsResponse, nutritionResponse] = await Promise.all([
-        axios.post('/api/calculate-targets', {
-          weight_kg: user?.weight_kg,
-          height_cm: user?.height_cm,
-          age: user?.age,
-          gender: user?.gender,
-          activity_level: user?.activity_level,
-          goal: user?.goal,
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const [targetsData, nutritionData] = await Promise.all([
+        calculationService.calculateTargets({
+          weight_kg: user?.weight_kg!,
+          height_cm: user?.height_cm!,
+          age: user?.age!,
+          gender: user?.gender!,
+          activity_level: user?.activity_level!,
+          goal: user?.goal!,
           weight_loss_per_week: user?.weight_loss_per_week || 0.5,
         }),
-        axios.get(`/api/daily-nutrition?date=${dateStr}`)
+        nutritionService.getDailyNutrition(dateStr)
       ]);
-      setTargets(targetsResponse.data);
-      setNutrition(nutritionResponse.data);
+      setTargets(targetsData);
+      setNutrition(nutritionData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -82,7 +82,7 @@ export default function CaloriesScreen() {
 
   const deleteMeal = async (mealId: number) => {
     try {
-      await axios.delete(`/api/meals/${mealId}`);
+      await nutritionService.deleteMeal(mealId);
       fetchData();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete meal');

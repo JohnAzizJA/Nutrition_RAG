@@ -7,16 +7,8 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
-import axios from '@/src/api/axios';
+import { workoutService, WorkoutRoutine } from '@/src/services';
 import { Swipeable } from 'react-native-gesture-handler';
-
-interface WorkoutRoutine {
-  id: number;
-  name: string;
-  description?: string;
-  created_at: string;
-  exercise_count: number;
-}
 
 export default function WorkoutsScreen() {
   const router = useRouter();
@@ -32,8 +24,8 @@ export default function WorkoutsScreen() {
 
   const fetchRoutines = async () => {
     try {
-      const response = await axios.get('/api/workouts');
-      setRoutines(response.data);
+      const data = await workoutService.getRoutines();
+      setRoutines(data);
     } catch (error) {
       console.error('Failed to fetch routines:', error);
     } finally {
@@ -43,7 +35,7 @@ export default function WorkoutsScreen() {
 
   const deleteRoutine = async (routineId: number) => {
     try {
-      await axios.delete(`/api/workouts/${routineId}`);
+      await workoutService.deleteRoutine(routineId);
       fetchRoutines();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete routine');

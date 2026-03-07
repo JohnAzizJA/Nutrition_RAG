@@ -9,7 +9,6 @@ import { Colors } from '@/constants/theme';
 import { chatService, ConversationSummary } from '@/src/services';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Swipeable } from 'react-native-gesture-handler';
-import axios from '@/src/api/axios';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -46,7 +45,7 @@ export default function ChatScreen() {
 
   const deleteConversation = async (threadId: string) => {
     try {
-      await axios.delete(`/api/conversations/${threadId}`);
+      await chatService.deleteConversation(threadId);
       loadConversations();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete conversation');

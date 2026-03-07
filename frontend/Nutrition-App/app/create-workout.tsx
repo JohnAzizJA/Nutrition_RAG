@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
-import axios from '@/src/api/axios';
+import { workoutService } from '@/src/services';
 
 export default function CreateWorkoutScreen() {
   const router = useRouter();
@@ -21,13 +21,13 @@ export default function CreateWorkoutScreen() {
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/workouts', {
+      const routine = await workoutService.createRoutine({
         name: name.trim(),
         description: description.trim() || undefined
       });
       
       Alert.alert('Success', 'Workout routine created successfully', [
-        { text: 'OK', onPress: () => router.replace(`/workout-detail?id=${response.data.id}`) }
+        { text: 'OK', onPress: () => router.replace(`/workout-detail?id=${routine.id}`) }
       ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to create workout routine');

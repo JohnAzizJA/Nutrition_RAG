@@ -1,3 +1,7 @@
 export * from './authService';
 export * from './userService';
 export * from './chatService';
+export * from './nutritionService';
+export * from './dashboardService';
+export * from './workoutService';
+export * from './calculationService';
