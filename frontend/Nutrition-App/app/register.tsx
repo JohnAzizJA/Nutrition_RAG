@@ -55,6 +55,33 @@ export default function RegisterScreen() {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Validate password
+    if (formData.password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long');
+      return;
+    }
+    if (!/[A-Z]/.test(formData.password)) {
+      Alert.alert('Error', 'Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+      Alert.alert('Error', 'Password must contain at least one special character');
+      return;
+    }
+
+    // Validate username
+    if (!/^[a-zA-Z._]+$/.test(formData.name)) {
+      Alert.alert('Error', 'Username can only contain letters, dots, and underscores');
+      return;
+    }
+
     // Convert exercise days to activity level
     const getActivityLevel = (days: number) => {
       if (days === 0) return 'sedentary';
@@ -129,12 +156,12 @@ export default function RegisterScreen() {
           <ThemedText type="title" style={styles.title}>Personal Info</ThemedText>
           
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Name</ThemedText>
+            <ThemedText style={styles.label}>Username</ThemedText>
             <TextInput
               style={styles.input}
               value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
-              placeholder="Enter your name"
+              onChangeText={(text) => setFormData({ ...formData, name: text.replace(/[^a-zA-Z._]/g, '') })}
+              placeholder="Enter username (letters, dots, underscores only)"
               placeholderTextColor="#999"
             />
           </View>

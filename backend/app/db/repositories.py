@@ -38,6 +38,17 @@ class UserRepository:
             db.refresh(user)
             return user
     
+    def verify_user(self, user_id: int) -> bool:
+        """Mark user as verified"""
+        with get_db() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                user.is_verified = True
+                user.verification_token = None
+                db.commit()
+                return True
+            return False
+    
     def update(self, user_id: int, **kwargs) -> Optional[User]:
         """Update user profile"""
         with get_db() as db:

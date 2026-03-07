@@ -5,16 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
-import axios from '@/src/api/axios';
-
-interface FoodItem {
-  fdcId: number;
-  description: string;
-  foodNutrients: Array<{
-    nutrientId: number;
-    value: number;
-  }>;
-}
+import { nutritionService, FoodItem } from '@/src/services';
 
 export default function LogFoodScreen() {
   const router = useRouter();
@@ -38,8 +29,8 @@ export default function LogFoodScreen() {
   const searchFoods = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/search-foods?query=${searchQuery}`);
-      setFoods(response.data.foods || []);
+      const data = await nutritionService.searchFoods(searchQuery);
+      setFoods(data.foods || []);
     } catch (error) {
       console.error('Failed to search foods:', error);
     } finally {
@@ -72,9 +63,9 @@ export default function LogFoodScreen() {
     const nutrients = calculateNutrients(food, grams);
     
     try {
-      await axios.post('/api/log-food', {
+      await nutritionService.logFood({
         food_name: food.description,
-        meal_type: mealType || 'snack',
+        meal_type: mealType as string || 'snack',
         grams: grams,
         calories: nutrients.calories,
         protein_g: nutrients.protein,

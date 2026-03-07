@@ -7,7 +7,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
-import axios from '@/src/api/axios';
+import { dashboardService, nutritionService } from '@/src/services';
 
 const { width } = Dimensions.get('window');
 
@@ -27,12 +27,12 @@ export default function HomeScreen() {
   const fetchDashboardData = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const [dashboardResponse, nutritionResponse] = await Promise.all([
-        axios.get('/api/dashboard'),
-        axios.get(`/api/daily-nutrition?date=${today}`)
+      const [dashboardData, nutritionData] = await Promise.all([
+        dashboardService.getDashboard(),
+        nutritionService.getDailyNutrition(today)
       ]);
-      setDashboardData(dashboardResponse.data);
-      setTodayNutrition(nutritionResponse.data);
+      setDashboardData(dashboardData);
+      setTodayNutrition(nutritionData);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -42,7 +42,7 @@ export default function HomeScreen() {
 
   const updateWater = async (change: number) => {
     try {
-      await axios.post('/api/dashboard/water', { glasses: change });
+      await dashboardService.updateWater(change);
       fetchDashboardData();
     } catch (error) {
       console.error('Failed to update water:', error);

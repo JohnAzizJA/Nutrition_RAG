@@ -7,7 +7,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
-import axios from '@/src/api/axios';
+import { calculationService, userService } from '@/src/services';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -43,7 +43,6 @@ export default function ProfileScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Convert exercise days back to activity level
       const getActivityLevel = (days: number) => {
         if (days === 0) return 'sedentary';
         if (days <= 2) return 'lightly_active';
@@ -53,19 +52,19 @@ export default function ProfileScreen() {
       };
 
       const updateData = {
-        age: user?.age,
-        gender: user?.gender,
-        weight_kg: user?.weight_kg,
-        height_cm: user?.height_cm,
-        activity_level: user?.activity_level,
-        goal: user?.goal,
-        goal_weight_kg: user?.goal_weight_kg,
-        weight_loss_per_week: user?.weight_loss_per_week,
+        age: user?.age!,
+        gender: user?.gender! as 'male' | 'female',
+        weight_kg: user?.weight_kg!,
+        height_cm: user?.height_cm!,
+        activity_level: user?.activity_level! as any,
+        goal: user?.goal! as any,
+        goal_weight_kg: user?.goal_weight_kg!,
+        weight_loss_per_week: user?.weight_loss_per_week!,
         [editModal.field]: editModal.field === 'activity_level' ? getActivityLevel(editModal.value) : editModal.value
       };
       
-      const response = await axios.put('/api/auth/profile', updateData);
-      await updateUser(response.data);
+      const updatedUser = await userService.updateProfile(updateData);
+      await updateUser(updatedUser);
       setEditModal({visible: false, field: '', value: ''});
       fetchTargets();
     } catch (error) {
@@ -77,15 +76,15 @@ export default function ProfileScreen() {
 
   const fetchTargets = async () => {
     try {
-      const response = await axios.post('/api/calculate-targets', {
-        weight_kg: user?.weight_kg,
-        height_cm: user?.height_cm,
-        age: user?.age,
-        gender: user?.gender,
-        activity_level: user?.activity_level,
-        goal: user?.goal,
+      const data = await calculationService.calculateTargets({
+        weight_kg: user?.weight_kg!,
+        height_cm: user?.height_cm!,
+        age: user?.age!,
+        gender: user?.gender!,
+        activity_level: user?.activity_level!,
+        goal: user?.goal!,
       });
-      setTargets(response.data);
+      setTargets(data);
     } catch (error) {
       console.error('Failed to fetch targets:', error);
     } finally {
@@ -109,7 +108,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete('/api/auth/delete-account');
+              await userService.deleteAccount();
               Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
               await logout();
               router.replace('/welcome');

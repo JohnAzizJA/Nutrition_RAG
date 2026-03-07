@@ -44,4 +44,8 @@ export const chatService = {
     const response = await axios.post(ENDPOINTS.CHAT.SEND, data);
     return response.data;
   },
+
+  async deleteConversation(threadId: string): Promise<void> {
+    await axios.delete(ENDPOINTS.CHAT.CONVERSATION(threadId));
+  },
 };

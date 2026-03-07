@@ -5,25 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
-import axios from '@/src/api/axios';
+import { workoutService, WorkoutRoutine, Exercise } from '@/src/services';
 import { Swipeable } from 'react-native-gesture-handler';
-
-interface Exercise {
-  id: number;
-  name: string;
-  sets: number;
-  reps: number;
-  weight_kg?: number;
-  rest_time_seconds?: number;
-}
-
-interface WorkoutRoutine {
-  id: number;
-  name: string;
-  description?: string;
-  created_at: string;
-  exercises: Exercise[];
-}
 
 export default function WorkoutDetailScreen() {
   const router = useRouter();
@@ -47,8 +30,8 @@ export default function WorkoutDetailScreen() {
 
   const fetchRoutine = async () => {
     try {
-      const response = await axios.get(`/api/workouts/${id}`);
-      setRoutine(response.data);
+      const data = await workoutService.getRoutine(Number(id));
+      setRoutine(data);
     } catch (error) {
       console.error('Failed to fetch routine:', error);
       Alert.alert('Error', 'Failed to load workout routine');
@@ -70,7 +53,7 @@ export default function WorkoutDetailScreen() {
 
   const deleteRoutine = async () => {
     try {
-      await axios.delete(`/api/workouts/${id}`);
+      await workoutService.deleteRoutine(Number(id));
       Alert.alert('Success', 'Workout routine deleted successfully', [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -81,7 +64,7 @@ export default function WorkoutDetailScreen() {
 
   const deleteExercise = async (exerciseId: number) => {
     try {
-      await axios.delete(`/api/workouts/${id}/exercises/${exerciseId}`);
+      await workoutService.deleteExercise(Number(id), exerciseId);
       fetchRoutine();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete exercise');

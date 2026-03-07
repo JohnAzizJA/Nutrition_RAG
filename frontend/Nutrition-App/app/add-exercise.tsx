@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
-import axios from '@/src/api/axios';
+import { workoutService } from '@/src/services';
 
 export default function AddExerciseScreen() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function AddExerciseScreen() {
 
     setLoading(true);
     try {
-      await axios.post(`/api/workouts/${routineId}/exercises`, {
+      await workoutService.addExercise(Number(routineId), {
         name: name.trim(),
         sets: setsNum,
         reps: repsNum,

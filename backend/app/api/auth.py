@@ -1,19 +1,20 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from db.repositories import UserRepository
 from auth.utils import hash_password, verify_password, create_access_token, create_refresh_token, decode_refresh_token
 from auth.middleware import get_current_user
 from db.models import User
 from typing import Literal
+import re
 
 router = APIRouter()
 user_repo = UserRepository()
 
 # Request/Response Schemas
 class RegisterRequest(BaseModel):
-    email: str = Field(..., min_length=3, max_length=100)
-    password: str = Field(..., min_length=6, max_length=100)
-    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr = Field(..., description="Valid email address")
+    password: str = Field(..., min_length=8, max_length=100)
+    name: str = Field(..., min_length=2, max_length=50, pattern=r'^[a-zA-Z._]+$')
     age: int = Field(..., ge=13, le=120)
     gender: Literal["male", "female"]
     weight_kg: float = Field(..., gt=0, le=500)
@@ -22,10 +23,18 @@ class RegisterRequest(BaseModel):
     goal: Literal["lose_weight", "maintain_weight", "gain_weight", "gain_muscle"]
     goal_weight_kg: float = Field(..., gt=0, le=500)
     weight_loss_per_week: float = Field(default=0.5, ge=0.25, le=1.0)
+    
+    @field_validator('password')
+    def validate_password(cls, v):
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError('Password must contain at least one special character')
+        return v
 
 class LoginRequest(BaseModel):
-    email: str = Field(..., min_length=3, max_length=100)
-    password: str = Field(..., min_length=6, max_length=100)
+    email: EmailStr = Field(..., description="Valid email address")
+    password: str = Field(..., min_length=8, max_length=100)
 
 class UpdateProfileRequest(BaseModel):
     age: int = Field(..., ge=13, le=120)
@@ -63,7 +72,7 @@ class AuthResponse(BaseModel):
 async def register(request: RegisterRequest):
     """Register a new user"""
     # Check if email already exists
-    existing_user = user_repo.get_by_email(request.email)
+    existing_user = user_repo.get_by_email(request.email.lower())
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -72,7 +81,7 @@ async def register(request: RegisterRequest):
         hashed_password = hash_password(request.password)
         
         user = user_repo.create(
-            email=request.email,
+            email=request.email.lower(),
             password=hashed_password,
             name=request.name,
             age=request.age,
@@ -101,7 +110,7 @@ async def register(request: RegisterRequest):
 @router.post("/login", response_model=AuthResponse)
 async def login(request: LoginRequest):
     """Login user"""
-    user = user_repo.get_by_email(request.email)
+    user = user_repo.get_by_email(request.email.lower())
     
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
