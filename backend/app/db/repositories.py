@@ -1,7 +1,7 @@
 from db.database import get_db
-from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow
+from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 
 class UserRepository:
     """Repository for User database operations"""
@@ -58,6 +58,7 @@ class UserRepository:
                 db.query(Conversation).filter(Conversation.user_id == user_id).delete()
                 db.query(WeightLog).filter(WeightLog.user_id == user_id).delete()
                 db.query(MealLog).filter(MealLog.user_id == user_id).delete()
+                db.query(WaterLog).filter(WaterLog.user_id == user_id).delete()
                 db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
                 db.query(Follow).filter((Follow.follower_id == user_id) | (Follow.following_id == user_id)).delete()
                 
@@ -281,3 +282,36 @@ class FollowRepository:
                 Follow.following_id == following_id
             ).first()
             return follow is not None
+
+class WaterLogRepository:
+    """Repository for WaterLog database operations"""
+    
+    def create_or_update(self, user_id: int, glasses: int, target_date: date) -> WaterLog:
+        """Create or update water log for a specific date"""
+        with get_db() as db:
+            log = db.query(WaterLog).filter(
+                WaterLog.user_id == user_id,
+                WaterLog.date == target_date
+            ).first()
+            
+            if log:
+                log.glasses = glasses
+            else:
+                log = WaterLog(
+                    user_id=user_id,
+                    glasses=glasses,
+                    date=target_date
+                )
+                db.add(log)
+            
+            db.commit()
+            db.refresh(log)
+            return log
+    
+    def get_by_date(self, user_id: int, target_date: date) -> Optional[WaterLog]:
+        """Get water log for a specific date"""
+        with get_db() as db:
+            return db.query(WaterLog).filter(
+                WaterLog.user_id == user_id,
+                WaterLog.date == target_date
+            ).first()

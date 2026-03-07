@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from auth.middleware import get_current_user
-from db.models import User
-from db.repositories import MealLogRepository
-from datetime import datetime, timezone, timedelta
+from db.models import User, WaterLog
+from db.repositories import MealLogRepository, WaterLogRepository
+from db.database import get_db
+from sqlalchemy.orm import Session
+from datetime import datetime, timezone, timedelta, date
 
 router = APIRouter()
 meal_repo = MealLogRepository()
+water_repo = WaterLogRepository()
 
-class AddWaterRequest(BaseModel):
+class UpdateWaterRequest(BaseModel):
     glasses: int
 
 @router.get("/dashboard")
@@ -18,8 +21,10 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
         # Calculate logging streak
         streak = calculate_logging_streak(current_user.id)
         
-        # Get today's water intake (placeholder - will implement water tracking later)
-        water_intake = 0
+        # Get today's water intake
+        today = date.today()
+        water_log = water_repo.get_by_date(current_user.id, today)
+        water_intake = water_log.glasses if water_log else 0
         
         return {
             "streak": streak,
@@ -28,17 +33,18 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get dashboard data: {str(e)}")
 
-@router.post("/add-water")
-async def add_water(
-    request: AddWaterRequest,
+@router.post("/dashboard/water")
+async def update_water(
+    request: UpdateWaterRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Add water intake (placeholder for now)"""
+    """Update daily water intake"""
     try:
-        # TODO: Implement water tracking in database
-        return {"message": f"Added {request.glasses} glasses of water"}
+        today = date.today()
+        water_repo.create_or_update(current_user.id, request.glasses, today)
+        return {"message": f"Water intake updated to {request.glasses} glasses"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add water: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update water intake: {str(e)}")
 
 def calculate_logging_streak(user_id: int) -> int:
     """Calculate consecutive days the user has logged food"""

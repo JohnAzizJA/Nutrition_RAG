@@ -21,9 +21,10 @@ export default function AddWaterScreen() {
 
     setLoading(true);
     try {
-      await axios.post('/api/add-water', { glasses: glassCount });
-      Alert.alert('Success', `Added ${glassCount} glasses of water`);
-      router.back();
+      await axios.post('/api/dashboard/water', { glasses: glassCount });
+      Alert.alert('Success', `Added ${glassCount} glasses of water`, [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to add water');
     } finally {
@@ -48,25 +49,27 @@ export default function AddWaterScreen() {
         
         <ThemedText style={styles.title}>How many glasses?</ThemedText>
         
-        <TextInput
-          style={styles.input}
-          value={glasses}
-          onChangeText={setGlasses}
-          placeholder="Enter number of glasses"
-          keyboardType="numeric"
-          placeholderTextColor={Colors.secondary}
-          autoFocus
-        />
-        
-        <TouchableOpacity
-          style={[styles.addButton, loading && styles.buttonDisabled]}
-          onPress={handleAddWater}
-          disabled={loading}
-        >
-          <ThemedText style={styles.addButtonText}>
-            {loading ? 'Adding...' : 'Add Water'}
-          </ThemedText>
-        </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={glasses}
+            onChangeText={setGlasses}
+            placeholder="Enter number of glasses"
+            keyboardType="numeric"
+            placeholderTextColor={Colors.secondary}
+            autoFocus
+          />
+          
+          <TouchableOpacity
+            style={[styles.addButton, loading && styles.buttonDisabled]}
+            onPress={handleAddWater}
+            disabled={loading}
+          >
+            <ThemedText style={styles.addButtonText}>
+              {loading ? 'Adding...' : 'Add Water'}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
     </ThemedView>
   );
@@ -115,17 +118,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: Colors.dark,
     textAlign: 'center',
-    minWidth: 200,
-    marginBottom: 32,
+    flex: 1,
+    marginRight: 12,
     borderWidth: 1,
     borderColor: Colors.secondary,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+    width: '100%',
+    maxWidth: 300,
   },
   addButton: {
     backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    minWidth: 200,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
   addButtonText: {
