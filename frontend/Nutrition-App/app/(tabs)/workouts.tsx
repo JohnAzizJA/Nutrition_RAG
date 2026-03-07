@@ -112,14 +112,6 @@ export default function WorkoutsScreen() {
       <View style={styles.content}>
         {routines.length > 0 ? (
           <>
-            <TouchableOpacity 
-              style={styles.createButton}
-              onPress={() => router.push('/create-workout')}
-            >
-              <Ionicons name="add" size={24} color={Colors.white} />
-              <ThemedText style={styles.createButtonText}>Create New Routine</ThemedText>
-            </TouchableOpacity>
-            
             <FlatList
               data={routines}
               renderItem={renderRoutine}
@@ -127,6 +119,13 @@ export default function WorkoutsScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContainer}
             />
+            
+            <TouchableOpacity 
+              style={styles.newWorkoutButton}
+              onPress={() => router.push('/create-workout')}
+            >
+              <Ionicons name="add" size={28} color={Colors.white} />
+            </TouchableOpacity>
           </>
         ) : (
           <View style={styles.emptyState}>
@@ -143,13 +142,6 @@ export default function WorkoutsScreen() {
           </View>
         )}
       </View>
-      
-      <TouchableOpacity 
-        style={styles.newWorkoutButton}
-        onPress={() => router.push('/create-workout')}
-      >
-        <Ionicons name="add" size={28} color={Colors.white} />
-      </TouchableOpacity>
     </ThemedView>
   );
 }

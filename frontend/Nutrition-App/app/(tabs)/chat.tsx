@@ -88,38 +88,40 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
-          data={conversations}
-          keyExtractor={(item) => item.thread_id}
-          renderItem={({ item }) => (
-            <Swipeable
-              renderRightActions={() => renderDeleteAction(item.thread_id)}
-            >
-              <TouchableOpacity
-                style={styles.conversationItem}
-                onPress={() => handleOpenChat(item.thread_id)}
+        <>
+          <FlatList
+            data={conversations}
+            keyExtractor={(item) => item.thread_id}
+            renderItem={({ item }) => (
+              <Swipeable
+                renderRightActions={() => renderDeleteAction(item.thread_id)}
               >
-                <View style={styles.conversationContent}>
-                  <ThemedText style={styles.conversationPreview} numberOfLines={2}>
-                    {item.last_message}
-                  </ThemedText>
-                  <ThemedText style={styles.conversationTime}>
-                    {new Date(item.last_message_time).toLocaleDateString()}
-                  </ThemedText>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.dark} />
-              </TouchableOpacity>
-            </Swipeable>
-          )}
-        />
+                <TouchableOpacity
+                  style={styles.conversationItem}
+                  onPress={() => handleOpenChat(item.thread_id)}
+                >
+                  <View style={styles.conversationContent}>
+                    <ThemedText style={styles.conversationPreview} numberOfLines={2}>
+                      {item.last_message}
+                    </ThemedText>
+                    <ThemedText style={styles.conversationTime}>
+                      {new Date(item.last_message_time).toLocaleDateString()}
+                    </ThemedText>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={Colors.dark} />
+                </TouchableOpacity>
+              </Swipeable>
+            )}
+          />
+          
+          <TouchableOpacity 
+            style={styles.newChatButton}
+            onPress={handleNewChat}
+          >
+            <Ionicons name="add" size={28} color={Colors.white} />
+          </TouchableOpacity>
+        </>
       )}
-      
-      <TouchableOpacity 
-        style={styles.newChatButton}
-        onPress={handleNewChat}
-      >
-        <Ionicons name="add" size={28} color={Colors.white} />
-      </TouchableOpacity>
     </ThemedView>
   );
 }
