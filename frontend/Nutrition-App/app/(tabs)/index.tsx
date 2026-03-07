@@ -40,6 +40,15 @@ export default function HomeScreen() {
     }
   };
 
+  const updateWater = async (change: number) => {
+    try {
+      await axios.post('/api/dashboard/water', { glasses: change });
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to update water:', error);
+    }
+  };
+
   if (loading) {
     return (
       <ThemedView style={styles.container}>
@@ -114,17 +123,24 @@ export default function HomeScreen() {
           <View style={styles.todayGrid}>
             {/* Water Intake */}
             <View style={styles.todayCard}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="water" size={24} color="#4FC3F7" />
+              <Ionicons name="water" size={24} color="#4FC3F7" />
+              <ThemedText style={styles.cardValue}>{dashboardData?.water_intake || 0}</ThemedText>
+              <ThemedText style={styles.cardLabel}>Glasses</ThemedText>
+              <View style={styles.waterControls}>
                 <TouchableOpacity 
-                  style={styles.cardAddButton}
-                  onPress={() => router.push('/add-water')}
+                  style={styles.waterButton}
+                  onPress={() => updateWater(-1)}
+                  disabled={!dashboardData?.water_intake}
+                >
+                  <Ionicons name="remove" size={16} color={dashboardData?.water_intake ? Colors.primary : Colors.secondary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.waterButton}
+                  onPress={() => updateWater(1)}
                 >
                   <Ionicons name="add" size={16} color={Colors.primary} />
                 </TouchableOpacity>
               </View>
-              <ThemedText style={styles.cardValue}>{dashboardData?.water_intake || 0}</ThemedText>
-              <ThemedText style={styles.cardLabel}>Glasses</ThemedText>
             </View>
             
             {/* Macro Breakdown */}
@@ -276,18 +292,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  cardHeader: {
+  waterControls: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    width: '100%',
-    marginBottom: 8,
+    gap: 8,
+    marginTop: 8,
   },
-  cardAddButton: {
+  waterButton: {
     backgroundColor: Colors.background,
     borderRadius: 12,
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
