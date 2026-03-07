@@ -38,6 +38,18 @@ class UserRepository:
             db.refresh(user)
             return user
     
+    def update(self, user_id: int, **kwargs) -> Optional[User]:
+        """Update user profile"""
+        with get_db() as db:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                for key, value in kwargs.items():
+                    if hasattr(user, key):
+                        setattr(user, key, value)
+                db.commit()
+                db.refresh(user)
+            return user
+    
     def update_weight(self, user_id: int, weight_kg: float) -> Optional[User]:
         """Update user weight"""
         with get_db() as db:
