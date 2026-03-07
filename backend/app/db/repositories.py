@@ -104,6 +104,20 @@ class ConversationRepository:
                 Conversation.user_id == user_id
             ).distinct().all()
             return [t[0] for t in threads]
+    
+    def delete_thread(self, thread_id: str, user_id: int) -> bool:
+        """Delete all messages in a thread for specific user"""
+        with get_db() as db:
+            messages = db.query(Conversation).filter(
+                Conversation.thread_id == thread_id,
+                Conversation.user_id == user_id
+            ).all()
+            if messages:
+                for message in messages:
+                    db.delete(message)
+                db.commit()
+                return True
+            return False
 
 class WeightLogRepository:
     """Repository for WeightLog database operations"""
@@ -369,7 +383,7 @@ class WaterLogRepository:
             ).first()
             
             if log:
-                log.glasses = glasses
+                log.glasses += glasses  # Add to existing amount
             else:
                 log = WaterLog(
                     user_id=user_id,

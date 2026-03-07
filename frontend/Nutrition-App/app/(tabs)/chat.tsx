@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { chatService, ConversationSummary } from '@/src/services';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { Swipeable } from 'react-native-gesture-handler';
+import axios from '@/src/api/axios';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -42,6 +44,24 @@ export default function ChatScreen() {
     router.push(`/conversation?threadId=${threadId}`);
   };
 
+  const deleteConversation = async (threadId: string) => {
+    try {
+      await axios.delete(`/api/conversations/${threadId}`);
+      loadConversations();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete conversation');
+    }
+  };
+
+  const renderDeleteAction = (threadId: string) => (
+    <TouchableOpacity 
+      style={styles.deleteAction}
+      onPress={() => deleteConversation(threadId)}
+    >
+      <Ionicons name="trash" size={20} color={Colors.white} />
+    </TouchableOpacity>
+  );
+
   if (loading) {
     return (
       <ThemedView style={styles.container}>
@@ -72,23 +92,34 @@ export default function ChatScreen() {
           data={conversations}
           keyExtractor={(item) => item.thread_id}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.conversationItem}
-              onPress={() => handleOpenChat(item.thread_id)}
+            <Swipeable
+              renderRightActions={() => renderDeleteAction(item.thread_id)}
             >
-              <View style={styles.conversationContent}>
-                <ThemedText style={styles.conversationPreview} numberOfLines={2}>
-                  {item.last_message}
-                </ThemedText>
-                <ThemedText style={styles.conversationTime}>
-                  {new Date(item.last_message_time).toLocaleDateString()}
-                </ThemedText>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.dark} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.conversationItem}
+                onPress={() => handleOpenChat(item.thread_id)}
+              >
+                <View style={styles.conversationContent}>
+                  <ThemedText style={styles.conversationPreview} numberOfLines={2}>
+                    {item.last_message}
+                  </ThemedText>
+                  <ThemedText style={styles.conversationTime}>
+                    {new Date(item.last_message_time).toLocaleDateString()}
+                  </ThemedText>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.dark} />
+              </TouchableOpacity>
+            </Swipeable>
           )}
         />
       )}
+      
+      <TouchableOpacity 
+        style={styles.newChatButton}
+        onPress={handleNewChat}
+      >
+        <Ionicons name="add" size={28} color={Colors.white} />
+      </TouchableOpacity>
     </ThemedView>
   );
 }
@@ -154,5 +185,30 @@ const styles = StyleSheet.create({
   conversationTime: {
     fontSize: 12,
     color: Colors.secondary,
+  },
+  newChatButton: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  deleteAction: {
+    backgroundColor: '#EF5350',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 12,
+    marginBottom: 8,
+    marginHorizontal: 20,
   },
 });

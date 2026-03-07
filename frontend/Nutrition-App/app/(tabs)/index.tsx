@@ -114,7 +114,15 @@ export default function HomeScreen() {
           <View style={styles.todayGrid}>
             {/* Water Intake */}
             <View style={styles.todayCard}>
-              <Ionicons name="water" size={24} color="#4FC3F7" />
+              <View style={styles.cardHeader}>
+                <Ionicons name="water" size={24} color="#4FC3F7" />
+                <TouchableOpacity 
+                  style={styles.cardAddButton}
+                  onPress={() => router.push('/add-water')}
+                >
+                  <Ionicons name="add" size={16} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
               <ThemedText style={styles.cardValue}>{dashboardData?.water_intake || 0}</ThemedText>
               <ThemedText style={styles.cardLabel}>Glasses</ThemedText>
             </View>
@@ -267,5 +275,22 @@ const styles = StyleSheet.create({
   macroBreakdown: {
     alignItems: 'center',
     marginTop: 8,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+    marginBottom: 8,
+  },
+  cardAddButton: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
 });

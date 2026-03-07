@@ -143,6 +143,13 @@ export default function WorkoutsScreen() {
           </View>
         )}
       </View>
+      
+      <TouchableOpacity 
+        style={styles.newWorkoutButton}
+        onPress={() => router.push('/create-workout')}
+      >
+        <Ionicons name="add" size={28} color={Colors.white} />
+      </TouchableOpacity>
     </ThemedView>
   );
 }
@@ -255,5 +262,21 @@ const styles = StyleSheet.create({
     width: 80,
     borderRadius: 12,
     marginBottom: 12,
+  },
+  newWorkoutButton: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
 });
