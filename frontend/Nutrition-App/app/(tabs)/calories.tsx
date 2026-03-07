@@ -16,6 +16,7 @@ export default function CaloriesScreen() {
   const [nutrition, setNutrition] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [weekOffset, setWeekOffset] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,7 +28,7 @@ export default function CaloriesScreen() {
     const days = [];
     const today = new Date();
     const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+    startOfWeek.setDate(today.getDate() - today.getDay() + (weekOffset * 7)); // Apply week offset
     
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
@@ -111,7 +112,33 @@ export default function CaloriesScreen() {
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Date Selector */}
         <View style={styles.dateContainer}>
-          <ThemedText style={styles.dateText}>{formatDate(selectedDate)}</ThemedText>
+          <View style={styles.dateHeader}>
+            <TouchableOpacity onPress={() => {
+              const newOffset = weekOffset - 1;
+              setWeekOffset(newOffset);
+              // Calculate new week days with updated offset
+              const today = new Date();
+              const startOfWeek = new Date(today);
+              startOfWeek.setDate(today.getDate() - today.getDay() + (newOffset * 7));
+              const lastDay = new Date(startOfWeek);
+              lastDay.setDate(startOfWeek.getDate() + 6);
+              setSelectedDate(lastDay);
+            }}>
+              <Ionicons name="chevron-back" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+            <ThemedText style={styles.dateText}>{formatDate(selectedDate)}</ThemedText>
+            <TouchableOpacity onPress={() => {
+              const newOffset = weekOffset + 1;
+              setWeekOffset(newOffset);
+              // Calculate new week days with updated offset
+              const today = new Date();
+              const startOfWeek = new Date(today);
+              startOfWeek.setDate(today.getDate() - today.getDay() + (newOffset * 7));
+              setSelectedDate(startOfWeek);
+            }}>
+              <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.weekContainer}>
             {getWeekDays().map((day, index) => (
               <TouchableOpacity
@@ -275,12 +302,17 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
   },
+  dateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   dateText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: Colors.dark,
     textAlign: 'center',
-    marginBottom: 12,
   },
   weekContainer: {
     flexDirection: 'row',
