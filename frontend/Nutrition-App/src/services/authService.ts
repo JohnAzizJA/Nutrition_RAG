@@ -11,6 +11,8 @@ export interface RegisterRequest {
   height_cm: number;
   activity_level: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extra_active';
   goal: 'lose_weight' | 'maintain_weight' | 'gain_weight' | 'gain_muscle';
+  goal_weight_kg: number;
+  weight_loss_per_week: number;
 }
 
 export interface LoginRequest {
@@ -28,6 +30,8 @@ export interface UserResponse {
   height_cm: number;
   activity_level: string;
   goal: string;
+  goal_weight_kg: number;
+  weight_loss_per_week: number;
 }
 
 export interface AuthResponse {

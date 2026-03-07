@@ -1,10 +1,19 @@
 import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/src/contexts/AuthContext';
 import { ThemedText } from '@/src/components/themed-text';
 import { Colors } from '@/constants/theme';
+import { useEffect } from 'react';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   return (
     <View style={styles.container}>

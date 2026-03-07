@@ -17,8 +17,10 @@ interface FormData {
   gender: 'male' | 'female';
   weight_kg: number;
   height_cm: number;
-  activity_level: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extra_active';
+  exercise_days_per_week: number;
   goal: 'lose_weight' | 'maintain_weight' | 'gain_weight' | 'gain_muscle';
+  goal_weight_kg: number;
+  weight_loss_per_week: number;
 }
 
 export default function RegisterScreen() {
@@ -35,8 +37,10 @@ export default function RegisterScreen() {
     gender: 'male',
     weight_kg: 70,
     height_cm: 170,
-    activity_level: 'moderately_active',
+    exercise_days_per_week: 3,
     goal: 'maintain_weight',
+    goal_weight_kg: 70,
+    weight_loss_per_week: 0.5,
   });
 
   const handleScroll = (event: any) => {
@@ -51,9 +55,23 @@ export default function RegisterScreen() {
       return;
     }
 
+    // Convert exercise days to activity level
+    const getActivityLevel = (days: number) => {
+      if (days === 0) return 'sedentary';
+      if (days <= 2) return 'lightly_active';
+      if (days <= 4) return 'moderately_active';
+      if (days <= 6) return 'very_active';
+      return 'extra_active';
+    };
+
+    const registrationData = {
+      ...formData,
+      activity_level: getActivityLevel(formData.exercise_days_per_week)
+    };
+
     setLoading(true);
     try {
-      await register(formData);
+      await register(registrationData);
       Alert.alert('Success!', 'Your account has been created.');
       router.replace('/(tabs)');
     } catch (error) {
@@ -191,40 +209,23 @@ export default function RegisterScreen() {
           </View>
         </View>
 
-        {/* Step 4: Activity Level */}
+        {/* Step 4: Exercise Frequency */}
         <View style={styles.stepContainer}>
-          <ThemedText type="title" style={styles.title}>Goals</ThemedText>
+          <ThemedText type="title" style={styles.title}>Exercise</ThemedText>
           
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Activity Level</ThemedText>
-            <View style={styles.pickerColumn}>
-              {[
-                { value: 'sedentary', label: 'Sedentary' },
-                { value: 'lightly_active', label: 'Lightly Active' },
-                { value: 'moderately_active', label: 'Moderately Active' },
-                { value: 'very_active', label: 'Very Active' },
-                { value: 'extra_active', label: 'Extra Active' },
-              ].map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.pickerButton,
-                    formData.activity_level === option.value && styles.pickerButtonActive,
-                  ]}
-                  onPress={() => setFormData({ ...formData, activity_level: option.value as any })}
-                >
-                  <ThemedText
-                    style={
-                      formData.activity_level === option.value
-                        ? styles.pickerTextActive
-                        : styles.pickerText
-                    }
-                  >
-                    {option.label}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ThemedText style={styles.label}>Exercise Days Per Week: {formData.exercise_days_per_week}</ThemedText>
+            <Slider
+              style={styles.slider}
+              minimumValue={0}
+              maximumValue={7}
+              step={1}
+              value={formData.exercise_days_per_week}
+              onValueChange={(value) => setFormData({ ...formData, exercise_days_per_week: value })}
+              minimumTrackTintColor={Colors.primary}
+              maximumTrackTintColor={Colors.secondary}
+              thumbTintColor={Colors.primary}
+            />
           </View>
         </View>
 
@@ -258,6 +259,43 @@ export default function RegisterScreen() {
               ))}
             </View>
           </View>
+        </View>
+
+        {/* Step 6: Goal Weight */}
+        <View style={styles.stepContainer}>
+          <ThemedText type="title" style={styles.title}>Target Weight</ThemedText>
+          
+          <View style={styles.inputGroup}>
+            <ThemedText style={styles.label}>Goal Weight: {formData.goal_weight_kg} kg</ThemedText>
+            <Slider
+              style={styles.slider}
+              minimumValue={30}
+              maximumValue={200}
+              step={1}
+              value={formData.goal_weight_kg}
+              onValueChange={(value) => setFormData({ ...formData, goal_weight_kg: value })}
+              minimumTrackTintColor={Colors.primary}
+              maximumTrackTintColor={Colors.secondary}
+              thumbTintColor={Colors.primary}
+            />
+          </View>
+
+          {formData.goal === 'lose_weight' && (
+            <View style={styles.inputGroup}>
+              <ThemedText style={styles.label}>Weight Loss Per Week: {formData.weight_loss_per_week} kg</ThemedText>
+              <Slider
+                style={styles.slider}
+                minimumValue={0.25}
+                maximumValue={1}
+                step={0.25}
+                value={formData.weight_loss_per_week}
+                onValueChange={(value) => setFormData({ ...formData, weight_loss_per_week: value })}
+                minimumTrackTintColor={Colors.primary}
+                maximumTrackTintColor={Colors.secondary}
+                thumbTintColor={Colors.primary}
+              />
+            </View>
+          )}
 
           <TouchableOpacity
             style={[styles.registerButton, loading && styles.buttonDisabled]}
@@ -273,7 +311,7 @@ export default function RegisterScreen() {
 
       {/* Progress Indicator */}
       <View style={styles.progressContainer}>
-        {[0, 1, 2, 3, 4].map((step) => (
+        {[0, 1, 2, 3, 4, 5].map((step) => (
           <View
             key={step}
             style={[
