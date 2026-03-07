@@ -203,27 +203,60 @@ export default function CaloriesScreen() {
       
       {nutrition?.meals?.length > 0 ? (
         <View style={styles.mealsSection}>
-          <ThemedText style={styles.sectionTitle}>Foods Logged</ThemedText>
-          {nutrition.meals.map((meal: any) => (
-            <Swipeable
-              key={meal.id}
-              renderRightActions={() => renderDeleteAction(meal.id)}
-            >
-              <View style={styles.mealItem}>
-                <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
-                <ThemedText style={styles.mealNutrients}>
-                  {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
-                </ThemedText>
+          {['Breakfast', 'Lunch', 'Snack', 'Dinner'].map((mealType) => {
+            const mealItems = nutrition.meals.filter((meal: any) => meal.meal_type === mealType.toLowerCase());
+            return (
+              <View key={mealType} style={styles.mealTypeSection}>
+                <View style={styles.mealTypeHeader}>
+                  <ThemedText style={styles.mealTypeTitle}>{mealType}</ThemedText>
+                  <TouchableOpacity 
+                    style={styles.addMealButton}
+                    onPress={() => router.push(`/log-food?mealType=${mealType.toLowerCase()}`)}
+                  >
+                    <Ionicons name="add" size={20} color={Colors.primary} />
+                  </TouchableOpacity>
+                </View>
+                {mealItems.length > 0 ? (
+                  mealItems.map((meal: any) => (
+                    <Swipeable
+                      key={meal.id}
+                      renderRightActions={() => renderDeleteAction(meal.id)}
+                    >
+                      <View style={styles.mealItem}>
+                        <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
+                        <ThemedText style={styles.mealNutrients}>
+                          {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+                        </ThemedText>
+                      </View>
+                    </Swipeable>
+                  ))
+                ) : (
+                  <View style={styles.emptyMealState}>
+                    <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                  </View>
+                )}
               </View>
-            </Swipeable>
-          ))}
+            );
+          })}
         </View>
       ) : (
         <View style={styles.mealsSection}>
-          <ThemedText style={styles.sectionTitle}>Foods Logged</ThemedText>
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyText}>No foods logged</ThemedText>
-          </View>
+          {['Breakfast', 'Lunch', 'Snack', 'Dinner'].map((mealType) => (
+            <View key={mealType} style={styles.mealTypeSection}>
+              <View style={styles.mealTypeHeader}>
+                <ThemedText style={styles.mealTypeTitle}>{mealType}</ThemedText>
+                <TouchableOpacity 
+                  style={styles.addMealButton}
+                  onPress={() => router.push(`/log-food?mealType=${mealType.toLowerCase()}`)}
+                >
+                  <Ionicons name="add" size={20} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.emptyMealState}>
+                <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+              </View>
+            </View>
+          ))}
         </View>
       )}
       </ScrollView>
@@ -381,5 +414,40 @@ const styles = StyleSheet.create({
     width: 80,
     borderRadius: 12,
     marginBottom: 8,
+  },
+  mealTypeSection: {
+    marginBottom: 20,
+  },
+  mealTypeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  mealTypeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.dark,
+  },
+  addMealButton: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  emptyMealState: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  emptyMealText: {
+    fontSize: 14,
+    color: Colors.secondary,
+    fontStyle: 'italic',
   },
 });
