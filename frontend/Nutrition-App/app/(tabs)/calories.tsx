@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   macroGoal: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     marginBottom: 8,
   },
   macroLabel: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   mealNutrients: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
   },
   dateContainer: {
     backgroundColor: Colors.white,
@@ -404,11 +404,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     fontStyle: 'italic',
   },
   deleteAction: {
-    backgroundColor: '#EF5350',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
   emptyMealText: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     fontStyle: 'italic',
   },
 });

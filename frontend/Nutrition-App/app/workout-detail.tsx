@@ -153,7 +153,7 @@ export default function WorkoutDetailScreen() {
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>Workout Details</ThemedText>
         <TouchableOpacity onPress={handleDeleteRoutine}>
-          <Ionicons name="trash-outline" size={24} color="#EF5350" />
+          <Ionicons name="trash-outline" size={24} color={Colors.danger} />
         </TouchableOpacity>
       </View>
 
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.secondary,
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   routineDescription: {
     fontSize: 16,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     marginBottom: 12,
     lineHeight: 22,
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     marginRight: 4,
   },
   detailValue: {
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   errorContainer: {
@@ -324,10 +324,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: Colors.secondary,
+    color: Colors.textMuted,
   },
   deleteAction: {
-    backgroundColor: '#EF5350',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,

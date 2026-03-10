@@ -52,7 +52,7 @@ export default function LoginScreen() {
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.placeholder}
             />
           </View>
 
@@ -64,7 +64,7 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               placeholder="Enter your password"
               secureTextEntry
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.placeholder}
             />
           </View>
 
@@ -127,9 +127,9 @@ const styles = StyleSheet.create({
     color: Colors.dark,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   loginButtonText: {
-    color: '#fff',
+    color: Colors.white,
     fontSize: 18,
     fontWeight: 'bold',
   },

@@ -102,7 +102,7 @@ export default function HomeScreen() {
           <View style={styles.overviewRow}>
             {/* Logging Streak */}
             <View style={styles.overviewCard}>
-              <Ionicons name="flame" size={24} color="#FF6B35" />
+              <Ionicons name="flame" size={24} color={Colors.iconStreak} />
               <ThemedText style={styles.cardValue}>{dashboardData?.streak || 0}</ThemedText>
               <ThemedText style={styles.cardLabel}>Day Streak</ThemedText>
             </View>
@@ -123,7 +123,7 @@ export default function HomeScreen() {
           <View style={styles.todayGrid}>
             {/* Water Intake */}
             <View style={styles.todayCard}>
-              <Ionicons name="water" size={24} color="#4FC3F7" />
+              <Ionicons name="water" size={24} color={Colors.iconWater} />
               <ThemedText style={styles.cardValue}>{dashboardData?.water_intake || 0}</ThemedText>
               <ThemedText style={styles.cardLabel}>Glasses</ThemedText>
               <View style={styles.waterControls}>
@@ -132,7 +132,7 @@ export default function HomeScreen() {
                   onPress={() => updateWater(-1)}
                   disabled={!dashboardData?.water_intake}
                 >
-                  <Ionicons name="remove" size={16} color={dashboardData?.water_intake ? Colors.primary : Colors.secondary} />
+                  <Ionicons name="remove" size={16} color={dashboardData?.water_intake ? Colors.primary : Colors.inactive} />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.waterButton}
@@ -145,7 +145,7 @@ export default function HomeScreen() {
             
             {/* Macro Breakdown */}
             <View style={styles.todayCard}>
-              <Ionicons name="nutrition" size={24} color="#66BB6A" />
+              <Ionicons name="nutrition" size={24} color={Colors.iconNutrition} />
               <View style={styles.macroBreakdown}>
                 <ThemedText style={styles.macroLine}>P: {todayNutrition?.totals?.protein_g || 0}g</ThemedText>
                 <ThemedText style={styles.macroLine}>C: {todayNutrition?.totals?.carbs_g || 0}g</ThemedText>
@@ -155,14 +155,14 @@ export default function HomeScreen() {
             
             {/* Steps */}
             <View style={styles.todayCard}>
-              <Ionicons name="footsteps" size={24} color="#FFA726" />
+              <Ionicons name="footsteps" size={24} color={Colors.iconSteps} />
               <ThemedText style={styles.cardValue}>0</ThemedText>
               <ThemedText style={styles.cardLabel}>Steps</ThemedText>
             </View>
             
             {/* Calories Burned */}
             <View style={styles.todayCard}>
-              <Ionicons name="flame" size={24} color="#EF5350" />
+              <Ionicons name="flame" size={24} color={Colors.iconCalories} />
               <ThemedText style={styles.cardValue}>0</ThemedText>
               <ThemedText style={styles.cardLabel}>Burned</ThemedText>
             </View>
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   overviewRow: {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   macroLine: {

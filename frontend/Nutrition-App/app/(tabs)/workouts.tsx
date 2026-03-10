@@ -61,7 +61,7 @@ export default function WorkoutsScreen() {
       >
         <View style={styles.routineHeader}>
           <ThemedText style={styles.routineName}>{item.name}</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </View>
         {item.description && (
           <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   routineDescription: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     marginBottom: 12,
   },
   routineStats: {
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     marginLeft: 4,
   },
   emptyState: {
@@ -234,13 +234,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
   },
   deleteAction: {
-    backgroundColor: '#EF5350',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

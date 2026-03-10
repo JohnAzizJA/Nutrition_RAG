@@ -134,7 +134,7 @@ export default function RegisterScreen() {
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.placeholder}
             />
           </View>
 
@@ -146,7 +146,7 @@ export default function RegisterScreen() {
               onChangeText={(text) => setFormData({ ...formData, password: text })}
               placeholder="Enter your password"
               secureTextEntry
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.placeholder}
             />
           </View>
         </View>
@@ -162,7 +162,7 @@ export default function RegisterScreen() {
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text.replace(/[^a-zA-Z._]/g, '') })}
               placeholder="Enter username (letters, dots, underscores only)"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.placeholder}
             />
           </View>
 
@@ -174,7 +174,7 @@ export default function RegisterScreen() {
               onChangeText={(text) => setFormData({ ...formData, age: parseInt(text) || 0 })}
               placeholder="Enter your age"
               keyboardType="numeric"
-              placeholderTextColor="#999"
+              placeholderTextColor={Colors.placeholder}
             />
           </View>
 
@@ -215,7 +215,7 @@ export default function RegisterScreen() {
               value={formData.weight_kg}
               onValueChange={(value) => setFormData({ ...formData, weight_kg: value })}
               minimumTrackTintColor={Colors.primary}
-              maximumTrackTintColor={Colors.secondary}
+              maximumTrackTintColor={Colors.inactive}
               thumbTintColor={Colors.primary}
             />
           </View>
@@ -230,7 +230,7 @@ export default function RegisterScreen() {
               value={formData.height_cm}
               onValueChange={(value) => setFormData({ ...formData, height_cm: value })}
               minimumTrackTintColor={Colors.primary}
-              maximumTrackTintColor={Colors.secondary}
+              maximumTrackTintColor={Colors.inactive}
               thumbTintColor={Colors.primary}
             />
           </View>
@@ -250,7 +250,7 @@ export default function RegisterScreen() {
               value={formData.exercise_days_per_week}
               onValueChange={(value) => setFormData({ ...formData, exercise_days_per_week: value })}
               minimumTrackTintColor={Colors.primary}
-              maximumTrackTintColor={Colors.secondary}
+              maximumTrackTintColor={Colors.inactive}
               thumbTintColor={Colors.primary}
             />
           </View>
@@ -302,7 +302,7 @@ export default function RegisterScreen() {
               value={formData.goal_weight_kg}
               onValueChange={(value) => setFormData({ ...formData, goal_weight_kg: value })}
               minimumTrackTintColor={Colors.primary}
-              maximumTrackTintColor={Colors.secondary}
+              maximumTrackTintColor={Colors.inactive}
               thumbTintColor={Colors.primary}
             />
           </View>
@@ -318,7 +318,7 @@ export default function RegisterScreen() {
                 value={formData.weight_loss_per_week}
                 onValueChange={(value) => setFormData({ ...formData, weight_loss_per_week: value })}
                 minimumTrackTintColor={Colors.primary}
-                maximumTrackTintColor={Colors.secondary}
+                maximumTrackTintColor={Colors.inactive}
                 thumbTintColor={Colors.primary}
               />
             </View>
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.inactive,
   },
   progressDotActive: {
     backgroundColor: Colors.primary,
@@ -410,9 +410,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -432,9 +432,9 @@ const styles = StyleSheet.create({
   },
   pickerButton: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
     borderRadius: 8,
     paddingVertical: 18,
     paddingHorizontal: 16,
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   },
   pickerTextActive: {
     fontSize: 15,
-    color: '#fff',
+    color: Colors.white,
     fontWeight: '600',
     lineHeight: 20,
   },
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextButtonText: {
-    color: '#fff',
+    color: Colors.white,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   registerButtonText: {
-    color: '#fff',
+    color: Colors.white,
     fontSize: 18,
     fontWeight: 'bold',
   },

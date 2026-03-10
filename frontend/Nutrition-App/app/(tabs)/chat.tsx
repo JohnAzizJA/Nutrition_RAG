@@ -80,7 +80,7 @@ export default function ChatScreen() {
 
       {conversations.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="chatbubbles-outline" size={64} color={Colors.secondary} />
+          <Ionicons name="chatbubbles-outline" size={64} color={Colors.textMuted} />
           <ThemedText style={styles.emptyText}>No conversations yet</ThemedText>
           <TouchableOpacity style={styles.startButton} onPress={handleNewChat}>
             <ThemedText style={styles.startButtonText}>Start a conversation</ThemedText>
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   conversationTime: {
     fontSize: 12,
-    color: Colors.secondary,
+    color: Colors.textMuted,
   },
   newChatButton: {
     position: 'absolute',
@@ -198,13 +198,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
   deleteAction: {
-    backgroundColor: '#EF5350',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,

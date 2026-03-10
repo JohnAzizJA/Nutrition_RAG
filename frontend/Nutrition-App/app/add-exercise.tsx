@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.secondary,
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.dark,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
   },
   row: {
     flexDirection: 'row',
