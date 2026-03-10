@@ -188,7 +188,7 @@ export default function WorkoutDetailScreen() {
           />
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="fitness-outline" size={64} color={Colors.secondary} />
+            <Ionicons name="fitness-outline" size={64} color={Colors.inactive} />
             <ThemedText style={styles.emptyTitle}>No Exercises</ThemedText>
             <ThemedText style={styles.emptyText}>Add exercises to this routine to get started</ThemedText>
           </View>

@@ -176,29 +176,28 @@ export default function CaloriesScreen() {
         </View>
       
       <View style={styles.macroGrid}>
-        <View style={styles.macroBox}>
-          <ThemedText style={styles.macroValue}>{nutrition?.totals?.calories || 0}</ThemedText>
-          <ThemedText style={styles.macroGoal}>/ {targets?.target_calories || 0} kcal</ThemedText>
-          <ThemedText style={styles.macroLabel}>Calories</ThemedText>
-        </View>
-        
-        <View style={styles.macroBox}>
-          <ThemedText style={styles.macroValue}>{nutrition?.totals?.protein_g || 0}</ThemedText>
-          <ThemedText style={styles.macroGoal}>/ {targets?.target_protein_g || 0} g</ThemedText>
-          <ThemedText style={styles.macroLabel}>Protein</ThemedText>
-        </View>
-        
-        <View style={styles.macroBox}>
-          <ThemedText style={styles.macroValue}>{nutrition?.totals?.carbs_g || 0}</ThemedText>
-          <ThemedText style={styles.macroGoal}>/ {targets?.target_carbs_g || 0} g</ThemedText>
-          <ThemedText style={styles.macroLabel}>Carbs</ThemedText>
-        </View>
-        
-        <View style={styles.macroBox}>
-          <ThemedText style={styles.macroValue}>{nutrition?.totals?.fat_g || 0}</ThemedText>
-          <ThemedText style={styles.macroGoal}>/ {targets?.target_fat_g || 0} g</ThemedText>
-          <ThemedText style={styles.macroLabel}>Fats</ThemedText>
-        </View>
+        {[
+          { label: 'Calories', current: nutrition?.totals?.calories || 0, target: targets?.target_calories || 0, unit: 'kcal', color: Colors.iconCalories },
+          { label: 'Protein',  current: nutrition?.totals?.protein_g || 0, target: targets?.target_protein_g || 0, unit: 'g', color: Colors.iconProtein },
+          { label: 'Carbs',    current: nutrition?.totals?.carbs_g || 0,   target: targets?.target_carbs_g || 0,   unit: 'g', color: Colors.iconCarbs },
+          { label: 'Fats',     current: nutrition?.totals?.fat_g || 0,     target: targets?.target_fat_g || 0,     unit: 'g', color: Colors.iconFats },
+        ].map(({ label, current, target, unit, color }) => {
+          const pct = target > 0 ? Math.min(1, current / target) : 0;
+          const isOver = target > 0 && current > target;
+          const fillColor = isOver ? Colors.danger : color;
+          return (
+            <View key={label} style={styles.macroBox}>
+              {/* Liquid fill — rises from bottom */}
+              <View style={[styles.macroFill, { height: pct * 140, backgroundColor: fillColor + '30' }]} />
+              {/* Content above fill */}
+              <View style={styles.macroContent}>
+                <ThemedText style={[styles.macroValue, { color: fillColor }]}>{current}</ThemedText>
+                <ThemedText style={styles.macroGoal}>/ {target} {unit}</ThemedText>
+                <ThemedText style={styles.macroLabel}>{label}</ThemedText>
+              </View>
+            </View>
+          );
+        })}
       </View>
       
       {nutrition?.meals?.length > 0 ? (
@@ -301,15 +300,24 @@ const styles = StyleSheet.create({
     width: '47%',
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    minHeight: 140,
+    height: 140,
+    overflow: 'hidden',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  macroFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  macroContent: {
+    alignItems: 'center',
+    zIndex: 1,
   },
   macroValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.primary,
     marginBottom: 4,
     lineHeight: 34,
   },

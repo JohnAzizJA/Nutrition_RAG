@@ -10,6 +10,8 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { dashboardService, nutritionService } from '@/src/services';
 
 const { width } = Dimensions.get('window');
+const WATER_GOAL = 8;
+const CARD_HEIGHT = 140;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -65,6 +67,14 @@ export default function HomeScreen() {
     );
   }
 
+  const waterGlasses = dashboardData?.water_intake || 0;
+  const waterPct = Math.min(1, waterGlasses / WATER_GOAL);
+
+  const protein = todayNutrition?.totals?.protein_g || 0;
+  const carbs = todayNutrition?.totals?.carbs_g || 0;
+  const fat = todayNutrition?.totals?.fat_g || 0;
+  const macroTotal = protein + carbs + fat || 1;
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
@@ -73,13 +83,13 @@ export default function HomeScreen() {
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
       </View>
-      
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         {/* Overview Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Overview</ThemedText>
-          
-          {/* Weight Trend Graph Placeholder */}
+
+          {/* Weight Progress */}
           <View style={styles.weightGraphContainer}>
             <View style={styles.weightHeader}>
               <ThemedText style={styles.weightText}>Current: {user?.weight_kg || 0} kg</ThemedText>
@@ -92,22 +102,19 @@ export default function HomeScreen() {
               ]} />
             </View>
             <ThemedText style={styles.progressText}>
-              {user?.goal === 'lose_weight' 
+              {user?.goal === 'lose_weight'
                 ? `${Math.max(0, (user?.weight_kg || 0) - (user?.goal_weight_kg || 0)).toFixed(1)} kg to go`
                 : `Progress: ${((user?.weight_kg || 0) / (user?.goal_weight_kg || 1) * 100).toFixed(0)}%`
               }
             </ThemedText>
           </View>
-          
+
           <View style={styles.overviewRow}>
-            {/* Logging Streak */}
             <View style={styles.overviewCard}>
               <Ionicons name="flame" size={24} color={Colors.iconStreak} />
               <ThemedText style={styles.cardValue}>{dashboardData?.streak || 0}</ThemedText>
               <ThemedText style={styles.cardLabel}>Day Streak</ThemedText>
             </View>
-            
-            {/* Workouts This Week */}
             <View style={styles.overviewCard}>
               <Ionicons name="barbell" size={24} color={Colors.primary} />
               <ThemedText style={styles.cardValue}>0</ThemedText>
@@ -115,56 +122,75 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-        
+
         {/* Today Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Today</ThemedText>
-          
+
           <View style={styles.todayGrid}>
-            {/* Water Intake */}
+            {/* Water Intake — liquid fill */}
             <View style={styles.todayCard}>
-              <Ionicons name="water" size={24} color={Colors.iconWater} />
-              <ThemedText style={styles.cardValue}>{dashboardData?.water_intake || 0}</ThemedText>
-              <ThemedText style={styles.cardLabel}>Glasses</ThemedText>
-              <View style={styles.waterControls}>
-                <TouchableOpacity 
-                  style={styles.waterButton}
-                  onPress={() => updateWater(-1)}
-                  disabled={!dashboardData?.water_intake}
-                >
-                  <Ionicons name="remove" size={16} color={dashboardData?.water_intake ? Colors.primary : Colors.inactive} />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.waterButton}
-                  onPress={() => updateWater(1)}
-                >
-                  <Ionicons name="add" size={16} color={Colors.primary} />
-                </TouchableOpacity>
+              <View style={[styles.liquidFill, { height: waterPct * CARD_HEIGHT, backgroundColor: Colors.iconWater + '30' }]} />
+              <View style={styles.cardInner}>
+                <Ionicons name="water" size={22} color={Colors.iconWater} />
+                <ThemedText style={[styles.cardValue, { color: Colors.iconWater }]}>{waterGlasses}</ThemedText>
+                <ThemedText style={styles.cardLabel}>/ {WATER_GOAL} glasses</ThemedText>
+                <View style={styles.waterControls}>
+                  <TouchableOpacity
+                    style={styles.waterButton}
+                    onPress={() => updateWater(-1)}
+                    disabled={!waterGlasses}
+                  >
+                    <Ionicons name="remove" size={14} color={waterGlasses ? Colors.primary : Colors.inactive} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.waterButton}
+                    onPress={() => updateWater(1)}
+                  >
+                    <Ionicons name="add" size={14} color={Colors.primary} />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-            
+
             {/* Macro Breakdown */}
             <View style={styles.todayCard}>
-              <Ionicons name="nutrition" size={24} color={Colors.iconNutrition} />
-              <View style={styles.macroBreakdown}>
-                <ThemedText style={styles.macroLine}>P: {todayNutrition?.totals?.protein_g || 0}g</ThemedText>
-                <ThemedText style={styles.macroLine}>C: {todayNutrition?.totals?.carbs_g || 0}g</ThemedText>
-                <ThemedText style={styles.macroLine}>F: {todayNutrition?.totals?.fat_g || 0}g</ThemedText>
+              <View style={styles.cardInner}>
+                <Ionicons name="nutrition" size={22} color={Colors.iconNutrition} />
+                <View style={styles.macroBreakdown}>
+                  {[
+                    { label: 'Protein', value: protein, color: Colors.iconProtein },
+                    { label: 'Carbs',   value: carbs,   color: Colors.iconCarbs },
+                    { label: 'Fats',    value: fat,     color: Colors.iconFats },
+                  ].map(({ label, value, color }) => (
+                    <View key={label} style={styles.macroRow}>
+                      <View style={[styles.macroDot, { backgroundColor: color }]} />
+                      <ThemedText style={[styles.macroLabel, { color }]}>{value}g</ThemedText>
+                      <View style={styles.macroBarTrack}>
+                        <View style={[styles.macroBarFill, { width: `${(value / macroTotal) * 100}%`, backgroundColor: color }]} />
+                      </View>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
-            
+
             {/* Steps */}
             <View style={styles.todayCard}>
-              <Ionicons name="footsteps" size={24} color={Colors.iconSteps} />
-              <ThemedText style={styles.cardValue}>0</ThemedText>
-              <ThemedText style={styles.cardLabel}>Steps</ThemedText>
+              <View style={styles.cardInner}>
+                <Ionicons name="footsteps" size={22} color={Colors.iconSteps} />
+                <ThemedText style={styles.cardValue}>0</ThemedText>
+                <ThemedText style={styles.cardLabel}>Steps</ThemedText>
+              </View>
             </View>
-            
+
             {/* Calories Burned */}
             <View style={styles.todayCard}>
-              <Ionicons name="flame" size={24} color={Colors.iconCalories} />
-              <ThemedText style={styles.cardValue}>0</ThemedText>
-              <ThemedText style={styles.cardLabel}>Burned</ThemedText>
+              <View style={styles.cardInner}>
+                <Ionicons name="flame" size={22} color={Colors.iconCalories} />
+                <ThemedText style={styles.cardValue}>0</ThemedText>
+                <ThemedText style={styles.cardLabel}>Burned</ThemedText>
+              </View>
             </View>
           </View>
         </View>
@@ -264,33 +290,35 @@ const styles = StyleSheet.create({
   },
   todayCard: {
     width: '47%',
+    height: CARD_HEIGHT,
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    minHeight: 100,
+    overflow: 'hidden',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  liquidFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  cardInner: {
+    alignItems: 'center',
+    zIndex: 1,
+    width: '100%',
+    paddingHorizontal: 12,
   },
   cardValue: {
     fontSize: 24,
     fontWeight: 'bold',
     color: Colors.dark,
-    marginVertical: 8,
+    marginVertical: 4,
   },
   cardLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.textMuted,
     textAlign: 'center',
-  },
-  macroLine: {
-    fontSize: 14,
-    color: Colors.dark,
-    fontWeight: '500',
-    marginVertical: 1,
-  },
-  macroBreakdown: {
-    alignItems: 'center',
-    marginTop: 8,
   },
   waterControls: {
     flexDirection: 'row',
@@ -299,12 +327,43 @@ const styles = StyleSheet.create({
   },
   waterButton: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
-    width: 28,
-    height: 28,
+    borderRadius: 10,
+    width: 26,
+    height: 26,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.primary,
+  },
+  macroBreakdown: {
+    width: '100%',
+    marginTop: 8,
+    gap: 6,
+  },
+  macroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  macroDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  macroLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    width: 32,
+  },
+  macroBarTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: Colors.background,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  macroBarFill: {
+    height: '100%',
+    borderRadius: 2,
   },
 });

@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   newChatButton: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 20,
     right: 20,
     backgroundColor: Colors.primary,
     borderRadius: 30,

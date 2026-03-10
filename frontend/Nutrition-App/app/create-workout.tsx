@@ -60,7 +60,7 @@ export default function CreateWorkoutScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Enter routine name"
-            placeholderTextColor={Colors.secondary}
+            placeholderTextColor={Colors.placeholder}
             maxLength={100}
           />
         </View>
@@ -72,7 +72,7 @@ export default function CreateWorkoutScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Describe your workout routine"
-            placeholderTextColor={Colors.secondary}
+            placeholderTextColor={Colors.placeholder}
             multiline
             numberOfLines={4}
             maxLength={500}

@@ -167,7 +167,7 @@ export default function ProfileScreen() {
                       <ThemedText style={styles.cardValue}>{goal.value}</ThemedText>
                     </View>
                   </View>
-                  {goal.editable && <Ionicons name="pencil" size={16} color={Colors.secondary} />}
+                  {goal.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
             </View>
@@ -201,7 +201,7 @@ export default function ProfileScreen() {
                       <ThemedText style={styles.cardValue}>{metric.value}</ThemedText>
                     </View>
                   </View>
-                  {metric.editable && <Ionicons name="pencil" size={16} color={Colors.secondary} />}
+                  {metric.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
             </View>
