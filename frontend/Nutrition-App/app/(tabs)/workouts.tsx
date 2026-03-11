@@ -55,7 +55,7 @@ export default function WorkoutsScreen() {
     <Swipeable
       renderRightActions={() => renderDeleteAction(item.id)}
     >
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.routineCard}
         onPress={() => router.push(`/workout-detail?id=${item.id}`)}
       >
@@ -66,11 +66,23 @@ export default function WorkoutsScreen() {
         {item.description && (
           <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
         )}
-        <View style={styles.routineStats}>
+        <View style={styles.routineFooter}>
           <View style={styles.statItem}>
             <Ionicons name="fitness" size={16} color={Colors.primary} />
             <ThemedText style={styles.statText}>{item.exercise_count} exercises</ThemedText>
           </View>
+          {(item.exercise_count ?? 0) > 0 && (
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                router.push(`/active-workout?routineId=${item.id}&routineName=${encodeURIComponent(item.name)}`);
+              }}
+            >
+              <Ionicons name="play" size={14} color={Colors.white} />
+              <ThemedText style={styles.startButtonText}>Start</ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -205,9 +217,24 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginBottom: 12,
   },
-  routineStats: {
+  routineFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.secondary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  startButtonText: {
+    color: Colors.white,
+    fontSize: 13,
+    fontWeight: '600',
   },
   statItem: {
     flexDirection: 'row',

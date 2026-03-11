@@ -22,6 +22,7 @@ class AddExerciseRequest(BaseModel):
     reps: int = Field(..., ge=1, le=100)
     weight_kg: Optional[float] = Field(None, ge=0, le=1000)
     rest_time_seconds: Optional[int] = Field(None, ge=0, le=3600)
+    duration_seconds: Optional[int] = Field(None, ge=1, le=7200)
 
 @router.post("/workouts")
 async def create_routine(
@@ -87,7 +88,8 @@ async def get_routine(
                     "sets": exercise.sets,
                     "reps": exercise.reps,
                     "weight_kg": exercise.weight_kg,
-                    "rest_time_seconds": exercise.rest_time_seconds
+                    "rest_time_seconds": exercise.rest_time_seconds,
+                    "duration_seconds": exercise.duration_seconds,
                 }
                 for exercise in (routine.exercises or [])
             ]
@@ -162,7 +164,8 @@ async def add_exercise(
             sets=request.sets,
             reps=request.reps,
             weight_kg=request.weight_kg,
-            rest_time_seconds=request.rest_time_seconds
+            rest_time_seconds=request.rest_time_seconds,
+            duration_seconds=request.duration_seconds,
         )
         
         return {
@@ -171,7 +174,8 @@ async def add_exercise(
             "sets": exercise.sets,
             "reps": exercise.reps,
             "weight_kg": exercise.weight_kg,
-            "rest_time_seconds": exercise.rest_time_seconds
+            "rest_time_seconds": exercise.rest_time_seconds,
+            "duration_seconds": exercise.duration_seconds,
         }
     except HTTPException:
         raise

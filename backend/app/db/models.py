@@ -31,6 +31,7 @@ class User(Base):
     meal_logs = relationship("MealLog", back_populates="user")
     water_logs = relationship("WaterLog", back_populates="user")
     workout_routines = relationship("WorkoutRoutine", back_populates="user")
+    workout_sessions = relationship("WorkoutSession", back_populates="user")
     following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
     followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
     meal_plans = relationship("MealPlan", back_populates="user")
@@ -124,8 +125,47 @@ class Exercise(Base):
     reps = Column(Integer, nullable=False)
     weight_kg = Column(Float, nullable=True)
     rest_time_seconds = Column(Integer, nullable=True)
+    duration_seconds = Column(Integer, nullable=True)  # non-null = time-based exercise
 
     routine = relationship("WorkoutRoutine", back_populates="exercises")
+
+
+# ── Workout Sessions ──────────────────────────────────────────────────────────
+
+class WorkoutSession(Base):
+    """A live workout session started from a routine."""
+    __tablename__ = "workout_sessions"
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    routine_id = Column(Integer, ForeignKey("public.workout_routines.id"), nullable=True)
+    routine_name = Column(String, nullable=False)
+    started_at = Column(DateTime, default=utc_now)
+    ended_at = Column(DateTime, nullable=True)
+    duration_seconds = Column(Integer, nullable=True)
+
+    user = relationship("User", back_populates="workout_sessions")
+    sets = relationship("WorkoutSessionSet", back_populates="session", cascade="all, delete-orphan")
+
+
+class WorkoutSessionSet(Base):
+    """One logged set within a WorkoutSession."""
+    __tablename__ = "workout_session_sets"
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("public.workout_sessions.id"), nullable=False)
+    exercise_id = Column(Integer, nullable=True)
+    exercise_name = Column(String, nullable=False)
+    set_number = Column(Integer, nullable=False)
+    reps = Column(Integer, nullable=True)
+    weight_kg = Column(Float, nullable=True)
+    duration_seconds = Column(Integer, nullable=True)
+    completed_at = Column(DateTime, default=utc_now)
+
+    session = relationship("WorkoutSession", back_populates="sets")
+
 
 # ── Meal Plan tables ──────────────────────────────────────────────────────────
 

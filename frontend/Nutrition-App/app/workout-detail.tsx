@@ -87,27 +87,44 @@ export default function WorkoutDetailScreen() {
       <View style={styles.exerciseCard}>
         <View style={styles.exerciseHeader}>
           <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
+          {item.duration_seconds ? (
+            <View style={styles.timedBadge}>
+              <Ionicons name="timer-outline" size={12} color={Colors.primary} />
+              <ThemedText style={styles.timedBadgeText}>Timed</ThemedText>
+            </View>
+          ) : null}
         </View>
         <View style={styles.exerciseDetails}>
-          <View style={styles.detailItem}>
-            <ThemedText style={styles.detailLabel}>Sets:</ThemedText>
-            <ThemedText style={styles.detailValue}>{item.sets}</ThemedText>
-          </View>
-          <View style={styles.detailItem}>
-            <ThemedText style={styles.detailLabel}>Reps:</ThemedText>
-            <ThemedText style={styles.detailValue}>{item.reps}</ThemedText>
-          </View>
-          {item.weight_kg && (
+          {item.duration_seconds ? (
             <View style={styles.detailItem}>
-              <ThemedText style={styles.detailLabel}>Weight:</ThemedText>
-              <ThemedText style={styles.detailValue}>{item.weight_kg} kg</ThemedText>
+              <ThemedText style={styles.detailLabel}>Duration:</ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {Math.floor(item.duration_seconds / 60)}:{(item.duration_seconds % 60).toString().padStart(2, '0')}
+              </ThemedText>
             </View>
-          )}
-          {item.rest_time_seconds && (
-            <View style={styles.detailItem}>
-              <ThemedText style={styles.detailLabel}>Rest:</ThemedText>
-              <ThemedText style={styles.detailValue}>{Math.floor(item.rest_time_seconds / 60)}:{(item.rest_time_seconds % 60).toString().padStart(2, '0')}</ThemedText>
-            </View>
+          ) : (
+            <>
+              <View style={styles.detailItem}>
+                <ThemedText style={styles.detailLabel}>Sets:</ThemedText>
+                <ThemedText style={styles.detailValue}>{item.sets}</ThemedText>
+              </View>
+              <View style={styles.detailItem}>
+                <ThemedText style={styles.detailLabel}>Reps:</ThemedText>
+                <ThemedText style={styles.detailValue}>{item.reps}</ThemedText>
+              </View>
+              {item.weight_kg ? (
+                <View style={styles.detailItem}>
+                  <ThemedText style={styles.detailLabel}>Weight:</ThemedText>
+                  <ThemedText style={styles.detailValue}>{item.weight_kg} kg</ThemedText>
+                </View>
+              ) : null}
+              {item.rest_time_seconds ? (
+                <View style={styles.detailItem}>
+                  <ThemedText style={styles.detailLabel}>Rest:</ThemedText>
+                  <ThemedText style={styles.detailValue}>{Math.floor(item.rest_time_seconds / 60)}:{(item.rest_time_seconds % 60).toString().padStart(2, '0')}</ThemedText>
+                </View>
+              ) : null}
+            </>
           )}
         </View>
       </View>
@@ -169,7 +186,16 @@ export default function WorkoutDetailScreen() {
         </View>
 
         <View style={styles.actionsContainer}>
-          <TouchableOpacity 
+          {routine.exercises.length > 0 && (
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={() => router.push(`/active-workout?routineId=${routine.id}&routineName=${encodeURIComponent(routine.name)}`)}
+            >
+              <Ionicons name="play" size={20} color={Colors.white} />
+              <ThemedText style={styles.startButtonText}>Start Workout</ThemedText>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push(`/add-exercise?routineId=${routine.id}`)}
           >
@@ -247,6 +273,21 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     marginBottom: 20,
+    gap: 10,
+  },
+  startButton: {
+    backgroundColor: Colors.secondary,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   addButton: {
     backgroundColor: Colors.primary,
@@ -261,6 +302,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  timedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${Colors.primary}15`,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 3,
+  },
+  timedBadgeText: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   exercisesList: {
     paddingBottom: 20,

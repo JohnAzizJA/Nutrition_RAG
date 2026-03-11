@@ -52,6 +52,15 @@ export const ENDPOINTS = {
     DELETE_EXERCISE: (routineId: number, exerciseId: number) => `/api/workouts/${routineId}/exercises/${exerciseId}`,
   },
   
+  // Workout Sessions
+  WORKOUT_SESSIONS: {
+    LIST: '/api/workout-sessions',
+    START: '/api/workout-sessions',
+    GET: (id: number) => `/api/workout-sessions/${id}`,
+    LOG_SET: (id: number) => `/api/workout-sessions/${id}/sets`,
+    END: (id: number) => `/api/workout-sessions/${id}/end`,
+  },
+
   // Calculations
   CALCULATIONS: {
     TARGETS: '/api/calculate-targets',

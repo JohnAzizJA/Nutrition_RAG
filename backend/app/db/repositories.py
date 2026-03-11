@@ -1,5 +1,5 @@
 from db.database import get_db
-from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion
+from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet
 from typing import Optional, List
 from datetime import datetime, date
 
@@ -224,8 +224,9 @@ class WorkoutRepository:
             return routine
     
     def add_exercise(self, routine_id: int, name: str, sets: int, reps: int,
-                     weight_kg: Optional[float] = None, 
-                     rest_time_seconds: Optional[int] = None) -> Exercise:
+                     weight_kg: Optional[float] = None,
+                     rest_time_seconds: Optional[int] = None,
+                     duration_seconds: Optional[int] = None) -> Exercise:
         """Add exercise to routine"""
         with get_db() as db:
             exercise = Exercise(
@@ -234,7 +235,8 @@ class WorkoutRepository:
                 sets=sets,
                 reps=reps,
                 weight_kg=weight_kg,
-                rest_time_seconds=rest_time_seconds
+                rest_time_seconds=rest_time_seconds,
+                duration_seconds=duration_seconds,
             )
             db.add(exercise)
             db.commit()
@@ -551,3 +553,80 @@ class MealPlanRepository:
                 db.commit()
                 return True
             return False
+
+
+class WorkoutSessionRepository:
+    """Repository for WorkoutSession and WorkoutSessionSet operations."""
+
+    def start_session(self, user_id: int, routine_id: int, routine_name: str) -> WorkoutSession:
+        with get_db() as db:
+            session = WorkoutSession(
+                user_id=user_id,
+                routine_id=routine_id,
+                routine_name=routine_name,
+            )
+            db.add(session)
+            db.commit()
+            db.refresh(session)
+            return session
+
+    def log_set(self, session_id: int, user_id: int, exercise_name: str,
+                set_number: int, exercise_id: Optional[int] = None,
+                reps: Optional[int] = None, weight_kg: Optional[float] = None,
+                duration_seconds: Optional[int] = None) -> Optional[WorkoutSessionSet]:
+        with get_db() as db:
+            session = db.query(WorkoutSession).filter(
+                WorkoutSession.id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not session:
+                return None
+            s = WorkoutSessionSet(
+                session_id=session_id,
+                exercise_id=exercise_id,
+                exercise_name=exercise_name,
+                set_number=set_number,
+                reps=reps,
+                weight_kg=weight_kg,
+                duration_seconds=duration_seconds,
+            )
+            db.add(s)
+            db.commit()
+            db.refresh(s)
+            return s
+
+    def end_session(self, session_id: int, user_id: int, duration_seconds: int) -> Optional[WorkoutSession]:
+        with get_db() as db:
+            session = db.query(WorkoutSession).filter(
+                WorkoutSession.id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not session:
+                return None
+            session.ended_at = datetime.now()
+            session.duration_seconds = duration_seconds
+            db.commit()
+            db.refresh(session)
+            return session
+
+    def get_user_sessions(self, user_id: int, limit: int = 20) -> List[WorkoutSession]:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(WorkoutSession)
+                .options(joinedload(WorkoutSession.sets))
+                .filter(WorkoutSession.user_id == user_id)
+                .order_by(WorkoutSession.started_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+    def get_session_by_id(self, session_id: int, user_id: int) -> Optional[WorkoutSession]:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(WorkoutSession)
+                .options(joinedload(WorkoutSession.sets))
+                .filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id)
+                .first()
+            )
