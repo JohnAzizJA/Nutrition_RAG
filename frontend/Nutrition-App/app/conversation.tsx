@@ -127,8 +127,8 @@ export default function ConversationScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
+      behavior="padding"
+      keyboardVerticalOffset={0}
     >
       <ThemedView style={styles.container}>
         {/* Header */}
@@ -259,8 +259,8 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: '30%',
     padding: 32,
   },
   emptyAvatar: {
