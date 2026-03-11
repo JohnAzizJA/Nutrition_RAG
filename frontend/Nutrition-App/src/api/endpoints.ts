@@ -23,6 +23,17 @@ export const ENDPOINTS = {
     DAILY_NUTRITION: '/api/daily-nutrition',
     DELETE_MEAL: (id: number) => `/api/meals/${id}`,
   },
+
+  // Meal Plans
+  MEAL_PLANS: {
+    LIST: '/api/meal-plans',
+    CREATE: '/api/meal-plans',
+    UPDATE: (id: number) => `/api/meal-plans/${id}`,
+    DELETE: (id: number) => `/api/meal-plans/${id}`,
+    ADD_FOOD: (id: number) => `/api/meal-plans/${id}/foods`,
+    REMOVE_FOOD: (id: number, foodId: number) => `/api/meal-plans/${id}/foods/${foodId}`,
+    COMPLETE: (id: number) => `/api/meal-plans/${id}/complete`,
+  },
   
   // Dashboard
   DASHBOARD: {

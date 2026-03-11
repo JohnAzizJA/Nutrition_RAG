@@ -117,3 +117,5 @@ app/(tabs)/calories.tsx
 - **Auth:** The JWT access token expires in 24 hours; refresh token in 30 days. The Axios interceptor handles refresh automatically.
 - **Vector store:** ChromaDB is currently used locally (`chroma_db/`). A migration to Supabase pgvector is planned but not yet implemented.
 - **Plan:** Mark done any steps that are completed in the `plan.md` file.
+
+Edit this file whenever you learn something new about this project that needs remembering.

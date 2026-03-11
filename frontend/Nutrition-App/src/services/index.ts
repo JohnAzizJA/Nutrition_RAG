@@ -5,3 +5,4 @@ export * from './nutritionService';
 export * from './dashboardService';
 export * from './workoutService';
 export * from './calculationService';
+export * from './mealPlanService';

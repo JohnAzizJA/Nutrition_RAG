@@ -1,5 +1,5 @@
 from db.database import get_db
-from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog
+from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion
 from typing import Optional, List
 from datetime import datetime, date
 
@@ -426,3 +426,128 @@ class WaterLogRepository:
                 WaterLog.user_id == user_id,
                 WaterLog.date == target_date
             ).first()
+
+
+class MealPlanRepository:
+    """Repository for MealPlan, MealPlanFood and MealPlanCompletion operations"""
+
+    # ── Plans ─────────────────────────────────────────────────────────────────
+
+    def get_user_plans(self, user_id: int) -> List[MealPlan]:
+        """Return all plans for a user, with foods eagerly loaded."""
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(MealPlan)
+                .options(joinedload(MealPlan.foods))
+                .filter(MealPlan.user_id == user_id)
+                .order_by(MealPlan.created_at.asc())
+                .all()
+            )
+
+    def create_plan(self, user_id: int, name: str) -> MealPlan:
+        with get_db() as db:
+            plan = MealPlan(user_id=user_id, name=name)
+            db.add(plan)
+            db.commit()
+            db.refresh(plan)
+            return plan
+
+    def update_plan(self, plan_id: int, user_id: int, name: str) -> Optional[MealPlan]:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if plan:
+                plan.name = name
+                db.commit()
+                db.refresh(plan)
+            return plan
+
+    def delete_plan(self, plan_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if plan:
+                db.delete(plan)
+                db.commit()
+                return True
+            return False
+
+    # ── Foods ─────────────────────────────────────────────────────────────────
+
+    def add_food(self, plan_id: int, user_id: int, food_name: str,
+                 calories: float, protein_g: float, carbs_g: float,
+                 fat_g: float, grams: Optional[float] = None) -> Optional[MealPlanFood]:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if not plan:
+                return None
+            food = MealPlanFood(
+                plan_id=plan_id,
+                food_name=food_name,
+                calories=calories,
+                protein_g=protein_g,
+                carbs_g=carbs_g,
+                fat_g=fat_g,
+                grams=grams,
+            )
+            db.add(food)
+            db.commit()
+            db.refresh(food)
+            return food
+
+    def remove_food(self, food_id: int, plan_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if not plan:
+                return False
+            food = db.query(MealPlanFood).filter(
+                MealPlanFood.id == food_id, MealPlanFood.plan_id == plan_id
+            ).first()
+            if food:
+                db.delete(food)
+                db.commit()
+                return True
+            return False
+
+    # ── Completions ───────────────────────────────────────────────────────────
+
+    def get_completed_plan_ids(self, user_id: int, target_date: date) -> List[int]:
+        with get_db() as db:
+            rows = db.query(MealPlanCompletion.plan_id).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.date == target_date,
+            ).all()
+            return [r[0] for r in rows]
+
+    def mark_complete(self, user_id: int, plan_id: int, target_date: date) -> bool:
+        with get_db() as db:
+            existing = db.query(MealPlanCompletion).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.plan_id == plan_id,
+                MealPlanCompletion.date == target_date,
+            ).first()
+            if existing:
+                return False  # already marked
+            db.add(MealPlanCompletion(user_id=user_id, plan_id=plan_id, date=target_date))
+            db.commit()
+            return True
+
+    def unmark_complete(self, user_id: int, plan_id: int, target_date: date) -> bool:
+        with get_db() as db:
+            row = db.query(MealPlanCompletion).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.plan_id == plan_id,
+                MealPlanCompletion.date == target_date,
+            ).first()
+            if row:
+                db.delete(row)
+                db.commit()
+                return True
+            return False

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import * as SecureStore from 'expo-secure-store';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { calculationService, userService } from '@/src/services';
+
+const MEAL_PLAN_KEY = 'mealPlanEnabled';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -16,10 +19,17 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState<{visible: boolean, field: string, value: any}>({visible: false, field: '', value: ''});
   const [saving, setSaving] = useState(false);
+  const [mealPlanEnabled, setMealPlanEnabled] = useState(false);
 
   useEffect(() => {
     fetchTargets();
+    SecureStore.getItemAsync(MEAL_PLAN_KEY).then((v: string | null) => setMealPlanEnabled(v === 'true'));
   }, []);
+
+  const toggleMealPlan = async (value: boolean) => {
+    setMealPlanEnabled(value);
+    await SecureStore.setItemAsync(MEAL_PLAN_KEY, value ? 'true' : 'false');
+  };
 
   const handleEdit = (field: string, currentValue: any) => {
     // Convert activity level to exercise days for slider
@@ -206,6 +216,28 @@ export default function ProfileScreen() {
               ))}
             </View>
           )}
+        </View>
+
+        {/* App Settings */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>App Settings</ThemedText>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
+                <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+              </View>
+              <View>
+                <ThemedText style={styles.settingLabel}>Daily Meal Plan</ThemedText>
+                <ThemedText style={styles.settingSubLabel}>Plan your meals ahead of time</ThemedText>
+              </View>
+            </View>
+            <Switch
+              value={mealPlanEnabled}
+              onValueChange={toggleMealPlan}
+              trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
+              thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
+            />
+          </View>
         </View>
 
         {/* Logout Button */}
@@ -517,6 +549,30 @@ const styles = StyleSheet.create({
   saveText: {
     color: Colors.white,
     fontWeight: '600',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 14,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.dark,
+  },
+  settingSubLabel: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
