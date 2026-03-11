@@ -40,10 +40,10 @@ export default function HomeScreen() {
       setTodayNutrition(nutrition);
       const totals = plans.filter(p => p.completed).reduce(
         (acc, p) => ({
-          calories:  acc.calories  + p.total_calories,
+          calories: acc.calories + p.total_calories,
           protein_g: acc.protein_g + p.total_protein_g,
-          carbs_g:   acc.carbs_g   + p.total_carbs_g,
-          fat_g:     acc.fat_g     + p.total_fat_g,
+          carbs_g: acc.carbs_g + p.total_carbs_g,
+          fat_g: acc.fat_g + p.total_fat_g,
         }),
         { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
       );
@@ -84,8 +84,8 @@ export default function HomeScreen() {
   const waterPct = Math.min(1, waterGlasses / WATER_GOAL);
 
   const protein = (todayNutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g;
-  const carbs   = (todayNutrition?.totals?.carbs_g   || 0) + completedPlanTotals.carbs_g;
-  const fat     = (todayNutrition?.totals?.fat_g     || 0) + completedPlanTotals.fat_g;
+  const carbs = (todayNutrition?.totals?.carbs_g || 0) + completedPlanTotals.carbs_g;
+  const fat = (todayNutrition?.totals?.fat_g || 0) + completedPlanTotals.fat_g;
   const macroTotal = protein + carbs + fat || 1;
 
   const workoutsThisWeek: number = dashboardData?.workouts_this_week || 0;
@@ -95,7 +95,7 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Dashboard</ThemedText>
+        <ThemedText type="title" style={styles.title}>Hello, {user?.name}</ThemedText>
         <TouchableOpacity onPress={() => router.push('/profile')}>
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
@@ -187,8 +187,8 @@ export default function HomeScreen() {
                 <View style={styles.macroBreakdown}>
                   {[
                     { label: 'Protein', value: +protein.toFixed(1), color: Colors.iconProtein },
-                    { label: 'Carbs',   value: +carbs.toFixed(1),   color: Colors.iconCarbs },
-                    { label: 'Fats',    value: +fat.toFixed(1),     color: Colors.iconFats },
+                    { label: 'Carbs', value: +carbs.toFixed(1), color: Colors.iconCarbs },
+                    { label: 'Fats', value: +fat.toFixed(1), color: Colors.iconFats },
                   ].map(({ label, value, color }) => (
                     <View key={label} style={styles.macroRow}>
                       <View style={[styles.macroDot, { backgroundColor: color }]} />
