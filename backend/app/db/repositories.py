@@ -1,7 +1,7 @@
 from db.database import get_db
-from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog
+from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet
 from typing import Optional, List
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 class UserRepository:
     """Repository for User database operations"""
@@ -224,8 +224,9 @@ class WorkoutRepository:
             return routine
     
     def add_exercise(self, routine_id: int, name: str, sets: int, reps: int,
-                     weight_kg: Optional[float] = None, 
-                     rest_time_seconds: Optional[int] = None) -> Exercise:
+                     weight_kg: Optional[float] = None,
+                     rest_time_seconds: Optional[int] = None,
+                     duration_seconds: Optional[int] = None) -> Exercise:
         """Add exercise to routine"""
         with get_db() as db:
             exercise = Exercise(
@@ -234,7 +235,8 @@ class WorkoutRepository:
                 sets=sets,
                 reps=reps,
                 weight_kg=weight_kg,
-                rest_time_seconds=rest_time_seconds
+                rest_time_seconds=rest_time_seconds,
+                duration_seconds=duration_seconds,
             )
             db.add(exercise)
             db.commit()
@@ -426,3 +428,266 @@ class WaterLogRepository:
                 WaterLog.user_id == user_id,
                 WaterLog.date == target_date
             ).first()
+
+
+class MealPlanRepository:
+    """Repository for MealPlan, MealPlanFood and MealPlanCompletion operations"""
+
+    # ── Plans ─────────────────────────────────────────────────────────────────
+
+    def get_user_plans(self, user_id: int) -> List[MealPlan]:
+        """Return all plans for a user, with foods eagerly loaded."""
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(MealPlan)
+                .options(joinedload(MealPlan.foods))
+                .filter(MealPlan.user_id == user_id)
+                .order_by(MealPlan.created_at.asc())
+                .all()
+            )
+
+    def create_plan(self, user_id: int, name: str) -> MealPlan:
+        with get_db() as db:
+            plan = MealPlan(user_id=user_id, name=name)
+            db.add(plan)
+            db.commit()
+            db.refresh(plan)
+            return plan
+
+    def update_plan(self, plan_id: int, user_id: int, name: str) -> Optional[MealPlan]:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if plan:
+                plan.name = name
+                db.commit()
+                db.refresh(plan)
+            return plan
+
+    def delete_plan(self, plan_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if plan:
+                db.delete(plan)
+                db.commit()
+                return True
+            return False
+
+    # ── Foods ─────────────────────────────────────────────────────────────────
+
+    def add_food(self, plan_id: int, user_id: int, food_name: str,
+                 calories: float, protein_g: float, carbs_g: float,
+                 fat_g: float, grams: Optional[float] = None) -> Optional[MealPlanFood]:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if not plan:
+                return None
+            food = MealPlanFood(
+                plan_id=plan_id,
+                food_name=food_name,
+                calories=calories,
+                protein_g=protein_g,
+                carbs_g=carbs_g,
+                fat_g=fat_g,
+                grams=grams,
+            )
+            db.add(food)
+            db.commit()
+            db.refresh(food)
+            return food
+
+    def remove_food(self, food_id: int, plan_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            plan = db.query(MealPlan).filter(
+                MealPlan.id == plan_id, MealPlan.user_id == user_id
+            ).first()
+            if not plan:
+                return False
+            food = db.query(MealPlanFood).filter(
+                MealPlanFood.id == food_id, MealPlanFood.plan_id == plan_id
+            ).first()
+            if food:
+                db.delete(food)
+                db.commit()
+                return True
+            return False
+
+    # ── Completions ───────────────────────────────────────────────────────────
+
+    def get_completed_plan_ids(self, user_id: int, target_date: date) -> List[int]:
+        with get_db() as db:
+            rows = db.query(MealPlanCompletion.plan_id).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.date == target_date,
+            ).all()
+            return [r[0] for r in rows]
+
+    def mark_complete(self, user_id: int, plan_id: int, target_date: date) -> bool:
+        with get_db() as db:
+            existing = db.query(MealPlanCompletion).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.plan_id == plan_id,
+                MealPlanCompletion.date == target_date,
+            ).first()
+            if existing:
+                return False  # already marked
+            db.add(MealPlanCompletion(user_id=user_id, plan_id=plan_id, date=target_date))
+            db.commit()
+            return True
+
+    def unmark_complete(self, user_id: int, plan_id: int, target_date: date) -> bool:
+        with get_db() as db:
+            row = db.query(MealPlanCompletion).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.plan_id == plan_id,
+                MealPlanCompletion.date == target_date,
+            ).first()
+            if row:
+                db.delete(row)
+                db.commit()
+                return True
+            return False
+
+    def get_logged_dates(self, user_id: int) -> set:
+        """Return all dates on which user completed any meal plan."""
+        with get_db() as db:
+            rows = db.query(MealPlanCompletion.date).filter(
+                MealPlanCompletion.user_id == user_id
+            ).all()
+            return {r[0] for r in rows}
+
+
+class WorkoutSessionRepository:
+    """Repository for WorkoutSession and WorkoutSessionSet operations."""
+
+    def start_session(self, user_id: int, routine_id: int, routine_name: str) -> WorkoutSession:
+        with get_db() as db:
+            session = WorkoutSession(
+                user_id=user_id,
+                routine_id=routine_id,
+                routine_name=routine_name,
+            )
+            db.add(session)
+            db.commit()
+            db.refresh(session)
+            return session
+
+    def log_set(self, session_id: int, user_id: int, exercise_name: str,
+                set_number: int, exercise_id: Optional[int] = None,
+                reps: Optional[int] = None, weight_kg: Optional[float] = None,
+                duration_seconds: Optional[int] = None) -> Optional[WorkoutSessionSet]:
+        with get_db() as db:
+            session = db.query(WorkoutSession).filter(
+                WorkoutSession.id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not session:
+                return None
+            s = WorkoutSessionSet(
+                session_id=session_id,
+                exercise_id=exercise_id,
+                exercise_name=exercise_name,
+                set_number=set_number,
+                reps=reps,
+                weight_kg=weight_kg,
+                duration_seconds=duration_seconds,
+            )
+            db.add(s)
+            db.commit()
+            db.refresh(s)
+            return s
+
+    def end_session(self, session_id: int, user_id: int, duration_seconds: int) -> Optional[WorkoutSession]:
+        with get_db() as db:
+            session = db.query(WorkoutSession).filter(
+                WorkoutSession.id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not session:
+                return None
+            session.ended_at = datetime.now()
+            session.duration_seconds = duration_seconds
+            db.commit()
+            db.refresh(session)
+            return session
+
+    def get_user_sessions(self, user_id: int, limit: int = 20) -> List[WorkoutSession]:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(WorkoutSession)
+                .options(joinedload(WorkoutSession.sets))
+                .filter(WorkoutSession.user_id == user_id)
+                .order_by(WorkoutSession.started_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+    def get_sessions_this_week(self, user_id: int) -> int:
+        """Count completed workout sessions in the current calendar week (Mon–Sun)."""
+        from datetime import datetime
+        today = datetime.now()
+        week_start = today - timedelta(days=today.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        with get_db() as db:
+            return db.query(WorkoutSession).filter(
+                WorkoutSession.user_id == user_id,
+                WorkoutSession.ended_at.isnot(None),
+                WorkoutSession.ended_at >= week_start,
+            ).count()
+
+    def get_weekly_volume(self, user_id: int, weeks: int = 8) -> List[dict]:
+        """Return total volume (weight_kg × reps) grouped by ISO week for last N weeks."""
+        from datetime import datetime
+        from sqlalchemy import func
+        cutoff = datetime.now() - timedelta(weeks=weeks)
+        with get_db() as db:
+            results = (
+                db.query(
+                    func.date_trunc('week', WorkoutSession.started_at).label('week'),
+                    func.sum(WorkoutSessionSet.weight_kg * WorkoutSessionSet.reps).label('volume'),
+                )
+                .join(WorkoutSessionSet, WorkoutSessionSet.session_id == WorkoutSession.id)
+                .filter(
+                    WorkoutSession.user_id == user_id,
+                    WorkoutSession.started_at >= cutoff,
+                    WorkoutSession.ended_at.isnot(None),
+                    WorkoutSessionSet.weight_kg.isnot(None),
+                    WorkoutSessionSet.reps.isnot(None),
+                )
+                .group_by(func.date_trunc('week', WorkoutSession.started_at))
+                .order_by(func.date_trunc('week', WorkoutSession.started_at))
+                .all()
+            )
+            return [
+                {"week_start": str(r.week.date()), "volume_kg": round(float(r.volume or 0), 1)}
+                for r in results
+            ]
+
+    def delete_session(self, session_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            session = db.query(WorkoutSession).filter(
+                WorkoutSession.id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not session:
+                return False
+            db.delete(session)
+            db.commit()
+            return True
+
+    def get_session_by_id(self, session_id: int, user_id: int) -> Optional[WorkoutSession]:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(WorkoutSession)
+                .options(joinedload(WorkoutSession.sets))
+                .filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id)
+                .first()
+            )

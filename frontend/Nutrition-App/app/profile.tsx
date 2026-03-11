@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import * as SecureStore from 'expo-secure-store';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { calculationService, userService } from '@/src/services';
+
+const MEAL_PLAN_KEY = 'mealPlanEnabled';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -16,10 +19,17 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState<{visible: boolean, field: string, value: any}>({visible: false, field: '', value: ''});
   const [saving, setSaving] = useState(false);
+  const [mealPlanEnabled, setMealPlanEnabled] = useState(false);
 
   useEffect(() => {
     fetchTargets();
+    SecureStore.getItemAsync(MEAL_PLAN_KEY).then((v: string | null) => setMealPlanEnabled(v === 'true'));
   }, []);
+
+  const toggleMealPlan = async (value: boolean) => {
+    setMealPlanEnabled(value);
+    await SecureStore.setItemAsync(MEAL_PLAN_KEY, value ? 'true' : 'false');
+  };
 
   const handleEdit = (field: string, currentValue: any) => {
     // Convert activity level to exercise days for slider
@@ -151,11 +161,11 @@ export default function ProfileScreen() {
             <View style={styles.cardsContainer}>
               {[
                 { label: 'Goal', value: user?.goal?.replace(/_/g, ' ') || 'N/A', icon: 'flag-outline', color: Colors.primary, field: 'goal', editable: true },
-                ...(user?.goal === 'lose_weight' ? [{ label: 'Amount to lose per week', value: `${user?.weight_loss_per_week || 0.5} kg/week`, icon: 'trending-down-outline', color: '#FF9500', field: 'weight_loss_per_week', editable: true }] : []),
-                { label: 'Daily Calories', value: `${targets?.target_calories || 0} kcal`, icon: 'flame-outline', color: '#FF6B6B', editable: false },
-                { label: 'Protein', value: `${targets?.target_protein_g || 0} g`, icon: 'nutrition-outline', color: '#4ECDC4', editable: false },
-                { label: 'Carbs', value: `${targets?.target_carbs_g || 0} g`, icon: 'leaf-outline', color: '#95E1D3', editable: false },
-                { label: 'Fats', value: `${targets?.target_fat_g || 0} g`, icon: 'water-outline', color: '#FFD93D', editable: false },
+                ...(user?.goal === 'lose_weight' ? [{ label: 'Amount to lose per week', value: `${user?.weight_loss_per_week || 0.5} kg/week`, icon: 'trending-down-outline', color: Colors.iconWeightLoss, field: 'weight_loss_per_week', editable: true }] : []),
+                { label: 'Daily Calories', value: `${targets?.target_calories || 0} kcal`, icon: 'flame-outline', color: Colors.iconCalories, editable: false },
+                { label: 'Protein', value: `${targets?.target_protein_g || 0} g`, icon: 'nutrition-outline', color: Colors.iconProtein, editable: false },
+                { label: 'Carbs', value: `${targets?.target_carbs_g || 0} g`, icon: 'leaf-outline', color: Colors.iconCarbs, editable: false },
+                { label: 'Fats', value: `${targets?.target_fat_g || 0} g`, icon: 'water-outline', color: Colors.iconFats, editable: false },
               ].map((goal, index) => (
                 <TouchableOpacity key={index} style={styles.card} onPress={() => goal.editable && handleEdit(goal.field!, user?.[goal.field! as keyof typeof user])}>
                   <View style={styles.cardLeft}>
@@ -167,7 +177,7 @@ export default function ProfileScreen() {
                       <ThemedText style={styles.cardValue}>{goal.value}</ThemedText>
                     </View>
                   </View>
-                  {goal.editable && <Ionicons name="pencil" size={16} color={Colors.secondary} />}
+                  {goal.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
             </View>
@@ -201,22 +211,44 @@ export default function ProfileScreen() {
                       <ThemedText style={styles.cardValue}>{metric.value}</ThemedText>
                     </View>
                   </View>
-                  {metric.editable && <Ionicons name="pencil" size={16} color={Colors.secondary} />}
+                  {metric.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
 
+        {/* App Settings */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>App Settings</ThemedText>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
+                <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+              </View>
+              <View>
+                <ThemedText style={styles.settingLabel}>Daily Meal Plan</ThemedText>
+                <ThemedText style={styles.settingSubLabel}>Plan your meals ahead of time</ThemedText>
+              </View>
+            </View>
+            <Switch
+              value={mealPlanEnabled}
+              onValueChange={toggleMealPlan}
+              trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
+              thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
+            />
+          </View>
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
+          <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
           <ThemedText style={styles.logoutText}>Logout</ThemedText>
         </TouchableOpacity>
 
         {/* Delete Account Button */}
         <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-          <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+          <Ionicons name="trash-outline" size={22} color={Colors.danger} />
           <ThemedText style={styles.deleteText}>Delete Account</ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -271,7 +303,7 @@ export default function ProfileScreen() {
                   value={editModal.value}
                   onValueChange={(value) => setEditModal({...editModal, value})}
                   minimumTrackTintColor={Colors.primary}
-                  maximumTrackTintColor={Colors.secondary}
+                  maximumTrackTintColor={Colors.inactive}
                   thumbTintColor={Colors.primary}
                 />
                 <View style={styles.sliderLabels}>
@@ -290,7 +322,7 @@ export default function ProfileScreen() {
                   value={editModal.value}
                   onValueChange={(value) => setEditModal({...editModal, value})}
                   minimumTrackTintColor={Colors.primary}
-                  maximumTrackTintColor={Colors.secondary}
+                  maximumTrackTintColor={Colors.inactive}
                   thumbTintColor={Colors.primary}
                 />
                 <View style={styles.sliderLabels}>
@@ -336,7 +368,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.secondary,
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
@@ -369,7 +401,7 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
   },
   section: {
     marginBottom: 24,
@@ -407,7 +439,7 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     marginBottom: 2,
   },
   cardValue: {
@@ -418,7 +450,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: Colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -439,7 +471,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -451,7 +483,7 @@ const styles = StyleSheet.create({
   optionButton: {
     padding: 12,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
     borderRadius: 8,
     marginBottom: 8,
     alignItems: 'center',
@@ -489,7 +521,7 @@ const styles = StyleSheet.create({
   },
   sliderLabelText: {
     fontSize: 12,
-    color: Colors.secondary,
+    color: Colors.textMuted,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -500,7 +532,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
     alignItems: 'center',
   },
   saveButton: {
@@ -511,12 +543,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelText: {
-    color: Colors.secondary,
+    color: Colors.textMuted,
     fontWeight: '600',
   },
   saveText: {
     color: Colors.white,
     fontWeight: '600',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 14,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.dark,
+  },
+  settingSubLabel: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
@@ -532,7 +588,7 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF3B30',
+    color: Colors.danger,
   },
   deleteButton: {
     flexDirection: 'row',
@@ -545,11 +601,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 40,
     borderWidth: 1,
-    borderColor: '#FF3B30',
+    borderColor: Colors.danger,
   },
   deleteText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF3B30',
+    color: Colors.danger,
   },
 });

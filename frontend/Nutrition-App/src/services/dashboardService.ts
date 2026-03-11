@@ -1,9 +1,17 @@
 import axios from '@/src/api/axios';
 import { ENDPOINTS } from '@/src/api/endpoints';
 
+export interface WeightHistoryPoint {
+  date: string;
+  weight_kg: number;
+}
+
 export interface DashboardData {
   streak: number;
   water_intake: number;
+  workouts_this_week: number;
+  workouts_goal: number;
+  weight_history: WeightHistoryPoint[];
 }
 
 export const dashboardService = {

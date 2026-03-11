@@ -1,33 +1,53 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, FlatList, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, FlatList, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
-import { useAuth } from '@/src/contexts/AuthContext';
-import { workoutService, WorkoutRoutine } from '@/src/services';
+import { workoutService, workoutSessionService, WorkoutRoutine, WorkoutSession } from '@/src/services';
 import { Swipeable } from 'react-native-gesture-handler';
+
+// ─── Format helpers ───────────────────────────────────────────────────────────
+
+const formatDuration = (seconds?: number) => {
+  if (!seconds) return '—';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m >= 60) return `${Math.floor(m / 60)}h ${m % 60}m`;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+};
+
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function WorkoutsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      fetchRoutines();
+      fetchAll();
     }, [])
   );
 
-  const fetchRoutines = async () => {
+  const fetchAll = async () => {
     try {
-      const data = await workoutService.getRoutines();
-      setRoutines(data);
+      const [r, s] = await Promise.all([
+        workoutService.getRoutines(),
+        workoutSessionService.getSessions(),
+      ]);
+      setRoutines(r);
+      setSessions(s.filter(sess => !!sess.ended_at));
     } catch (error) {
-      console.error('Failed to fetch routines:', error);
+      console.error('Failed to fetch workout data:', error);
     } finally {
       setLoading(false);
     }
@@ -36,44 +56,156 @@ export default function WorkoutsScreen() {
   const deleteRoutine = async (routineId: number) => {
     try {
       await workoutService.deleteRoutine(routineId);
-      fetchRoutines();
-    } catch (error) {
+      fetchAll();
+    } catch {
       Alert.alert('Error', 'Failed to delete routine');
     }
   };
 
-  const renderDeleteAction = (routineId: number) => (
-    <TouchableOpacity 
-      style={styles.deleteAction}
-      onPress={() => deleteRoutine(routineId)}
-    >
+  const deleteSession = async (sessionId: number) => {
+    try {
+      await workoutSessionService.deleteSession(sessionId);
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+    } catch {
+      Alert.alert('Error', 'Failed to delete workout');
+    }
+  };
+
+  const renderDeleteAction = (onPress: () => void) => (
+    <TouchableOpacity style={styles.deleteAction} onPress={onPress}>
       <Ionicons name="trash" size={20} color={Colors.white} />
     </TouchableOpacity>
   );
 
   const renderRoutine = ({ item }: { item: WorkoutRoutine }) => (
-    <Swipeable
-      renderRightActions={() => renderDeleteAction(item.id)}
-    >
-      <TouchableOpacity 
+    <Swipeable renderRightActions={() => renderDeleteAction(() => deleteRoutine(item.id))}>
+      <TouchableOpacity
         style={styles.routineCard}
         onPress={() => router.push(`/workout-detail?id=${item.id}`)}
       >
         <View style={styles.routineHeader}>
           <ThemedText style={styles.routineName}>{item.name}</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color={Colors.secondary} />
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </View>
         {item.description && (
           <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
         )}
-        <View style={styles.routineStats}>
+        <View style={styles.routineFooter}>
           <View style={styles.statItem}>
             <Ionicons name="fitness" size={16} color={Colors.primary} />
             <ThemedText style={styles.statText}>{item.exercise_count} exercises</ThemedText>
           </View>
+          {(item.exercise_count ?? 0) > 0 && (
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                router.push(`/active-workout?routineId=${item.id}&routineName=${encodeURIComponent(item.name)}`);
+              }}
+            >
+              <Ionicons name="play" size={14} color={Colors.white} />
+              <ThemedText style={styles.startButtonText}>Start</ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </Swipeable>
+  );
+
+  const renderSession = (item: WorkoutSession) => (
+    <Swipeable renderRightActions={() => renderDeleteAction(() => deleteSession(item.id))}>
+      <View style={styles.sessionCard}>
+        <View style={styles.sessionHeader}>
+          <ThemedText style={styles.sessionName}>{item.routine_name}</ThemedText>
+          <ThemedText style={styles.sessionDate}>{formatDate(item.started_at)}</ThemedText>
+        </View>
+
+        <View style={styles.sessionStats}>
+          <View style={styles.sessionStat}>
+            <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
+            <ThemedText style={styles.sessionStatText}>{formatDuration(item.duration_seconds)}</ThemedText>
+          </View>
+          {(item.total_volume_kg ?? 0) > 0 && (
+            <View style={styles.sessionStat}>
+              <Ionicons name="barbell-outline" size={13} color={Colors.textMuted} />
+              <ThemedText style={styles.sessionStatText}>
+                {(item.total_volume_kg ?? 0) >= 1000
+                  ? `${((item.total_volume_kg ?? 0) / 1000).toFixed(1)}t`
+                  : `${item.total_volume_kg}kg`} vol
+              </ThemedText>
+            </View>
+          )}
+          <View style={styles.sessionStat}>
+            <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
+            <ThemedText style={styles.sessionStatText}>{item.set_count} sets</ThemedText>
+          </View>
+        </View>
+
+        {item.exercises_summary && item.exercises_summary.length > 0 && (
+          <View style={styles.exercisePills}>
+            {item.exercises_summary.map(ex => (
+              <View key={ex.name} style={styles.exercisePill}>
+                <ThemedText style={styles.exercisePillText}>
+                  {ex.name} × {ex.sets_logged}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </Swipeable>
+  );
+
+  const ListHeader = () => (
+    <>
+      {/* Volume Chart */}
+      <View style={styles.chartCard}>
+        <ThemedText style={styles.chartTitle}>Weekly Volume</ThemedText>
+        <View style={{ height: 80, justifyContent: 'center', alignItems: 'center' }}>
+          <ThemedText style={{ fontSize: 13, color: Colors.textMuted }}>Graph coming soon</ThemedText>
+        </View>
+      </View>
+
+      {/* Routines section */}
+      <View style={styles.sectionHeader}>
+        <ThemedText style={styles.sectionTitle}>My Routines</ThemedText>
+      </View>
+
+      {routines.length === 0 && (
+        <View style={styles.emptyRoutines}>
+          <Ionicons name="barbell-outline" size={48} color={Colors.inactive} />
+          <ThemedText style={styles.emptyTitle}>No Routines Yet</ThemedText>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => router.push('/create-workout')}
+          >
+            <ThemedText style={styles.createButtonText}>Create Routine</ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
+    </>
+  );
+
+  const ListFooter = () => (
+    <>
+      <View style={[styles.sectionHeader, { marginTop: 8 }]}>
+        <ThemedText style={styles.sectionTitle}>Workout History</ThemedText>
+      </View>
+
+      {sessions.length === 0 ? (
+        <View style={styles.emptyHistory}>
+          <ThemedText style={styles.emptyHistoryText}>No completed workouts yet</ThemedText>
+        </View>
+      ) : (
+        sessions.map(s => (
+          <View key={s.id}>
+            {renderSession(s)}
+          </View>
+        ))
+      )}
+
+      <View style={{ height: 100 }} />
+    </>
   );
 
   if (loading) {
@@ -100,40 +232,24 @@ export default function WorkoutsScreen() {
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
       </View>
-      
-      <View style={styles.content}>
-        {routines.length > 0 ? (
-          <>
-            <FlatList
-              data={routines}
-              renderItem={renderRoutine}
-              keyExtractor={(item) => item.id.toString()}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContainer}
-            />
-            
-            <TouchableOpacity 
-              style={styles.newWorkoutButton}
-              onPress={() => router.push('/create-workout')}
-            >
-              <Ionicons name="add" size={28} color={Colors.white} />
-            </TouchableOpacity>
-          </>
-        ) : (
-          <View style={styles.emptyState}>
-            <Ionicons name="barbell-outline" size={64} color={Colors.secondary} />
-            <ThemedText style={styles.emptyTitle}>No Workout Routines</ThemedText>
-            <ThemedText style={styles.emptyText}>Create your first workout routine to get started</ThemedText>
-            <TouchableOpacity 
-              style={styles.createButton}
-              onPress={() => router.push('/create-workout')}
-            >
-              <Ionicons name="add" size={24} color={Colors.white} />
-              <ThemedText style={styles.createButtonText}>Create New Routine</ThemedText>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+
+      <FlatList
+        data={routines}
+        renderItem={renderRoutine}
+        keyExtractor={(item) => item.id.toString()}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={<ListHeader />}
+        ListFooterComponent={<ListFooter />}
+      />
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/create-workout')}
+      >
+        <Ionicons name="add" size={28} color={Colors.white} />
+      </TouchableOpacity>
     </ThemedView>
   );
 }
@@ -156,32 +272,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.dark,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  createButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
+  listContainer: {
+    paddingHorizontal: 20,
+  },
+  chartCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
   },
-  createButtonText: {
-    color: Colors.white,
-    fontSize: 16,
+  chartTitle: {
+    fontSize: 15,
     fontWeight: '600',
-    marginLeft: 8,
+    color: Colors.dark,
+    marginBottom: 4,
   },
-  listContainer: {
-    paddingBottom: 20,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.dark,
   },
   routineCard: {
     backgroundColor: Colors.white,
@@ -196,60 +316,136 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   routineName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: Colors.dark,
   },
   routineDescription: {
-    fontSize: 14,
-    color: Colors.secondary,
-    marginBottom: 12,
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginBottom: 10,
   },
-  routineStats: {
+  routineFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
   },
   statText: {
-    fontSize: 14,
-    color: Colors.secondary,
+    fontSize: 13,
+    color: Colors.textMuted,
     marginLeft: 4,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+  startButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    backgroundColor: Colors.secondary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.dark,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: Colors.secondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
+  startButtonText: {
+    color: Colors.white,
+    fontSize: 13,
+    fontWeight: '600',
   },
   deleteAction: {
-    backgroundColor: '#EF5350',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
     borderRadius: 12,
     marginBottom: 12,
   },
-  newWorkoutButton: {
+  emptyRoutines: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    color: Colors.textMuted,
+    marginTop: 10,
+    marginBottom: 14,
+  },
+  createButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  createButtonText: {
+    color: Colors.white,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  sessionCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+  },
+  sessionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  sessionName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.dark,
+    flex: 1,
+  },
+  sessionDate: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginLeft: 8,
+  },
+  sessionStats: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  sessionStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sessionStatText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  exercisePills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  exercisePill: {
+    backgroundColor: Colors.background,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  exercisePillText: {
+    fontSize: 11,
+    color: Colors.dark,
+  },
+  emptyHistory: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  emptyHistoryText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  fab: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 20,
     right: 20,
     backgroundColor: Colors.primary,
     borderRadius: 30,
@@ -258,7 +454,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

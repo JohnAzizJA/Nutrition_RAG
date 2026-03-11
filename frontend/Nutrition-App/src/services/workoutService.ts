@@ -8,6 +8,7 @@ export interface Exercise {
   reps: number;
   weight_kg?: number;
   rest_time_seconds?: number;
+  duration_seconds?: number;
 }
 
 export interface WorkoutRoutine {
@@ -30,6 +31,7 @@ export interface AddExerciseRequest {
   reps: number;
   weight_kg?: number;
   rest_time_seconds?: number;
+  duration_seconds?: number;
 }
 
 export const workoutService = {

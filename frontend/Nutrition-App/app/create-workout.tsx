@@ -60,7 +60,7 @@ export default function CreateWorkoutScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Enter routine name"
-            placeholderTextColor={Colors.secondary}
+            placeholderTextColor={Colors.placeholder}
             maxLength={100}
           />
         </View>
@@ -72,7 +72,7 @@ export default function CreateWorkoutScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Describe your workout routine"
-            placeholderTextColor={Colors.secondary}
+            placeholderTextColor={Colors.placeholder}
             multiline
             numberOfLines={4}
             maxLength={500}
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.secondary,
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.dark,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
   },
   textArea: {
     minHeight: 100,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 14,
-    color: Colors.secondary,
+    color: Colors.textMuted,
     textAlign: 'center',
     fontStyle: 'italic',
   },

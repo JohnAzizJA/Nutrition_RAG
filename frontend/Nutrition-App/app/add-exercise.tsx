@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
@@ -11,11 +11,16 @@ export default function AddExerciseScreen() {
   const router = useRouter();
   const { routineId } = useLocalSearchParams();
   const [name, setName] = useState('');
+  const [isTimed, setIsTimed] = useState(false);
+  // Strength fields
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
   const [restMinutes, setRestMinutes] = useState('');
   const [restSeconds, setRestSeconds] = useState('');
+  // Timed fields
+  const [durationMinutes, setDurationMinutes] = useState('');
+  const [durationSeconds, setDurationSeconds] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAddExercise = async () => {
@@ -23,15 +28,41 @@ export default function AddExerciseScreen() {
       Alert.alert('Error', 'Please enter exercise name');
       return;
     }
-    
+
+    if (isTimed) {
+      const durMin = parseInt(durationMinutes) || 0;
+      const durSec = parseInt(durationSeconds) || 0;
+      const totalDuration = durMin * 60 + durSec;
+      if (totalDuration <= 0) {
+        Alert.alert('Error', 'Please enter a valid duration');
+        return;
+      }
+      setLoading(true);
+      try {
+        await workoutService.addExercise(Number(routineId), {
+          name: name.trim(),
+          sets: 1,
+          reps: 1,
+          duration_seconds: totalDuration,
+        });
+        Alert.alert('Success', 'Exercise added successfully', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } catch {
+        Alert.alert('Error', 'Failed to add exercise');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const setsNum = parseInt(sets);
     const repsNum = parseInt(reps);
-    
+
     if (!setsNum || setsNum <= 0) {
       Alert.alert('Error', 'Please enter valid number of sets');
       return;
     }
-    
     if (!repsNum || repsNum <= 0) {
       Alert.alert('Error', 'Please enter valid number of reps');
       return;
@@ -40,7 +71,7 @@ export default function AddExerciseScreen() {
     const weightNum = weight ? parseFloat(weight) : undefined;
     const restMin = parseInt(restMinutes) || 0;
     const restSec = parseInt(restSeconds) || 0;
-    const totalRestSeconds = (restMin * 60) + restSec;
+    const totalRestSeconds = restMin * 60 + restSec;
 
     setLoading(true);
     try {
@@ -49,13 +80,12 @@ export default function AddExerciseScreen() {
         sets: setsNum,
         reps: repsNum,
         weight_kg: weightNum,
-        rest_time_seconds: totalRestSeconds > 0 ? totalRestSeconds : undefined
+        rest_time_seconds: totalRestSeconds > 0 ? totalRestSeconds : undefined,
       });
-      
       Alert.alert('Success', 'Exercise added successfully', [
         { text: 'OK', onPress: () => router.back() }
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to add exercise');
     } finally {
       setLoading(false);
@@ -76,90 +106,135 @@ export default function AddExerciseScreen() {
         <View style={styles.iconContainer}>
           <Ionicons name="fitness" size={64} color={Colors.primary} />
         </View>
-        
+
         <ThemedText style={styles.title}>Add New Exercise</ThemedText>
-        
+
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>Exercise Name *</ThemedText>
           <TextInput
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholder="e.g., Push-ups, Squats, Bench Press"
-            placeholderTextColor={Colors.secondary}
+            placeholder="e.g., Push-ups, Squats, Plank"
+            placeholderTextColor={Colors.placeholder}
             maxLength={100}
           />
         </View>
-        
-        <View style={styles.row}>
-          <View style={[styles.inputContainer, styles.halfWidth]}>
-            <ThemedText style={styles.label}>Sets *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={sets}
-              onChangeText={setSets}
-              placeholder="3"
-              placeholderTextColor={Colors.secondary}
-              keyboardType="numeric"
-              maxLength={2}
-            />
+
+        {/* Timed exercise toggle */}
+        <View style={styles.toggleRow}>
+          <View>
+            <ThemedText style={styles.label}>Timed Exercise</ThemedText>
+            <ThemedText style={styles.toggleSubtext}>Uses a countdown timer instead of sets/reps</ThemedText>
           </View>
-          
-          <View style={[styles.inputContainer, styles.halfWidth]}>
-            <ThemedText style={styles.label}>Reps *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={reps}
-              onChangeText={setReps}
-              placeholder="12"
-              placeholderTextColor={Colors.secondary}
-              keyboardType="numeric"
-              maxLength={3}
-            />
-          </View>
-        </View>
-        
-        <View style={styles.inputContainer}>
-          <ThemedText style={styles.label}>Weight (kg) - Optional</ThemedText>
-          <TextInput
-            style={styles.input}
-            value={weight}
-            onChangeText={setWeight}
-            placeholder="Enter weight in kg"
-            placeholderTextColor={Colors.secondary}
-            keyboardType="decimal-pad"
-            maxLength={6}
+          <Switch
+            value={isTimed}
+            onValueChange={setIsTimed}
+            trackColor={{ false: Colors.border, true: Colors.primary }}
+            thumbColor={Colors.white}
           />
         </View>
-        
-        <View style={styles.inputContainer}>
-          <ThemedText style={styles.label}>Rest Time - Optional</ThemedText>
-          <View style={styles.row}>
-            <View style={[styles.halfWidth, { marginRight: 8 }]}>
-              <TextInput
-                style={styles.input}
-                value={restMinutes}
-                onChangeText={setRestMinutes}
-                placeholder="Minutes"
-                placeholderTextColor={Colors.secondary}
-                keyboardType="numeric"
-                maxLength={2}
-              />
-            </View>
-            <View style={styles.halfWidth}>
-              <TextInput
-                style={styles.input}
-                value={restSeconds}
-                onChangeText={setRestSeconds}
-                placeholder="Seconds"
-                placeholderTextColor={Colors.secondary}
-                keyboardType="numeric"
-                maxLength={2}
-              />
+
+        {isTimed ? (
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.label}>Duration *</ThemedText>
+            <View style={styles.row}>
+              <View style={[styles.halfWidth, { marginRight: 8 }]}>
+                <TextInput
+                  style={styles.input}
+                  value={durationMinutes}
+                  onChangeText={setDurationMinutes}
+                  placeholder="Minutes"
+                  placeholderTextColor={Colors.placeholder}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+              </View>
+              <View style={styles.halfWidth}>
+                <TextInput
+                  style={styles.input}
+                  value={durationSeconds}
+                  onChangeText={setDurationSeconds}
+                  placeholder="Seconds"
+                  placeholderTextColor={Colors.placeholder}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+              </View>
             </View>
           </View>
-        </View>
-        
+        ) : (
+          <>
+            <View style={styles.row}>
+              <View style={[styles.inputContainer, styles.halfWidth]}>
+                <ThemedText style={styles.label}>Sets *</ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={sets}
+                  onChangeText={setSets}
+                  placeholder="3"
+                  placeholderTextColor={Colors.placeholder}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+              </View>
+              <View style={[styles.inputContainer, styles.halfWidth]}>
+                <ThemedText style={styles.label}>Reps *</ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={reps}
+                  onChangeText={setReps}
+                  placeholder="12"
+                  placeholderTextColor={Colors.placeholder}
+                  keyboardType="numeric"
+                  maxLength={3}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>Weight (kg) - Optional</ThemedText>
+              <TextInput
+                style={styles.input}
+                value={weight}
+                onChangeText={setWeight}
+                placeholder="Enter weight in kg"
+                placeholderTextColor={Colors.placeholder}
+                keyboardType="decimal-pad"
+                maxLength={6}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>Rest Time - Optional</ThemedText>
+              <View style={styles.row}>
+                <View style={[styles.halfWidth, { marginRight: 8 }]}>
+                  <TextInput
+                    style={styles.input}
+                    value={restMinutes}
+                    onChangeText={setRestMinutes}
+                    placeholder="Minutes"
+                    placeholderTextColor={Colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </View>
+                <View style={styles.halfWidth}>
+                  <TextInput
+                    style={styles.input}
+                    value={restSeconds}
+                    onChangeText={setRestSeconds}
+                    placeholder="Seconds"
+                    placeholderTextColor={Colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </View>
+              </View>
+            </View>
+          </>
+        )}
+
         <TouchableOpacity
           style={[styles.addButton, loading && styles.buttonDisabled]}
           onPress={handleAddExercise}
@@ -187,7 +262,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.secondary,
+    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: 18,
@@ -225,7 +300,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.dark,
     borderWidth: 1,
-    borderColor: Colors.secondary,
+    borderColor: Colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -235,6 +310,22 @@ const styles = StyleSheet.create({
   halfWidth: {
     flex: 1,
   },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  toggleSubtext: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
   addButton: {
     backgroundColor: Colors.primary,
     borderRadius: 12,
@@ -242,6 +333,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     alignItems: 'center',
     marginTop: 20,
+    marginBottom: 40,
   },
   addButtonText: {
     color: Colors.white,
