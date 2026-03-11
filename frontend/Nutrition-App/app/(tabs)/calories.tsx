@@ -48,10 +48,8 @@ export default function CaloriesScreen() {
       ]);
       setTargets(targetsData);
       setNutrition(nutritionData);
-      if (enabled) {
-        const plansData = await mealPlanService.getPlans(dateStr);
-        setPlans(plansData);
-      }
+      const plansData = await mealPlanService.getPlans(dateStr);
+      setPlans(plansData);
     } catch (e) {
       console.error('Failed to fetch data:', e);
     } finally {
@@ -121,6 +119,17 @@ export default function CaloriesScreen() {
     };
   };
 
+  // ── Completed plan macro contribution ─────────────────────────────────────
+  const completedPlanTotals = plans.filter(p => p.completed).reduce(
+    (acc, p) => ({
+      calories:  acc.calories  + p.total_calories,
+      protein_g: acc.protein_g + p.total_protein_g,
+      carbs_g:   acc.carbs_g   + p.total_carbs_g,
+      fat_g:     acc.fat_g     + p.total_fat_g,
+    }),
+    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+  );
+
   // ── Shared top section ─────────────────────────────────────────────────────
   const TopSection = (
     <>
@@ -162,10 +171,10 @@ export default function CaloriesScreen() {
 
       <View style={styles.macroGrid}>
         {[
-          { label: 'Calories', current: nutrition?.totals?.calories || 0, target: targets?.target_calories || 0, unit: 'kcal', color: Colors.iconCalories },
-          { label: 'Protein',  current: nutrition?.totals?.protein_g || 0, target: targets?.target_protein_g || 0, unit: 'g', color: Colors.iconProtein },
-          { label: 'Carbs',    current: nutrition?.totals?.carbs_g || 0,   target: targets?.target_carbs_g || 0,   unit: 'g', color: Colors.iconCarbs },
-          { label: 'Fats',     current: nutrition?.totals?.fat_g || 0,     target: targets?.target_fat_g || 0,     unit: 'g', color: Colors.iconFats },
+          { label: 'Calories', current: (nutrition?.totals?.calories || 0) + completedPlanTotals.calories,  target: targets?.target_calories  || 0, unit: 'kcal', color: Colors.iconCalories },
+          { label: 'Protein',  current: (nutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g, target: targets?.target_protein_g || 0, unit: 'g',    color: Colors.iconProtein },
+          { label: 'Carbs',    current: (nutrition?.totals?.carbs_g   || 0) + completedPlanTotals.carbs_g,   target: targets?.target_carbs_g   || 0, unit: 'g',    color: Colors.iconCarbs },
+          { label: 'Fats',     current: (nutrition?.totals?.fat_g     || 0) + completedPlanTotals.fat_g,     target: targets?.target_fat_g     || 0, unit: 'g',    color: Colors.iconFats },
         ].map(({ label, current, target, unit, color }) => {
           const pct = target > 0 ? Math.min(1, current / target) : 0;
           const isOver = target > 0 && current > target;
@@ -221,43 +230,49 @@ export default function CaloriesScreen() {
               </View>
             ) : (
               plans.map(plan => (
-                <View key={plan.id} style={[styles.planCard, plan.completed && styles.planCardDone]}>
-                  <View style={styles.planCardHeader}>
-                    <TouchableOpacity style={styles.checkBtn} onPress={() => togglePlanComplete(plan)}>
-                      <Ionicons
-                        name={plan.completed ? 'checkmark-circle' : 'ellipse-outline'}
-                        size={26}
-                        color={plan.completed ? Colors.primary : Colors.inactive}
-                      />
+                <Swipeable
+                  key={plan.id}
+                  renderRightActions={() => (
+                    <TouchableOpacity style={styles.planDeleteAction} onPress={() => deletePlan(plan.id)}>
+                      <Ionicons name="trash-outline" size={20} color={Colors.white} />
                     </TouchableOpacity>
-                    <View style={styles.planCardTitle}>
-                      <ThemedText style={[styles.planName, plan.completed && styles.planNameDone]}>
-                        {plan.name}
-                      </ThemedText>
-                      <ThemedText style={styles.planTotals}>
-                        {Math.round(plan.total_calories)} kcal · {plan.total_protein_g}g P · {plan.total_carbs_g}g C
-                      </ThemedText>
-                    </View>
-                    <View style={styles.planActions}>
+                  )}
+                >
+                  <View style={[styles.planCard, plan.completed && styles.planCardDone]}>
+                    <View style={styles.planCardHeader}>
+                      <TouchableOpacity style={styles.checkBtn} onPress={() => togglePlanComplete(plan)}>
+                        <Ionicons
+                          name={plan.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={26}
+                          color={plan.completed ? Colors.primary : Colors.inactive}
+                        />
+                      </TouchableOpacity>
+                      <View style={styles.planCardTitle}>
+                        <ThemedText style={[styles.planName, plan.completed && styles.planNameDone]}>
+                          {plan.name}
+                        </ThemedText>
+                        <ThemedText style={styles.planTotals}>
+                          {Math.round(plan.total_calories)} kcal · {plan.total_protein_g}g P · {plan.total_carbs_g}g C
+                        </ThemedText>
+                      </View>
                       <TouchableOpacity onPress={() => router.push({
                         pathname: '/create-meal-plan' as any,
                         params: { planId: plan.id, planName: plan.name },
                       })}>
                         <Ionicons name="pencil-outline" size={18} color={Colors.textMuted} />
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deletePlan(plan.id)}>
-                        <Ionicons name="trash-outline" size={18} color={Colors.danger} />
-                      </TouchableOpacity>
                     </View>
-                  </View>
 
-                  {plan.foods.map(food => (
-                    <View key={food.id} style={styles.planFoodRow}>
-                      <ThemedText style={styles.planFoodName} numberOfLines={1}>{food.food_name}</ThemedText>
-                      <ThemedText style={styles.planFoodCal}>{Math.round(food.calories)} kcal</ThemedText>
-                    </View>
-                  ))}
-                </View>
+                    {plan.foods.map(food => (
+                      <View key={food.id} style={styles.planFoodRow}>
+                        <ThemedText style={styles.planFoodName} numberOfLines={1}>{food.food_name}</ThemedText>
+                        <ThemedText style={styles.planFoodMeta}>
+                          {food.grams ? `${Math.round(food.grams)}g · ` : ''}{Math.round(food.calories)} kcal
+                        </ThemedText>
+                      </View>
+                    ))}
+                  </View>
+                </Swipeable>
               ))
             )}
           </View>
@@ -442,5 +457,13 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
   planFoodName: { fontSize: 13, color: Colors.dark, flex: 1 },
-  planFoodCal: { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
+  planFoodMeta: { fontSize: 12, color: Colors.textMuted, fontWeight: '600' },
+  planDeleteAction: {
+    backgroundColor: Colors.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 14,
+    marginBottom: 14,
+  },
 });
