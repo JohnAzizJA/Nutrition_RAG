@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, EmailStr, field_validator
-from db.repositories import UserRepository
+from db.repositories import UserRepository, WeightLogRepository
 from auth.utils import hash_password, verify_password, create_access_token, create_refresh_token, decode_refresh_token
 from auth.middleware import get_current_user
 from db.models import User
@@ -9,6 +9,7 @@ import re
 
 router = APIRouter()
 user_repo = UserRepository()
+weight_log_repo = WeightLogRepository()
 
 # Request/Response Schemas
 class RegisterRequest(BaseModel):
@@ -167,6 +168,7 @@ async def logout():
 async def update_profile(request: UpdateProfileRequest, current_user: User = Depends(get_current_user)):
     """Update user profile"""
     try:
+        weight_changed = request.weight_kg != current_user.weight_kg
         updated_user = user_repo.update(
             current_user.id,
             age=request.age,
@@ -178,6 +180,8 @@ async def update_profile(request: UpdateProfileRequest, current_user: User = Dep
             goal_weight_kg=request.goal_weight_kg,
             weight_loss_per_week=request.weight_loss_per_week
         )
+        if weight_changed:
+            weight_log_repo.create(current_user.id, request.weight_kg)
         return UserResponse.model_validate(updated_user)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Profile update failed: {str(e)}")

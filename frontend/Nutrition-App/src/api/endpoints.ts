@@ -59,6 +59,8 @@ export const ENDPOINTS = {
     GET: (id: number) => `/api/workout-sessions/${id}`,
     LOG_SET: (id: number) => `/api/workout-sessions/${id}/sets`,
     END: (id: number) => `/api/workout-sessions/${id}/end`,
+    VOLUME_HISTORY: '/api/workout-sessions/volume-history',
+    DELETE: (id: number) => `/api/workout-sessions/${id}`,
   },
 
   // Calculations

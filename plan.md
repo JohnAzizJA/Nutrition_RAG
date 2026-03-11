@@ -37,10 +37,10 @@
 ## Phase 4: Enhanced Nutrition & Active Workout Tracking UI/UX
 * [x] **Nutrition Enhancement:** Support alternative food units (grams, pieces, ml).
 * [x] **Nutrition Enhancement:** Implement Pre-set Meals feature for one-tap logging of recurring meals.
-* [ ] **Workout Engine:** Implement Active Workout Mode (live session logging, adding sets, reps, weight in lbs/kgs, duration stopwatch).
-* [ ] **Workout Configuration:** Add support for time-based exercise timers.
-* [ ] **Workout Analytics:** Build screens to view workout history, routine volume over time, and exercise-specific volume progression.
-* [ ] **Dashboard Enhancement:** Add tracking for "workouts this week" and "step count".
+* [x] **Workout Engine:** Implement Active Workout Mode (live session logging, adding sets, reps, weight in lbs/kgs, duration stopwatch).
+* [x] **Workout Configuration:** Add support for time-based exercise timers.
+* [x] **Workout Historys:** Build screens to view workout history.
+* [x] **Dashboard Enhancement:** Add tracking for "workouts this week" and "step count".
 
 ## Phase 5: Social & Gamification Features
 * [ ] **Social Engine:** Allow users to follow each other and view activities.

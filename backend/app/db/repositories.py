@@ -1,7 +1,7 @@
 from db.database import get_db
 from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet
 from typing import Optional, List
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 class UserRepository:
     """Repository for User database operations"""
@@ -554,6 +554,14 @@ class MealPlanRepository:
                 return True
             return False
 
+    def get_logged_dates(self, user_id: int) -> set:
+        """Return all dates on which user completed any meal plan."""
+        with get_db() as db:
+            rows = db.query(MealPlanCompletion.date).filter(
+                MealPlanCompletion.user_id == user_id
+            ).all()
+            return {r[0] for r in rows}
+
 
 class WorkoutSessionRepository:
     """Repository for WorkoutSession and WorkoutSessionSet operations."""
@@ -620,6 +628,59 @@ class WorkoutSessionRepository:
                 .limit(limit)
                 .all()
             )
+
+    def get_sessions_this_week(self, user_id: int) -> int:
+        """Count completed workout sessions in the current calendar week (Mon–Sun)."""
+        from datetime import datetime
+        today = datetime.now()
+        week_start = today - timedelta(days=today.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        with get_db() as db:
+            return db.query(WorkoutSession).filter(
+                WorkoutSession.user_id == user_id,
+                WorkoutSession.ended_at.isnot(None),
+                WorkoutSession.ended_at >= week_start,
+            ).count()
+
+    def get_weekly_volume(self, user_id: int, weeks: int = 8) -> List[dict]:
+        """Return total volume (weight_kg × reps) grouped by ISO week for last N weeks."""
+        from datetime import datetime
+        from sqlalchemy import func
+        cutoff = datetime.now() - timedelta(weeks=weeks)
+        with get_db() as db:
+            results = (
+                db.query(
+                    func.date_trunc('week', WorkoutSession.started_at).label('week'),
+                    func.sum(WorkoutSessionSet.weight_kg * WorkoutSessionSet.reps).label('volume'),
+                )
+                .join(WorkoutSessionSet, WorkoutSessionSet.session_id == WorkoutSession.id)
+                .filter(
+                    WorkoutSession.user_id == user_id,
+                    WorkoutSession.started_at >= cutoff,
+                    WorkoutSession.ended_at.isnot(None),
+                    WorkoutSessionSet.weight_kg.isnot(None),
+                    WorkoutSessionSet.reps.isnot(None),
+                )
+                .group_by(func.date_trunc('week', WorkoutSession.started_at))
+                .order_by(func.date_trunc('week', WorkoutSession.started_at))
+                .all()
+            )
+            return [
+                {"week_start": str(r.week.date()), "volume_kg": round(float(r.volume or 0), 1)}
+                for r in results
+            ]
+
+    def delete_session(self, session_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            session = db.query(WorkoutSession).filter(
+                WorkoutSession.id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not session:
+                return False
+            db.delete(session)
+            db.commit()
+            return True
 
     def get_session_by_id(self, session_id: int, user_id: int) -> Optional[WorkoutSession]:
         with get_db() as db:

@@ -11,6 +11,16 @@ export interface WorkoutSessionSet {
   completed_at: string;
 }
 
+export interface ExerciseSummary {
+  name: string;
+  sets_logged: number;
+}
+
+export interface VolumeHistoryPoint {
+  week_start: string;
+  volume_kg: number;
+}
+
 export interface WorkoutSession {
   id: number;
   routine_id?: number;
@@ -19,6 +29,8 @@ export interface WorkoutSession {
   ended_at?: string;
   duration_seconds?: number;
   set_count?: number;
+  total_volume_kg?: number;
+  exercises_summary?: ExerciseSummary[];
   sets?: WorkoutSessionSet[];
 }
 
@@ -62,5 +74,14 @@ export const workoutSessionService = {
   async getSession(sessionId: number): Promise<WorkoutSession> {
     const response = await axios.get(ENDPOINTS.WORKOUT_SESSIONS.GET(sessionId));
     return response.data;
+  },
+
+  async getVolumeHistory(): Promise<VolumeHistoryPoint[]> {
+    const response = await axios.get(ENDPOINTS.WORKOUT_SESSIONS.VOLUME_HISTORY);
+    return response.data;
+  },
+
+  async deleteSession(sessionId: number): Promise<void> {
+    await axios.delete(ENDPOINTS.WORKOUT_SESSIONS.DELETE(sessionId));
   },
 };
