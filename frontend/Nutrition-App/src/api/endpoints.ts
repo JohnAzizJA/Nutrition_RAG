@@ -67,4 +67,19 @@ export const ENDPOINTS = {
   CALCULATIONS: {
     TARGETS: '/api/calculate-targets',
   },
+
+  // Community
+  COMMUNITY: {
+    LIST: '/api/communities',
+    CREATE: '/api/communities',
+    DELETE: (id: number) => `/api/communities/${id}`,
+    INFO: (id: number) => `/api/communities/${id}/info`,
+    FEED: (id: number) => `/api/communities/${id}/feed`,
+    ADD_MEMBER: (id: number) => `/api/communities/${id}/members`,
+    REMOVE_MEMBER: (id: number, userId: number) => `/api/communities/${id}/members/${userId}`,
+    REACT: (communityId: number, announcementId: number) =>
+      `/api/communities/${communityId}/announcements/${announcementId}/reactions`,
+    DELETE_REACTION: (communityId: number, announcementId: number) =>
+      `/api/communities/${communityId}/announcements/${announcementId}/reactions`,
+  },
 };

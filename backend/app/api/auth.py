@@ -6,6 +6,7 @@ from auth.middleware import get_current_user
 from db.models import User
 from typing import Literal
 import re
+import scoring
 
 router = APIRouter()
 user_repo = UserRepository()
@@ -182,6 +183,7 @@ async def update_profile(request: UpdateProfileRequest, current_user: User = Dep
         )
         if weight_changed:
             weight_log_repo.create(current_user.id, request.weight_kg)
+            scoring.on_weight_logged(updated_user, request.weight_kg)
         return UserResponse.model_validate(updated_user)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Profile update failed: {str(e)}")

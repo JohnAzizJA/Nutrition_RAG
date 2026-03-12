@@ -1,5 +1,5 @@
 from db.database import get_db
-from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet
+from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet, Community, CommunityMember, UserPoints, CommunityAnnouncement, AnnouncementReaction, UserPRLog, UserWeightGoalAward, UserStreakState, UserWeeklyCheck, UserCalorieCheck
 from typing import Optional, List
 from datetime import datetime, date, timedelta, timezone
 
@@ -15,6 +15,11 @@ class UserRepository:
         """Fetch user by email"""
         with get_db() as db:
             return db.query(User).filter(User.email == email).first()
+
+    def get_by_name(self, name: str) -> Optional[User]:
+        """Fetch user by display name (case-insensitive)"""
+        with get_db() as db:
+            return db.query(User).filter(User.name.ilike(name)).first()
     
     def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float, 
                height_cm: float, activity_level: str, goal: str, goal_weight_kg: float, weight_loss_per_week: float = None) -> User:
@@ -702,3 +707,391 @@ class WorkoutSessionRepository:
                 .filter(WorkoutSession.id == session_id, WorkoutSession.user_id == user_id)
                 .first()
             )
+
+    def get_sessions_in_week(self, user_id: int, week_start: date, week_end: date) -> int:
+        """Count completed sessions in a specific week range."""
+        with get_db() as db:
+            return db.query(WorkoutSession).filter(
+                WorkoutSession.user_id == user_id,
+                WorkoutSession.ended_at.isnot(None),
+                WorkoutSession.ended_at >= datetime.combine(week_start, __import__('datetime').time.min),
+                WorkoutSession.ended_at < datetime.combine(week_end, __import__('datetime').time.min),
+            ).count()
+
+
+class CommunityRepository:
+    """Repository for Community operations."""
+
+    def create(self, name: str, description: Optional[str], creator_id: int) -> Community:
+        with get_db() as db:
+            community = Community(name=name, description=description, creator_id=creator_id)
+            db.add(community)
+            db.commit()
+            db.refresh(community)
+            # Auto-add creator as member
+            member = CommunityMember(community_id=community.id, user_id=creator_id)
+            db.add(member)
+            points = UserPoints(community_id=community.id, user_id=creator_id, points=0)
+            db.add(points)
+            db.commit()
+            db.refresh(community)
+            return community
+
+    def get_by_id(self, community_id: int) -> Optional[Community]:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(Community)
+                .options(
+                    joinedload(Community.members).joinedload(CommunityMember.user),
+                    joinedload(Community.creator),
+                )
+                .filter(Community.id == community_id)
+                .first()
+            )
+
+    def get_user_communities(self, user_id: int) -> List[Community]:
+        with get_db() as db:
+            rows = db.query(CommunityMember.community_id).filter(
+                CommunityMember.user_id == user_id
+            ).all()
+            ids = [r[0] for r in rows]
+            if not ids:
+                return []
+            return db.query(Community).filter(Community.id.in_(ids)).all()
+
+    def is_member(self, community_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            return db.query(CommunityMember).filter(
+                CommunityMember.community_id == community_id,
+                CommunityMember.user_id == user_id,
+            ).first() is not None
+
+    def add_member(self, community_id: int, user_id: int) -> bool:
+        """Add a user to a community. Returns False if already a member."""
+        with get_db() as db:
+            existing = db.query(CommunityMember).filter(
+                CommunityMember.community_id == community_id,
+                CommunityMember.user_id == user_id,
+            ).first()
+            if existing:
+                return False
+            db.add(CommunityMember(community_id=community_id, user_id=user_id))
+            db.add(UserPoints(community_id=community_id, user_id=user_id, points=0))
+            db.commit()
+            return True
+
+    def remove_member(self, community_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            member = db.query(CommunityMember).filter(
+                CommunityMember.community_id == community_id,
+                CommunityMember.user_id == user_id,
+            ).first()
+            if not member:
+                return False
+            db.delete(member)
+            db.commit()
+            return True
+
+    def get_leaderboard(self, community_id: int) -> List[dict]:
+        """Return members sorted by points descending."""
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            rows = (
+                db.query(UserPoints)
+                .options(joinedload(UserPoints.user))
+                .filter(UserPoints.community_id == community_id)
+                .order_by(UserPoints.points.desc())
+                .all()
+            )
+            return [
+                {"user_id": r.user_id, "username": r.user.name, "points": r.points}
+                for r in rows
+            ]
+
+    def get_member_community_ids(self, user_id: int) -> List[int]:
+        with get_db() as db:
+            rows = db.query(CommunityMember.community_id).filter(
+                CommunityMember.user_id == user_id
+            ).all()
+            return [r[0] for r in rows]
+
+    def delete(self, community_id: int, creator_id: int) -> bool:
+        with get_db() as db:
+            community = db.query(Community).filter(
+                Community.id == community_id,
+                Community.creator_id == creator_id,
+            ).first()
+            if not community:
+                return False
+            db.delete(community)
+            db.commit()
+            return True
+
+
+class PointsRepository:
+    """Repository for UserPoints operations."""
+
+    def add_points(self, community_id: int, user_id: int, delta: int):
+        with get_db() as db:
+            record = db.query(UserPoints).filter(
+                UserPoints.community_id == community_id,
+                UserPoints.user_id == user_id,
+            ).first()
+            if record:
+                record.points += delta
+                record.updated_at = datetime.now()
+                db.commit()
+
+    def get_points(self, community_id: int, user_id: int) -> int:
+        with get_db() as db:
+            record = db.query(UserPoints).filter(
+                UserPoints.community_id == community_id,
+                UserPoints.user_id == user_id,
+            ).first()
+            return record.points if record else 0
+
+
+class AnnouncementRepository:
+    """Repository for CommunityAnnouncement and AnnouncementReaction operations."""
+
+    def create(self, community_id: int, user_id: int, event_type: str, content: str, points_delta: int) -> CommunityAnnouncement:
+        with get_db() as db:
+            ann = CommunityAnnouncement(
+                community_id=community_id,
+                user_id=user_id,
+                event_type=event_type,
+                content=content,
+                points_delta=points_delta,
+            )
+            db.add(ann)
+            db.commit()
+            db.refresh(ann)
+            return ann
+
+    def get_community_announcements(self, community_id: int, limit: int = 50) -> List[CommunityAnnouncement]:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            return (
+                db.query(CommunityAnnouncement)
+                .options(
+                    joinedload(CommunityAnnouncement.user),
+                    joinedload(CommunityAnnouncement.reactions).joinedload(AnnouncementReaction.user),
+                )
+                .filter(CommunityAnnouncement.community_id == community_id)
+                .order_by(CommunityAnnouncement.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+    def upsert_reaction(self, announcement_id: int, user_id: int, reaction_type: str) -> AnnouncementReaction:
+        with get_db() as db:
+            existing = db.query(AnnouncementReaction).filter(
+                AnnouncementReaction.announcement_id == announcement_id,
+                AnnouncementReaction.user_id == user_id,
+            ).first()
+            if existing:
+                existing.reaction_type = reaction_type
+                db.commit()
+                db.refresh(existing)
+                return existing
+            reaction = AnnouncementReaction(
+                announcement_id=announcement_id,
+                user_id=user_id,
+                reaction_type=reaction_type,
+            )
+            db.add(reaction)
+            db.commit()
+            db.refresh(reaction)
+            return reaction
+
+    def delete_reaction(self, announcement_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            reaction = db.query(AnnouncementReaction).filter(
+                AnnouncementReaction.announcement_id == announcement_id,
+                AnnouncementReaction.user_id == user_id,
+            ).first()
+            if not reaction:
+                return False
+            db.delete(reaction)
+            db.commit()
+            return True
+
+
+class ScoringRepository:
+    """Repository for scoring state tables (PRs, streak state, weekly/calorie checks, weight goal awards)."""
+
+    # ── PR ─────────────────────────────────────────────────────────────────────
+
+    def check_and_update_pr(self, user_id: int, exercise_name: str,
+                             weight_kg: Optional[float] = None,
+                             duration_seconds: Optional[int] = None) -> bool:
+        """Check if this is a new PR. Updates the record if yes. Returns True if PR was broken."""
+        with get_db() as db:
+            record = db.query(UserPRLog).filter(
+                UserPRLog.user_id == user_id,
+                UserPRLog.exercise_name == exercise_name,
+            ).first()
+
+            is_pr = False
+            if record is None:
+                db.add(UserPRLog(
+                    user_id=user_id,
+                    exercise_name=exercise_name,
+                    best_weight_kg=weight_kg,
+                    best_duration_seconds=duration_seconds,
+                ))
+                is_pr = True
+            else:
+                if weight_kg is not None and (record.best_weight_kg is None or weight_kg > record.best_weight_kg):
+                    record.best_weight_kg = weight_kg
+                    record.updated_at = datetime.now()
+                    is_pr = True
+                if duration_seconds is not None and (record.best_duration_seconds is None or duration_seconds > record.best_duration_seconds):
+                    record.best_duration_seconds = duration_seconds
+                    record.updated_at = datetime.now()
+                    is_pr = True
+            db.commit()
+            return is_pr
+
+    # ── Streak state ───────────────────────────────────────────────────────────
+
+    def get_streak_state(self, user_id: int) -> int:
+        """Returns last known streak for user."""
+        with get_db() as db:
+            record = db.query(UserStreakState).filter(UserStreakState.user_id == user_id).first()
+            return record.last_known_streak if record else 0
+
+    def update_streak_state(self, user_id: int, streak: int):
+        with get_db() as db:
+            record = db.query(UserStreakState).filter(UserStreakState.user_id == user_id).first()
+            if record:
+                record.last_known_streak = streak
+                record.updated_at = datetime.now()
+            else:
+                db.add(UserStreakState(user_id=user_id, last_known_streak=streak))
+            db.commit()
+
+    # ── Weight goal award ──────────────────────────────────────────────────────
+
+    def has_weight_goal_been_awarded(self, user_id: int, goal_weight_kg: float) -> bool:
+        """True if the closest existing award is within 3 kg of this goal."""
+        with get_db() as db:
+            awards = db.query(UserWeightGoalAward).filter(
+                UserWeightGoalAward.user_id == user_id
+            ).all()
+            for award in awards:
+                if abs(award.goal_weight_kg - goal_weight_kg) < 3.0:
+                    return True
+            return False
+
+    def record_weight_goal_award(self, user_id: int, goal_weight_kg: float):
+        with get_db() as db:
+            db.add(UserWeightGoalAward(user_id=user_id, goal_weight_kg=goal_weight_kg))
+            db.commit()
+
+    # ── Weekly check ───────────────────────────────────────────────────────────
+
+    def has_weekly_check(self, user_id: int, week_start: date) -> bool:
+        with get_db() as db:
+            return db.query(UserWeeklyCheck).filter(
+                UserWeeklyCheck.user_id == user_id,
+                UserWeeklyCheck.week_start == week_start,
+            ).first() is not None
+
+    def record_weekly_check(self, user_id: int, week_start: date, sessions_completed: int, sessions_goal: int):
+        with get_db() as db:
+            db.add(UserWeeklyCheck(
+                user_id=user_id,
+                week_start=week_start,
+                sessions_completed=sessions_completed,
+                sessions_goal=sessions_goal,
+            ))
+            db.commit()
+
+    # ── Calorie check ──────────────────────────────────────────────────────────
+
+    def has_calorie_check(self, user_id: int, check_date: date) -> bool:
+        with get_db() as db:
+            return db.query(UserCalorieCheck).filter(
+                UserCalorieCheck.user_id == user_id,
+                UserCalorieCheck.check_date == check_date,
+            ).first() is not None
+
+    def record_calorie_check(self, user_id: int, check_date: date):
+        with get_db() as db:
+            db.add(UserCalorieCheck(user_id=user_id, check_date=check_date))
+            db.commit()
+
+    # ── Meal log queries for calorie miss check ────────────────────────────────
+
+    def get_daily_calories(self, user_id: int, target_date: date) -> float:
+        """Sum of calories logged for a user on a specific date (Cairo time stored as UTC)."""
+        with get_db() as db:
+            from sqlalchemy import func
+            start = datetime.combine(target_date, __import__('datetime').time.min)
+            end = datetime.combine(target_date + timedelta(days=1), __import__('datetime').time.min)
+            result = db.query(func.sum(MealLog.calories)).filter(
+                MealLog.user_id == user_id,
+                MealLog.logged_at >= start,
+                MealLog.logged_at < end,
+            ).scalar()
+            return float(result or 0)
+
+    def get_daily_calories_from_plans(self, user_id: int, target_date: date) -> float:
+        """Sum of calories from completed meal plans on a specific date."""
+        with get_db() as db:
+            from sqlalchemy import func
+            completions = db.query(MealPlanCompletion.plan_id).filter(
+                MealPlanCompletion.user_id == user_id,
+                MealPlanCompletion.date == target_date,
+            ).all()
+            plan_ids = [r[0] for r in completions]
+            if not plan_ids:
+                return 0.0
+            result = db.query(func.sum(MealPlanFood.calories)).filter(
+                MealPlanFood.plan_id.in_(plan_ids)
+            ).scalar()
+            return float(result or 0)
+
+    def has_any_log_today(self, user_id: int, target_date: date) -> bool:
+        """Check if user has any meal log on target_date (to detect first log of day)."""
+        with get_db() as db:
+            start = datetime.combine(target_date, __import__('datetime').time.min)
+            end = datetime.combine(target_date + timedelta(days=1), __import__('datetime').time.min)
+            count = db.query(MealLog).filter(
+                MealLog.user_id == user_id,
+                MealLog.logged_at >= start,
+                MealLog.logged_at < end,
+            ).count()
+            return count > 0
+
+    def get_meal_log_count_today(self, user_id: int, target_date: date) -> int:
+        """Count meal logs for user on target_date."""
+        with get_db() as db:
+            start = datetime.combine(target_date, __import__('datetime').time.min)
+            end = datetime.combine(target_date + timedelta(days=1), __import__('datetime').time.min)
+            return db.query(MealLog).filter(
+                MealLog.user_id == user_id,
+                MealLog.logged_at >= start,
+                MealLog.logged_at < end,
+            ).count()
+
+    def has_streak_bonus_today(self, user_id: int, bonus_date: date) -> bool:
+        """Check if streak bonus has already been awarded today using calorie check table with prefix."""
+        # We reuse UserCalorieCheck with a special negative date offset to avoid table proliferation
+        # Actually we store it as a regular UserCalorieCheck for date = bonus_date
+        # but we need separate tracking. Use a simple approach: check if count of
+        # calorie checks with check_date == bonus_date already exists.
+        # For streak bonus dedup we use a separate query on the announcements table.
+        with get_db() as db:
+            return db.query(CommunityAnnouncement).filter(
+                CommunityAnnouncement.user_id == user_id,
+                CommunityAnnouncement.event_type == "streak_bonus",
+                CommunityAnnouncement.created_at >= datetime.combine(bonus_date, __import__('datetime').time.min),
+                CommunityAnnouncement.created_at < datetime.combine(bonus_date + timedelta(days=1), __import__('datetime').time.min),
+            ).first() is not None
+
+    def record_streak_bonus_today(self, user_id: int, bonus_date: date):
+        """No-op: the announcement creation itself serves as the dedup record."""
+        pass

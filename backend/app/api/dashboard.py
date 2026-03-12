@@ -4,6 +4,7 @@ from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import MealLogRepository, WaterLogRepository, MealPlanRepository, WeightLogRepository, WorkoutSessionRepository
 from datetime import datetime, timezone, timedelta, date
+import scoring
 
 router = APIRouter()
 meal_repo = MealLogRepository()
@@ -28,6 +29,11 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
     """Get dashboard data including streak, water, workouts, and weight history"""
     try:
         streak = calculate_logging_streak(current_user.id)
+
+        # Scoring checks (non-blocking – errors caught inside each function)
+        scoring.check_streak_state(current_user, streak)
+        scoring.check_weekly_workouts(current_user)
+        scoring.check_calorie_miss(current_user)
 
         today = date.today()
         water_log = water_repo.get_by_date(current_user.id, today)

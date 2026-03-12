@@ -243,13 +243,14 @@ export default function WorkoutsScreen() {
         ListFooterComponent={<ListFooter />}
       />
 
-      {/* FAB */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/create-workout')}
-      >
-        <Ionicons name="add" size={28} color={Colors.white} />
-      </TouchableOpacity>
+      {routines.length > 0 && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push('/create-workout')}
+        >
+          <Ionicons name="add" size={28} color={Colors.white} />
+        </TouchableOpacity>
+      )}
     </ThemedView>
   );
 }
