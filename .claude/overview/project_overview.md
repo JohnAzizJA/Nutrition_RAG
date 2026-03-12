@@ -12,9 +12,14 @@ An AI-powered, all-in-one nutrition, calorie, and workout tracking mobile app. I
 *   **Unit Support:** Grams, number of pieces, or ml for liquids.
 *   **AI Analysis:** The AI will actively analyze the user's eating habits, nutritional patterns, and caloric balance to offer tailored feedback.
 
-### 2. Gamified Social Experience (New)
-*   **Follow Friends:** Follow other users to track workouts and meal logging together.
-*   **Consistency Score:** A dynamic scoring system affected by completing or missing workouts, maintaining meal logging streaks, and general consistency. Designed to push friends and motivate keeping the streak alive.
+### 2. Gamified Social Experience (Communities)
+*   **Communities:** Users can create different communities (similar to a WhatsApp group interface, but focused on fitness rather than just chat) and add friends via username.
+*   **Live Leaderboards:** Each community features a live leaderboard at the top. The top 3 members are displayed in a dynamic bar chart, with the remaining members listed below with their current points.
+*   **Dynamic Scoring System:** Points are awarded and deducted dynamically to motivate consistency:
+    *   **+ Points:** Completing a workout, hitting a Personal Record (PR), hitting a weight goal, or keeping a streak alive (Base points $\times$ day streak length).
+    *   **- Points:** Missing weekly workout goals (Deduction $\times$ workouts missed), losing a logging streak, or severely missing daily calorie targets (over/under eating).
+*   **Interactive Announcements:** Activities (like completing a workout or hitting a milestone) automatically generate announcements in the community feed. Announcements feature relevant icons, text, and workout details.
+*   **Reactions:** Users can long-tap announcements to react (Celebrate, Love, Sad, Angry, Funny), with reactions displayed on the bottom left of the announcement card.
 
 ### 3. Workout Tracking & Analytics
 *   **Routine Builder:** Create workout routines by selecting exercises. Support for weight units (lbs or kgs) and timers for time-based exercises.

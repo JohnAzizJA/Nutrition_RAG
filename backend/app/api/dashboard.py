@@ -4,6 +4,7 @@ from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import MealLogRepository, WaterLogRepository, MealPlanRepository, WeightLogRepository, WorkoutSessionRepository
 from datetime import datetime, timezone, timedelta, date
+import scoring
 
 router = APIRouter()
 meal_repo = MealLogRepository()
@@ -28,6 +29,11 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
     """Get dashboard data including streak, water, workouts, and weight history"""
     try:
         streak = calculate_logging_streak(current_user.id)
+
+        # Scoring checks (non-blocking – errors caught inside each function)
+        scoring.check_streak_state(current_user, streak)
+        scoring.check_weekly_workouts(current_user)
+        scoring.check_calorie_miss(current_user)
 
         today = date.today()
         water_log = water_repo.get_by_date(current_user.id, today)
@@ -65,36 +71,39 @@ async def update_water(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update water intake: {str(e)}")
 
+CAIRO_TZ = timezone(timedelta(hours=2))
+
 def calculate_logging_streak(user_id: int) -> int:
     """
-    Calculate consecutive days the user has logged food.
-    Counts both direct meal logs AND meal plan completions.
-    Streak resets only if there is a full calendar day with no logging.
+    Calculate streak in Cairo calendar days (UTC+2).
+    Streak = number of consecutive calendar days (ending today or yesterday)
+    on which the user logged a meal or completed a meal plan.
     """
     try:
-        # Collect dates from manual meal logs
         meals = meal_repo.get_user_logs(user_id)
-        logged_dates = {meal.logged_at.date() for meal in meals}
+        timestamps = [
+            m.logged_at.replace(tzinfo=timezone.utc) if m.logged_at.tzinfo is None else m.logged_at
+            for m in meals
+            if m.logged_at is not None
+        ]
+        timestamps.extend(meal_plan_repo.get_completion_timestamps(user_id))
 
-        # Also include dates from completed meal plans
-        plan_dates = meal_plan_repo.get_logged_dates(user_id)
-        logged_dates |= plan_dates
-
-        if not logged_dates:
+        if not timestamps:
             return 0
 
-        sorted_dates = sorted(logged_dates, reverse=True)
-        today = datetime.now(timezone.utc).date()
-        streak = 0
-        current_date = today
+        log_dates = {ts.astimezone(CAIRO_TZ).date() for ts in timestamps}
+        today = datetime.now(CAIRO_TZ).date()
 
-        for d in sorted_dates:
-            if d == current_date:
-                streak += 1
-                current_date -= timedelta(days=1)
-            elif d < current_date:
-                break
+        # Start from today if already logged, otherwise from yesterday
+        # (so the streak doesn't drop to 0 before the first log of the day)
+        check = today if today in log_dates else today - timedelta(days=1)
+
+        streak = 0
+        while check in log_dates:
+            streak += 1
+            check -= timedelta(days=1)
 
         return streak
-    except Exception:
+    except Exception as e:
+        print(f"[streak] error for user {user_id}: {e}")
         return 0

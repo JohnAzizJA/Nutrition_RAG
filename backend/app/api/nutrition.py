@@ -6,6 +6,8 @@ from typing import Optional
 from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import MealLogRepository
+import scoring
+from api.dashboard import calculate_logging_streak
 
 router = APIRouter()
 meal_repo = MealLogRepository()
@@ -63,6 +65,10 @@ async def log_food(
             fat_g=request.fat_g,
             entry_method="manual"
         )
+        # Fire scoring streak bonus (non-blocking)
+        current_streak = calculate_logging_streak(current_user.id)
+        scoring.on_meal_logged(current_user, current_streak)
+
         return {"message": "Food logged successfully", "id": meal_log.id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to log food: {str(e)}")

@@ -243,7 +243,7 @@ export default function ActiveWorkoutScreen() {
   const renderExerciseCard = (exercise: Exercise) => {
     const isTimed = !!exercise.duration_seconds;
     const setsLogged = getSetCount(exercise.id);
-    const targetSets = isTimed ? 1 : exercise.sets;
+    const targetSets = exercise.sets;
     const isTimerRunning = exerciseTimerActive && timedExerciseId === exercise.id;
 
     return (

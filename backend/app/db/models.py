@@ -229,3 +229,166 @@ class Follow(Base):
 
     follower = relationship("User", foreign_keys=[follower_id], back_populates="following")
     following = relationship("User", foreign_keys=[following_id], back_populates="followers")
+
+
+# ── Community & Gamification tables ───────────────────────────────────────────
+
+class Community(Base):
+    __tablename__ = "communities"
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    creator_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+
+    creator = relationship("User", foreign_keys=[creator_id])
+    members = relationship("CommunityMember", back_populates="community", cascade="all, delete-orphan")
+    user_points = relationship("UserPoints", back_populates="community", cascade="all, delete-orphan")
+    announcements = relationship("CommunityAnnouncement", back_populates="community", cascade="all, delete-orphan")
+
+
+class CommunityMember(Base):
+    __tablename__ = "community_members"
+    __table_args__ = (
+        UniqueConstraint('community_id', 'user_id', name='uq_community_member'),
+        {'schema': 'public'},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    community_id = Column(Integer, ForeignKey("public.communities.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    joined_at = Column(DateTime, default=utc_now)
+
+    community = relationship("Community", back_populates="members")
+    user = relationship("User")
+
+
+class UserPoints(Base):
+    __tablename__ = "user_points"
+    __table_args__ = (
+        UniqueConstraint('community_id', 'user_id', name='uq_user_community_points'),
+        {'schema': 'public'},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    community_id = Column(Integer, ForeignKey("public.communities.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    points = Column(Integer, default=0, nullable=False)
+    updated_at = Column(DateTime, default=utc_now)
+
+    community = relationship("Community", back_populates="user_points")
+    user = relationship("User")
+
+
+class CommunityAnnouncement(Base):
+    __tablename__ = "community_announcements"
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(Integer, primary_key=True, index=True)
+    community_id = Column(Integer, ForeignKey("public.communities.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    event_type = Column(String, nullable=False)
+    content = Column(Text, nullable=False)  # JSON string with event details
+    points_delta = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+
+    community = relationship("Community", back_populates="announcements")
+    user = relationship("User")
+    reactions = relationship("AnnouncementReaction", back_populates="announcement", cascade="all, delete-orphan")
+
+
+class AnnouncementReaction(Base):
+    __tablename__ = "announcement_reactions"
+    __table_args__ = (
+        UniqueConstraint('announcement_id', 'user_id', name='uq_announcement_user_reaction'),
+        {'schema': 'public'},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    announcement_id = Column(Integer, ForeignKey("public.community_announcements.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    reaction_type = Column(String, nullable=False)  # celebrate, love, sad, angry, funny
+    created_at = Column(DateTime, default=utc_now)
+
+    announcement = relationship("CommunityAnnouncement", back_populates="reactions")
+    user = relationship("User")
+
+
+class UserPRLog(Base):
+    """Tracks personal records per exercise per user."""
+    __tablename__ = "user_pr_logs"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'exercise_name', name='uq_user_exercise_pr'),
+        {'schema': 'public'},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    exercise_name = Column(String, nullable=False)
+    best_weight_kg = Column(Float, nullable=True)
+    best_duration_seconds = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, default=utc_now)
+
+    user = relationship("User")
+
+
+class UserWeightGoalAward(Base):
+    """Tracks which weight goals have already been awarded points."""
+    __tablename__ = "user_weight_goal_awards"
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    goal_weight_kg = Column(Float, nullable=False)
+    awarded_at = Column(DateTime, default=utc_now)
+
+    user = relationship("User")
+
+
+class UserStreakState(Base):
+    """Tracks the user's last known streak to detect breaks."""
+    __tablename__ = "user_streak_states"
+    __table_args__ = {'schema': 'public'}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), unique=True, nullable=False)
+    last_known_streak = Column(Integer, default=0, nullable=False)
+    updated_at = Column(DateTime, default=utc_now)
+
+    user = relationship("User")
+
+
+class UserWeeklyCheck(Base):
+    """Records that the weekly workout deduction has been processed for a given week."""
+    __tablename__ = "user_weekly_checks"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'week_start', name='uq_user_weekly_check'),
+        {'schema': 'public'},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    week_start = Column(Date, nullable=False)  # Monday of that week
+    sessions_completed = Column(Integer, nullable=False)
+    sessions_goal = Column(Integer, nullable=False)
+    processed_at = Column(DateTime, default=utc_now)
+
+    user = relationship("User")
+
+
+class UserCalorieCheck(Base):
+    """Records that the daily calorie miss check has been processed for a given date."""
+    __tablename__ = "user_calorie_checks"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'check_date', name='uq_user_calorie_check'),
+        {'schema': 'public'},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("public.users.id"), nullable=False)
+    check_date = Column(Date, nullable=False)
+    processed_at = Column(DateTime, default=utc_now)
+
+    user = relationship("User")

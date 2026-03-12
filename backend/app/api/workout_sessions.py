@@ -5,6 +5,7 @@ from datetime import datetime
 from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import WorkoutSessionRepository
+import scoring
 
 router = APIRouter()
 session_repo = WorkoutSessionRepository()
@@ -101,6 +102,12 @@ async def end_session(
         )
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
+
+        # Fire scoring (non-blocking – errors are caught inside)
+        full_session = session_repo.get_session_by_id(session_id, current_user.id)
+        if full_session:
+            scoring.on_workout_complete(current_user, full_session.sets)
+
         return {
             "id": session.id,
             "routine_name": session.routine_name,

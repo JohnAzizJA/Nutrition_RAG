@@ -96,12 +96,18 @@ export default function WorkoutDetailScreen() {
         </View>
         <View style={styles.exerciseDetails}>
           {item.duration_seconds ? (
-            <View style={styles.detailItem}>
-              <ThemedText style={styles.detailLabel}>Duration:</ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {Math.floor(item.duration_seconds / 60)}:{(item.duration_seconds % 60).toString().padStart(2, '0')}
-              </ThemedText>
-            </View>
+            <>
+              <View style={styles.detailItem}>
+                <ThemedText style={styles.detailLabel}>Sets:</ThemedText>
+                <ThemedText style={styles.detailValue}>{item.sets}</ThemedText>
+              </View>
+              <View style={styles.detailItem}>
+                <ThemedText style={styles.detailLabel}>Duration:</ThemedText>
+                <ThemedText style={styles.detailValue}>
+                  {Math.floor(item.duration_seconds / 60)}:{(item.duration_seconds % 60).toString().padStart(2, '0')}
+                </ThemedText>
+              </View>
+            </>
           ) : (
             <>
               <View style={styles.detailItem}>
