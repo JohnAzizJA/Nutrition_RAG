@@ -27,7 +27,7 @@ export interface LeaderboardEntry {
   points: number;
 }
 
-export type ReactionType = 'celebrate' | 'love' | 'sad' | 'angry' | 'funny';
+export type ReactionType = 'celebrate' | 'love';
 
 export interface Announcement {
   id: number;
@@ -51,6 +51,12 @@ export interface CommunityFeed {
 export interface CreateCommunityRequest {
   name: string;
   description?: string;
+}
+
+export interface Reactor {
+  user_id: number;
+  username: string | null;
+  reaction_type: ReactionType;
 }
 
 // ── Service ──────────────────────────────────────────────────────────────────
@@ -95,5 +101,10 @@ export const communityService = {
 
   deleteReaction: async (communityId: number, announcementId: number): Promise<void> => {
     await axios.delete(ENDPOINTS.COMMUNITY.DELETE_REACTION(communityId, announcementId));
+  },
+
+  getReactors: async (communityId: number, announcementId: number): Promise<Reactor[]> => {
+    const res = await axios.get(ENDPOINTS.COMMUNITY.GET_REACTIONS(communityId, announcementId));
+    return res.data;
   },
 };

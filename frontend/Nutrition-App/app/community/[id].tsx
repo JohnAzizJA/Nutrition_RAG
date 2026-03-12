@@ -9,15 +9,12 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import {
-  communityService, CommunityFeed, Announcement, LeaderboardEntry, ReactionType,
+  communityService, CommunityFeed, Announcement, LeaderboardEntry, ReactionType, Reactor,
 } from '@/src/services/communityService';
 
 const REACTION_OPTIONS: { type: ReactionType; emoji: string }[] = [
   { type: 'celebrate', emoji: '🎉' },
   { type: 'love', emoji: '❤️' },
-  { type: 'sad', emoji: '😢' },
-  { type: 'angry', emoji: '😠' },
-  { type: 'funny', emoji: '😂' },
 ];
 
 const EVENT_META: Record<string, { icon: string; color: string; label: (c: any) => string }> = {
@@ -137,13 +134,11 @@ function ReactionModal({
   visible,
   current,
   onPick,
-  onRemove,
   onClose,
 }: {
   visible: boolean;
   current: ReactionType | null;
   onPick: (r: ReactionType) => void;
-  onRemove: () => void;
   onClose: () => void;
 }) {
   return (
@@ -161,11 +156,6 @@ function ReactionModal({
               </TouchableOpacity>
             ))}
           </View>
-          {current && (
-            <TouchableOpacity style={modalStyles.removeBtn} onPress={onRemove}>
-              <ThemedText style={modalStyles.removeText}>Remove reaction</ThemedText>
-            </TouchableOpacity>
-          )}
         </View>
       </Pressable>
     </Modal>
@@ -175,7 +165,7 @@ function ReactionModal({
 const modalStyles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: Colors.overlay,
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -204,13 +194,85 @@ const modalStyles = StyleSheet.create({
     lineHeight: 36,
     includeFontPadding: false,
   },
-  removeBtn: {
-    marginTop: 8,
-    paddingVertical: 8,
+});
+
+// ── Announcement card ─────────────────────────────────────────────────────────
+
+function ReactorsModal({
+  visible,
+  reactors,
+  onClose,
+}: {
+  visible: boolean;
+  reactors: Reactor[];
+  onClose: () => void;
+}) {
+  const EMOJI: Record<ReactionType, string> = { celebrate: '🎉', love: '❤️' };
+  return (
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+      <Pressable style={reactorStyles.backdrop} onPress={onClose}>
+        <Pressable style={reactorStyles.box} onPress={(e) => e.stopPropagation()}>
+          <ThemedText style={reactorStyles.title}>Reactions</ThemedText>
+          {reactors.length === 0 ? (
+            <ThemedText style={reactorStyles.empty}>No reactions yet</ThemedText>
+          ) : (
+            reactors.map((r, i) => (
+              <View key={i} style={reactorStyles.row}>
+                <ThemedText style={reactorStyles.emoji}>{EMOJI[r.reaction_type]}</ThemedText>
+                <ThemedText style={reactorStyles.name}>{r.username ?? 'Unknown'}</ThemedText>
+              </View>
+            ))
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const reactorStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  removeText: {
+  box: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 20,
+    width: 280,
+    maxHeight: 400,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.dark,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  emoji: {
+    fontSize: 20,
+    lineHeight: 26,
+    includeFontPadding: false,
+  },
+  name: {
+    fontSize: 15,
+    color: Colors.dark,
+    fontWeight: '500',
+  },
+  empty: {
     fontSize: 13,
-    color: Colors.danger,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: 8,
   },
 });
 
@@ -225,24 +287,32 @@ function AnnouncementCard({
   communityId: number;
   onReactionChange: () => void;
 }) {
-  const [modalVisible, setModalVisible] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [reactorsVisible, setReactorsVisible] = useState(false);
+  const [reactors, setReactors] = useState<Reactor[]>([]);
+  const [pressing, setPressing] = useState(false);
   const meta = EVENT_META[item.event_type];
 
   const handlePick = async (type: ReactionType) => {
-    setModalVisible(false);
+    setPickerVisible(false);
+    setPressing(false);
     try {
-      await communityService.upsertReaction(communityId, item.id, type);
+      if (type === item.my_reaction) {
+        await communityService.deleteReaction(communityId, item.id);
+      } else {
+        await communityService.upsertReaction(communityId, item.id, type);
+      }
       onReactionChange();
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleRemove = async () => {
-    setModalVisible(false);
+  const handleChipPress = async () => {
     try {
-      await communityService.deleteReaction(communityId, item.id);
-      onReactionChange();
+      const data = await communityService.getReactors(communityId, item.id);
+      setReactors(data);
+      setReactorsVisible(true);
     } catch (e) {
       console.error(e);
     }
@@ -262,10 +332,10 @@ function AnnouncementCard({
 
   return (
     <TouchableOpacity
-      style={annStyles.card}
-      onLongPress={() => setModalVisible(true)}
+      style={[annStyles.card, pressing && { opacity: 0.45 }]}
+      onLongPress={() => { setPressing(true); setPickerVisible(true); }}
       delayLongPress={400}
-      activeOpacity={0.9}
+      activeOpacity={0.4}
     >
       <View style={[annStyles.iconWrap, { backgroundColor: (meta?.color ?? Colors.primary) + '18' }]}>
         <Ionicons
@@ -283,22 +353,26 @@ function AnnouncementCard({
           {meta ? meta.label(item.content) : item.event_type}
         </ThemedText>
         {totalReactions > 0 && (
-          <View style={annStyles.reactionRow}>
+          <TouchableOpacity style={annStyles.reactionRow} onPress={handleChipPress} activeOpacity={0.7}>
             {REACTION_OPTIONS.filter((r) => (item.reactions[r.type] ?? 0) > 0).map((r) => (
-              <View key={r.type} style={annStyles.reactionChip}>
+              <View key={r.type} style={[annStyles.reactionChip, item.my_reaction === r.type && annStyles.reactionChipMine]}>
                 <ThemedText style={annStyles.reactionEmoji}>{r.emoji}</ThemedText>
                 <ThemedText style={annStyles.reactionCount}>{item.reactions[r.type]}</ThemedText>
               </View>
             ))}
-          </View>
+          </TouchableOpacity>
         )}
       </View>
       <ReactionModal
-        visible={modalVisible}
+        visible={pickerVisible}
         current={item.my_reaction}
         onPick={handlePick}
-        onRemove={handleRemove}
-        onClose={() => setModalVisible(false)}
+        onClose={() => { setPickerVisible(false); setPressing(false); }}
+      />
+      <ReactorsModal
+        visible={reactorsVisible}
+        reactors={reactors}
+        onClose={() => setReactorsVisible(false)}
       />
     </TouchableOpacity>
   );
@@ -359,6 +433,11 @@ const annStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     gap: 3,
+  },
+  reactionChipMine: {
+    backgroundColor: Colors.primary + '20',
+    borderWidth: 1,
+    borderColor: Colors.primary + '50',
   },
   reactionEmoji: {
     fontSize: 14,

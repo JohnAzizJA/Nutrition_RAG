@@ -917,6 +917,24 @@ class AnnouncementRepository:
             db.commit()
             return True
 
+    def get_announcement_reactors(self, announcement_id: int) -> list:
+        with get_db() as db:
+            from sqlalchemy.orm import joinedload
+            reactions = (
+                db.query(AnnouncementReaction)
+                .options(joinedload(AnnouncementReaction.user))
+                .filter(AnnouncementReaction.announcement_id == announcement_id)
+                .all()
+            )
+            return [
+                {
+                    "user_id": r.user_id,
+                    "username": r.user.name if r.user else None,
+                    "reaction_type": r.reaction_type,
+                }
+                for r in reactions
+            ]
+
 
 class ScoringRepository:
     """Repository for scoring state tables (PRs, streak state, weekly/calorie checks, weight goal awards)."""

@@ -11,7 +11,7 @@ community_repo = CommunityRepository()
 ann_repo = AnnouncementRepository()
 user_repo = UserRepository()
 
-VALID_REACTIONS = {"celebrate", "love", "sad", "angry", "funny"}
+VALID_REACTIONS = {"celebrate", "love"}
 
 
 # ── Request schemas ─────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ class AddMemberRequest(BaseModel):
 
 
 class ReactRequest(BaseModel):
-    reaction_type: str = Field(..., pattern="^(celebrate|love|sad|angry|funny)$")
+    reaction_type: str = Field(..., pattern="^(celebrate|love)$")
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -256,3 +256,14 @@ async def delete_reaction(
     deleted = ann_repo.delete_reaction(announcement_id, current_user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Reaction not found")
+
+
+@router.get("/communities/{community_id}/announcements/{announcement_id}/reactions")
+async def get_announcement_reactions(
+    community_id: int,
+    announcement_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """Get the list of users who reacted to an announcement."""
+    _require_member(community_id, current_user.id)
+    return ann_repo.get_announcement_reactors(announcement_id)

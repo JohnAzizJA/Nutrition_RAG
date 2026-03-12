@@ -81,5 +81,7 @@ export const ENDPOINTS = {
       `/api/communities/${communityId}/announcements/${announcementId}/reactions`,
     DELETE_REACTION: (communityId: number, announcementId: number) =>
       `/api/communities/${communityId}/announcements/${announcementId}/reactions`,
+    GET_REACTIONS: (communityId: number, announcementId: number) =>
+      `/api/communities/${communityId}/announcements/${announcementId}/reactions`,
   },
 };
