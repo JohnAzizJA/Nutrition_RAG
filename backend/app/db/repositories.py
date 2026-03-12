@@ -1,7 +1,7 @@
 from db.database import get_db
 from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet
 from typing import Optional, List
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 class UserRepository:
     """Repository for User database operations"""
@@ -561,6 +561,17 @@ class MealPlanRepository:
                 MealPlanCompletion.user_id == user_id
             ).all()
             return {r[0] for r in rows}
+
+    def get_completion_timestamps(self, user_id: int) -> list:
+        """Return UTC datetimes of all meal plan completions for a user."""
+        with get_db() as db:
+            rows = db.query(MealPlanCompletion.created_at).filter(
+                MealPlanCompletion.user_id == user_id
+            ).all()
+            return [
+                r[0].replace(tzinfo=timezone.utc) if r[0].tzinfo is None else r[0]
+                for r in rows if r[0] is not None
+            ]
 
 
 class WorkoutSessionRepository:

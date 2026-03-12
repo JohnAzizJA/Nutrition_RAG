@@ -67,32 +67,32 @@ async def update_water(
 
 def calculate_logging_streak(user_id: int) -> int:
     """
-    Calculate consecutive days the user has logged food.
-    Counts both direct meal logs AND meal plan completions.
-    Streak resets only if there is a full calendar day with no logging.
+    Calculate streak using 24-hour rolling windows.
+    Streak resets only if the user goes 24+ hours without logging or completing a meal.
     """
     try:
-        # Collect dates from manual meal logs
+        now = datetime.now(timezone.utc)
+
         meals = meal_repo.get_user_logs(user_id)
-        logged_dates = {meal.logged_at.date() for meal in meals}
+        timestamps = [
+            m.logged_at.replace(tzinfo=timezone.utc) if m.logged_at.tzinfo is None else m.logged_at
+            for m in meals
+        ]
+        timestamps.extend(meal_plan_repo.get_completion_timestamps(user_id))
 
-        # Also include dates from completed meal plans
-        plan_dates = meal_plan_repo.get_logged_dates(user_id)
-        logged_dates |= plan_dates
-
-        if not logged_dates:
+        if not timestamps:
             return 0
 
-        sorted_dates = sorted(logged_dates, reverse=True)
-        today = datetime.now(timezone.utc).date()
         streak = 0
-        current_date = today
+        window_end = now
+        window_start = now - timedelta(hours=24)
 
-        for d in sorted_dates:
-            if d == current_date:
+        while True:
+            if any(window_start <= ts <= window_end for ts in timestamps):
                 streak += 1
-                current_date -= timedelta(days=1)
-            elif d < current_date:
+                window_end = window_start
+                window_start = window_start - timedelta(hours=24)
+            else:
                 break
 
         return streak

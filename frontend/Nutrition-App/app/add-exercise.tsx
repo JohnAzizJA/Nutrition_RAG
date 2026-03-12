@@ -21,6 +21,7 @@ export default function AddExerciseScreen() {
   // Timed fields
   const [durationMinutes, setDurationMinutes] = useState('');
   const [durationSeconds, setDurationSeconds] = useState('');
+  const [timedSets, setTimedSets] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAddExercise = async () => {
@@ -37,11 +38,16 @@ export default function AddExerciseScreen() {
         Alert.alert('Error', 'Please enter a valid duration');
         return;
       }
+      const timedSetsNum = parseInt(timedSets) || 1;
+      if (timedSetsNum <= 0) {
+        Alert.alert('Error', 'Please enter a valid number of sets');
+        return;
+      }
       setLoading(true);
       try {
         await workoutService.addExercise(Number(routineId), {
           name: name.trim(),
-          sets: 1,
+          sets: timedSetsNum,
           reps: 1,
           duration_seconds: totalDuration,
         });
@@ -136,33 +142,47 @@ export default function AddExerciseScreen() {
         </View>
 
         {isTimed ? (
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.label}>Duration *</ThemedText>
-            <View style={styles.row}>
-              <View style={[styles.halfWidth, { marginRight: 8 }]}>
-                <TextInput
-                  style={styles.input}
-                  value={durationMinutes}
-                  onChangeText={setDurationMinutes}
-                  placeholder="Minutes"
-                  placeholderTextColor={Colors.placeholder}
-                  keyboardType="numeric"
-                  maxLength={2}
-                />
-              </View>
-              <View style={styles.halfWidth}>
-                <TextInput
-                  style={styles.input}
-                  value={durationSeconds}
-                  onChangeText={setDurationSeconds}
-                  placeholder="Seconds"
-                  placeholderTextColor={Colors.placeholder}
-                  keyboardType="numeric"
-                  maxLength={2}
-                />
+          <>
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>Sets *</ThemedText>
+              <TextInput
+                style={styles.input}
+                value={timedSets}
+                onChangeText={setTimedSets}
+                placeholder="3"
+                placeholderTextColor={Colors.placeholder}
+                keyboardType="numeric"
+                maxLength={2}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>Duration per Set *</ThemedText>
+              <View style={styles.row}>
+                <View style={[styles.halfWidth, { marginRight: 8 }]}>
+                  <TextInput
+                    style={styles.input}
+                    value={durationMinutes}
+                    onChangeText={setDurationMinutes}
+                    placeholder="Minutes"
+                    placeholderTextColor={Colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </View>
+                <View style={styles.halfWidth}>
+                  <TextInput
+                    style={styles.input}
+                    value={durationSeconds}
+                    onChangeText={setDurationSeconds}
+                    placeholder="Seconds"
+                    placeholderTextColor={Colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </View>
               </View>
             </View>
-          </View>
+          </>
         ) : (
           <>
             <View style={styles.row}>
