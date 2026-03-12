@@ -65,36 +65,39 @@ async def update_water(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update water intake: {str(e)}")
 
+CAIRO_TZ = timezone(timedelta(hours=2))
+
 def calculate_logging_streak(user_id: int) -> int:
     """
-    Calculate streak using 24-hour rolling windows.
-    Streak resets only if the user goes 24+ hours without logging or completing a meal.
+    Calculate streak in Cairo calendar days (UTC+2).
+    Streak = number of consecutive calendar days (ending today or yesterday)
+    on which the user logged a meal or completed a meal plan.
     """
     try:
-        now = datetime.now(timezone.utc)
-
         meals = meal_repo.get_user_logs(user_id)
         timestamps = [
             m.logged_at.replace(tzinfo=timezone.utc) if m.logged_at.tzinfo is None else m.logged_at
             for m in meals
+            if m.logged_at is not None
         ]
         timestamps.extend(meal_plan_repo.get_completion_timestamps(user_id))
 
         if not timestamps:
             return 0
 
-        streak = 0
-        window_end = now
-        window_start = now - timedelta(hours=24)
+        log_dates = {ts.astimezone(CAIRO_TZ).date() for ts in timestamps}
+        today = datetime.now(CAIRO_TZ).date()
 
-        while True:
-            if any(window_start <= ts <= window_end for ts in timestamps):
-                streak += 1
-                window_end = window_start
-                window_start = window_start - timedelta(hours=24)
-            else:
-                break
+        # Start from today if already logged, otherwise from yesterday
+        # (so the streak doesn't drop to 0 before the first log of the day)
+        check = today if today in log_dates else today - timedelta(days=1)
+
+        streak = 0
+        while check in log_dates:
+            streak += 1
+            check -= timedelta(days=1)
 
         return streak
-    except Exception:
+    except Exception as e:
+        print(f"[streak] error for user {user_id}: {e}")
         return 0
