@@ -1,13 +1,17 @@
-import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
+import { useState, useCallback } from 'react';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { LineChart } from 'react-native-gifted-charts';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { dashboardService, nutritionService, mealPlanService } from '@/src/services';
+
+const SCREEN_W = Dimensions.get('window').width;
+// 20px scrollView padding × 2 + 16px card padding × 2 + 40px y-axis label space
+const CHART_W = SCREEN_W - 112;
 
 const WATER_GOAL = 8;
 const CARD_HEIGHT = 140;
@@ -92,6 +96,14 @@ export default function HomeScreen() {
   const workoutsGoal: number = dashboardData?.workouts_goal || 3;
   const workoutPct = Math.min(1, workoutsThisWeek / workoutsGoal);
 
+  const weightChartData = (dashboardData?.weight_history ?? []).map((p: any) => ({
+    value: p.weight_kg,
+    label: p.date.slice(5).replace('-', '/'),
+  }));
+  const weightSpacing = weightChartData.length > 1
+    ? Math.min(55, Math.max(28, Math.floor((CHART_W - 20) / Math.max(weightChartData.length - 1, 1))))
+    : 40;
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
@@ -119,9 +131,34 @@ export default function HomeScreen() {
                 <ThemedText style={styles.logWeightLink}>+ Log Weight</ThemedText>
               </TouchableOpacity>
             </View>
-            <View style={{ height: 80, justifyContent: 'center', alignItems: 'center' }}>
-              <ThemedText style={{ fontSize: 13, color: Colors.textMuted }}>Graph coming soon</ThemedText>
-            </View>
+            {weightChartData.length >= 1 ? (
+              <View style={styles.chartCenter}>
+                <LineChart
+                  data={weightChartData}
+                  height={100}
+                  width={CHART_W}
+                  curved
+                  color={Colors.primary}
+                  thickness={2}
+                  dataPointsColor={Colors.primary}
+                  dataPointsRadius={5}
+                  yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
+                  xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
+                  noOfSections={3}
+                  initialSpacing={20}
+                  spacing={weightSpacing}
+                  rulesColor={Colors.border}
+                  yAxisColor="transparent"
+                  xAxisColor={Colors.border}
+                  yAxisLabelWidth={38}
+                  scrollToEnd
+                />
+              </View>
+            ) : (
+              <View style={styles.chartEmpty}>
+                <ThemedText style={styles.chartEmptyText}>Log your weight to see progress</ThemedText>
+              </View>
+            )}
           </View>
 
           <View style={styles.overviewRow}>
@@ -267,11 +304,27 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  chartCenter: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  chartEmpty: {
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chartEmptyText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
   },
   weightHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
   weightTitle: {
     fontSize: 15,

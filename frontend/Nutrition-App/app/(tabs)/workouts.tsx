@@ -1,13 +1,18 @@
-import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, FlatList, Alert } from 'react-native';
+import { useState, useCallback } from 'react';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, FlatList, Alert, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { BarChart } from 'react-native-gifted-charts';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutService, workoutSessionService, WorkoutRoutine, WorkoutSession } from '@/src/services';
+import { VolumeHistoryPoint } from '@/src/services/workoutSessionService';
 import { Swipeable } from 'react-native-gesture-handler';
+
+const SCREEN_W = Dimensions.get('window').width;
+// 20px listContainer padding × 2 + 16px card padding × 2 + 40px y-axis
+const CHART_W = SCREEN_W - 112;
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
 
@@ -30,6 +35,7 @@ export default function WorkoutsScreen() {
   const router = useRouter();
   const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [volumeHistory, setVolumeHistory] = useState<VolumeHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -40,12 +46,14 @@ export default function WorkoutsScreen() {
 
   const fetchAll = async () => {
     try {
-      const [r, s] = await Promise.all([
+      const [r, s, vol] = await Promise.all([
         workoutService.getRoutines(),
         workoutSessionService.getSessions(),
+        workoutSessionService.getVolumeHistory(),
       ]);
       setRoutines(r);
       setSessions(s.filter(sess => !!sess.ended_at));
+      setVolumeHistory(vol);
     } catch (error) {
       console.error('Failed to fetch workout data:', error);
     } finally {
@@ -156,14 +164,48 @@ export default function WorkoutsScreen() {
     </Swipeable>
   );
 
+  const volumeChartData = volumeHistory.map((p) => ({
+    value: Math.round(p.volume_kg),
+    label: p.week_start.slice(5, 10).replace('-', '/'),
+    frontColor: Colors.secondary,
+  }));
+  const barW = volumeChartData.length > 0
+    ? Math.max(16, Math.min(36, Math.floor((CHART_W - 20) / volumeChartData.length / 2)))
+    : 24;
+  const volSpacing = volumeChartData.length > 0
+    ? Math.max(10, Math.floor((CHART_W - barW * volumeChartData.length - 20) / (volumeChartData.length + 1)))
+    : 20;
+
   const ListHeader = () => (
     <>
       {/* Volume Chart */}
       <View style={styles.chartCard}>
-        <ThemedText style={styles.chartTitle}>Weekly Volume</ThemedText>
-        <View style={{ height: 80, justifyContent: 'center', alignItems: 'center' }}>
-          <ThemedText style={{ fontSize: 13, color: Colors.textMuted }}>Graph coming soon</ThemedText>
-        </View>
+        <ThemedText style={styles.chartTitle}>Weekly Volume (kg)</ThemedText>
+        {volumeChartData.length > 0 ? (
+          <View style={styles.chartCenter}>
+            <BarChart
+              data={volumeChartData}
+              height={100}
+              width={CHART_W}
+              barWidth={barW}
+              spacing={volSpacing}
+              yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
+              xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
+              noOfSections={3}
+              initialSpacing={20}
+              yAxisColor="transparent"
+              xAxisColor={Colors.border}
+              rulesColor={Colors.border}
+              yAxisLabelWidth={38}
+              isAnimated
+              animationDuration={500}
+            />
+          </View>
+        ) : (
+          <View style={styles.chartEmpty}>
+            <ThemedText style={styles.chartEmptyText}>Complete your first workout to start tracking weekly volume</ThemedText>
+          </View>
+        )}
       </View>
 
       {/* Routines section */}
@@ -286,12 +328,28 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
+    overflow: 'hidden',
   },
   chartTitle: {
     fontSize: 15,
     fontWeight: '600',
     color: Colors.dark,
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  chartCenter: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  chartEmpty: {
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  chartEmptyText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
