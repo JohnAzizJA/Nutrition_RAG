@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal, Annotated
+from typing import TypedDict, Literal, Annotated, Optional
 from langgraph.graph.message import add_messages
 
 class GraphState(TypedDict):
@@ -9,3 +9,4 @@ class GraphState(TypedDict):
     tool_results: str
     next_action: Literal["retrieve", "tools", "generate", "end"]
     response: str
+    user_profile: Optional[dict]

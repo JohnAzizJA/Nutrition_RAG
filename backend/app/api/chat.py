@@ -108,11 +108,25 @@ async def chat(
             content=request.message
         )
         
+        # Build user profile dict for context injection
+        user_profile = {
+            "name": current_user.name,
+            "age": current_user.age,
+            "gender": current_user.gender,
+            "weight_kg": current_user.weight_kg,
+            "height_cm": current_user.height_cm,
+            "activity_level": current_user.activity_level,
+            "goal": current_user.goal,
+            "goal_weight_kg": current_user.goal_weight_kg,
+            "weight_loss_per_week": current_user.weight_loss_per_week,
+        }
+
         # Get AI response
         response = rag_graph.run(
             query=request.message,
             user_id=current_user.id,
-            thread_id=thread_id
+            thread_id=thread_id,
+            user_profile=user_profile,
         )
         
         # Save AI response to conversations table
