@@ -31,6 +31,26 @@ export default function ProfileScreen() {
     await SecureStore.setItemAsync(MEAL_PLAN_KEY, value ? 'true' : 'false');
   };
 
+  const handleWeekStartChange = async (day: number) => {
+    if ((user?.week_start_day ?? 0) === day) return;
+    try {
+      const updatedUser = await userService.updateProfile({
+        age: user?.age!,
+        gender: user?.gender! as 'male' | 'female',
+        weight_kg: user?.weight_kg!,
+        height_cm: user?.height_cm!,
+        activity_level: user?.activity_level! as any,
+        goal: user?.goal! as any,
+        goal_weight_kg: user?.goal_weight_kg!,
+        weight_loss_per_week: user?.weight_loss_per_week!,
+        week_start_day: day,
+      });
+      await updateUser(updatedUser);
+    } catch {
+      Alert.alert('Error', 'Failed to update week start day');
+    }
+  };
+
   const handleEdit = (field: string, currentValue: any) => {
     // Convert activity level to exercise days for slider
     if (field === 'activity_level') {
@@ -70,6 +90,7 @@ export default function ProfileScreen() {
         goal: user?.goal! as any,
         goal_weight_kg: user?.goal_weight_kg!,
         weight_loss_per_week: user?.weight_loss_per_week!,
+        week_start_day: user?.week_start_day ?? 0,
         [editModal.field]: editModal.field === 'activity_level' ? getActivityLevel(editModal.value) : editModal.value
       };
       
@@ -237,6 +258,31 @@ export default function ProfileScreen() {
               trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
               thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
             />
+          </View>
+
+          <View style={[styles.settingRow, { marginTop: 8 }]}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: Colors.secondary + '20' }]}>
+                <Ionicons name="today-outline" size={20} color={Colors.secondary} />
+              </View>
+              <View>
+                <ThemedText style={styles.settingLabel}>Week Starts On</ThemedText>
+                <ThemedText style={styles.settingSubLabel}>Affects weekly stats & charts</ThemedText>
+              </View>
+            </View>
+            <View style={styles.weekToggle}>
+              {(['Sun', 'Mon'] as const).map((label, idx) => (
+                <TouchableOpacity
+                  key={label}
+                  style={[styles.weekChip, (user?.week_start_day ?? 0) === idx && styles.weekChipActive]}
+                  onPress={() => handleWeekStartChange(idx)}
+                >
+                  <ThemedText style={[(user?.week_start_day ?? 0) === idx ? styles.weekChipTextActive : styles.weekChipText]}>
+                    {label}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -607,5 +653,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.danger,
+  },
+  weekToggle: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  weekChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  weekChipActive: {
+    backgroundColor: Colors.secondary,
+    borderColor: Colors.secondary,
+  },
+  weekChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  weekChipTextActive: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.white,
   },
 });

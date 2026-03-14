@@ -214,19 +214,26 @@ def check_streak_state(user, current_streak: int):
 
 def check_weekly_workouts(user):
     """
-    Called on dashboard fetch on Mondays.
+    Called on dashboard fetch on the first day of the week.
     Checks if the previous week's workout goal was missed and deducts points.
+    week_start_day: 0=Sunday, 1=Monday
     """
     try:
         today_cairo = datetime.now(CAIRO_TZ).date()
-        if today_cairo.weekday() != 0:  # Only on Monday (0)
+        week_start_day = getattr(user, 'week_start_day', 0)
+
+        # Python weekday(): Mon=0 ... Sun=6
+        # For Sunday start: trigger on Sunday (weekday==6)
+        # For Monday start: trigger on Monday (weekday==0)
+        trigger_weekday = 6 if week_start_day == 0 else 0
+        if today_cairo.weekday() != trigger_weekday:
             return
 
-        last_week_start = today_cairo - timedelta(days=7)  # Last Monday
+        last_week_start = today_cairo - timedelta(days=7)
         if _scoring_repo.has_weekly_check(user.id, last_week_start):
             return
 
-        last_week_end = last_week_start + timedelta(days=7)  # exclusive (this Monday)
+        last_week_end = last_week_start + timedelta(days=7)  # exclusive
         sessions = _session_repo.get_sessions_in_week(user.id, last_week_start, last_week_end)
         goal = ACTIVITY_WORKOUTS_MAP.get(user.activity_level, 3)
         missed = max(0, goal - sessions)

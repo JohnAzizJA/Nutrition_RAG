@@ -21,8 +21,9 @@ class UserRepository:
         with get_db() as db:
             return db.query(User).filter(User.name.ilike(name)).first()
     
-    def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float, 
-               height_cm: float, activity_level: str, goal: str, goal_weight_kg: float, weight_loss_per_week: float = None) -> User:
+    def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float,
+               height_cm: float, activity_level: str, goal: str, goal_weight_kg: float,
+               weight_loss_per_week: float = None, week_start_day: int = 0) -> User:
         """Create new user"""
         with get_db() as db:
             user = User(
@@ -36,7 +37,8 @@ class UserRepository:
                 activity_level=activity_level,
                 goal=goal,
                 goal_weight_kg=goal_weight_kg,
-                weight_loss_per_week=weight_loss_per_week
+                weight_loss_per_week=weight_loss_per_week,
+                week_start_day=week_start_day,
             )
             db.add(user)
             db.commit()
@@ -165,6 +167,26 @@ class WeightLogRepository:
             return db.query(WeightLog).filter(
                 WeightLog.user_id == user_id
             ).order_by(WeightLog.logged_at.desc()).limit(limit).all()
+
+    def get_weekly_weights(self, user_id: int, week_starts: List[date]) -> List[dict]:
+        """For each week_start date, return the most recent weight log in that week or None."""
+        with get_db() as db:
+            all_logs = db.query(WeightLog).filter(
+                WeightLog.user_id == user_id
+            ).order_by(WeightLog.logged_at.desc()).all()
+
+        result = []
+        for ws in week_starts:
+            week_end = ws + timedelta(days=7)
+            log = next(
+                (l for l in all_logs if ws <= l.logged_at.date() < week_end),
+                None,
+            )
+            result.append({
+                "week_start": str(ws),
+                "weight_kg": log.weight_kg if log else None,
+            })
+        return result
 
 class MealLogRepository:
     """Repository for MealLog database operations"""
@@ -645,12 +667,18 @@ class WorkoutSessionRepository:
                 .all()
             )
 
-    def get_sessions_this_week(self, user_id: int) -> int:
-        """Count completed workout sessions in the current calendar week (Mon–Sun)."""
+    def get_sessions_this_week(self, user_id: int, week_start_day: int = 0) -> int:
+        """Count completed workout sessions in the current calendar week.
+        week_start_day: 0=Sunday, 1=Monday
+        """
         from datetime import datetime
         today = datetime.now()
-        week_start = today - timedelta(days=today.weekday())
-        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Python weekday(): Mon=0 ... Sun=6
+        if week_start_day == 0:  # Sunday start
+            days_back = (today.weekday() + 1) % 7  # Sun->0, Mon->1, ..., Sat->6
+        else:  # Monday start
+            days_back = today.weekday()  # Mon->0, ..., Sun->6
+        week_start = (today - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
         with get_db() as db:
             return db.query(WorkoutSession).filter(
                 WorkoutSession.user_id == user_id,
@@ -658,33 +686,43 @@ class WorkoutSessionRepository:
                 WorkoutSession.ended_at >= week_start,
             ).count()
 
-    def get_weekly_volume(self, user_id: int, weeks: int = 8) -> List[dict]:
-        """Return total volume (weight_kg × reps) grouped by ISO week for last N weeks."""
-        from datetime import datetime
-        from sqlalchemy import func
-        cutoff = datetime.now() - timedelta(weeks=weeks)
+    def get_weekly_volume(self, user_id: int, week_starts: List[date], week_start_day: int = 0) -> List[dict]:
+        """Return total volume (weight_kg × reps) for each given week. Returns 0 for weeks with no data.
+        week_start_day: 0=Sunday, 1=Monday
+        """
+        from datetime import datetime as dt, time as dt_time
+        from sqlalchemy import func, text
+        if not week_starts:
+            return []
+        min_dt = dt.combine(min(week_starts), dt_time.min)
+        max_dt = dt.combine(max(week_starts) + timedelta(days=7), dt_time.min)
         with get_db() as db:
+            if week_start_day == 0:  # Sunday start
+                week_expr = func.date_trunc('week', WorkoutSession.started_at + text("interval '1 day'")) - text("interval '1 day'")
+            else:  # Monday start (PostgreSQL default)
+                week_expr = func.date_trunc('week', WorkoutSession.started_at)
             results = (
                 db.query(
-                    func.date_trunc('week', WorkoutSession.started_at).label('week'),
+                    week_expr.label('week'),
                     func.sum(WorkoutSessionSet.weight_kg * WorkoutSessionSet.reps).label('volume'),
                 )
                 .join(WorkoutSessionSet, WorkoutSessionSet.session_id == WorkoutSession.id)
                 .filter(
                     WorkoutSession.user_id == user_id,
-                    WorkoutSession.started_at >= cutoff,
+                    WorkoutSession.started_at >= min_dt,
+                    WorkoutSession.started_at < max_dt,
                     WorkoutSession.ended_at.isnot(None),
                     WorkoutSessionSet.weight_kg.isnot(None),
                     WorkoutSessionSet.reps.isnot(None),
                 )
-                .group_by(func.date_trunc('week', WorkoutSession.started_at))
-                .order_by(func.date_trunc('week', WorkoutSession.started_at))
+                .group_by(week_expr)
                 .all()
             )
-            return [
-                {"week_start": str(r.week.date()), "volume_kg": round(float(r.volume or 0), 1)}
-                for r in results
-            ]
+        volume_map = {r.week.date(): round(float(r.volume or 0), 1) for r in results}
+        return [
+            {"week_start": str(ws), "volume_kg": volume_map.get(ws, 0.0)}
+            for ws in week_starts
+        ]
 
     def delete_session(self, session_id: int, user_id: int) -> bool:
         with get_db() as db:

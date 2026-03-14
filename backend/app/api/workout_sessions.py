@@ -1,11 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import WorkoutSessionRepository
 import scoring
+
+
+def _week_window(week_start_day: int, n_before: int = 2, n_after: int = 2):
+    today = date.today()
+    days_back = (today.weekday() + 1) % 7 if week_start_day == 0 else today.weekday()
+    current = today - timedelta(days=days_back)
+    return [current + timedelta(weeks=i) for i in range(-n_before, n_after + 1)]
 
 router = APIRouter()
 session_repo = WorkoutSessionRepository()
@@ -144,7 +151,8 @@ async def get_volume_history(
 ):
     """Get weekly workout volume (kg×reps) for the last 8 weeks"""
     try:
-        return session_repo.get_weekly_volume(current_user.id, weeks=8)
+        week_starts = _week_window(current_user.week_start_day)
+        return session_repo.get_weekly_volume(current_user.id, week_starts, week_start_day=current_user.week_start_day)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get volume history: {str(e)}")
 

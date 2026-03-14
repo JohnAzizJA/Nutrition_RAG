@@ -32,6 +32,7 @@ export interface UserResponse {
   goal: string;
   goal_weight_kg: number;
   weight_loss_per_week: number;
+  week_start_day: number;
 }
 
 export interface AuthResponse {

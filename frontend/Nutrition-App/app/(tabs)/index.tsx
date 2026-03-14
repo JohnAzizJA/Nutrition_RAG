@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { LineChart } from 'react-native-gifted-charts';
+import Svg, { Line, Circle, Text as SvgText } from 'react-native-svg';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
@@ -10,8 +10,96 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { dashboardService, nutritionService, mealPlanService } from '@/src/services';
 
 const SCREEN_W = Dimensions.get('window').width;
-// 20px scrollView padding × 2 + 16px card padding × 2 + 40px y-axis label space
-const CHART_W = SCREEN_W - 112;
+// 20px scrollView padding × 2 + 16px card padding × 2
+// 20px scrollView padding × 2 + 16px card padding × 2
+const WEIGHT_CHART_W = SCREEN_W - 72;
+
+const formatWeekLabel = (dateStr: string) =>
+  new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// ─── Custom weight chart ───────────────────────────────────────────────────────
+
+const PAD_L = 38; // y-axis label space
+const PAD_R = 8;
+const PAD_T = 8;
+const PAD_B = 20; // x-axis labels
+
+function WeightProgressChart({
+  data,
+  width,
+}: {
+  data: { week_start: string; weight_kg: number | null }[];
+  width: number;
+}) {
+  const HEIGHT = 120;
+  const plotW = width - PAD_L - PAD_R;
+  const plotH = HEIGHT - PAD_T - PAD_B;
+  const N = data.length;
+
+  const nonNull = data.filter(p => p.weight_kg !== null);
+  const weights = nonNull.map(p => p.weight_kg as number);
+  let minW = Math.min(...weights);
+  let maxW = Math.max(...weights);
+  if (minW === maxW) { minW -= 1; maxW += 1; }
+
+  const slotW = plotW / N;
+  const toX = (i: number) => PAD_L + slotW * i + slotW / 2;
+  const toY = (w: number) => PAD_T + plotH * (1 - (w - minW) / (maxW - minW));
+
+  // Line segments only between adjacent weeks where BOTH have data
+  const segments: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  for (let i = 0; i < N - 1; i++) {
+    if (data[i].weight_kg !== null && data[i + 1].weight_kg !== null) {
+      segments.push({
+        x1: toX(i), y1: toY(data[i].weight_kg as number),
+        x2: toX(i + 1), y2: toY(data[i + 1].weight_kg as number),
+      });
+    }
+  }
+
+  const yTicks = [maxW, (minW + maxW) / 2, minW];
+
+  return (
+    <Svg width={width} height={HEIGHT}>
+      {/* Horizontal grid rules + y-axis labels */}
+      {yTicks.map((val, i) => {
+        const y = toY(val);
+        return [
+          <Line key={`rule-${i}`} x1={PAD_L} y1={y} x2={width - PAD_R} y2={y}
+            stroke={Colors.border as string} strokeWidth={1} />,
+          <SvgText key={`ylbl-${i}`} x={PAD_L - 4} y={y + 3} fontSize={9}
+            fill={Colors.textMuted as string} textAnchor="end">
+            {val.toFixed(1)}
+          </SvgText>,
+        ];
+      })}
+
+      {/* X-axis line */}
+      <Line x1={PAD_L} y1={PAD_T + plotH} x2={width - PAD_R} y2={PAD_T + plotH}
+        stroke={Colors.border as string} strokeWidth={1} />
+
+      {/* X-axis labels */}
+      {data.map((p, i) => (
+        <SvgText key={`xlbl-${i}`} x={toX(i)} y={HEIGHT - 4} fontSize={8}
+          fill={Colors.textMuted as string} textAnchor="middle">
+          {formatWeekLabel(p.week_start)}
+        </SvgText>
+      ))}
+
+      {/* Line segments */}
+      {segments.map((seg, i) => (
+        <Line key={`seg-${i}`} x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
+          stroke={Colors.primary as string} strokeWidth={2} strokeLinecap="round" />
+      ))}
+
+      {/* Dots at weeks with data */}
+      {data.map((p, i) => p.weight_kg !== null ? (
+        <Circle key={`dot-${i}`} cx={toX(i)} cy={toY(p.weight_kg)} r={4}
+          fill={Colors.primary as string} />
+      ) : null)}
+    </Svg>
+  );
+}
 
 const WATER_GOAL = 8;
 const CARD_HEIGHT = 140;
@@ -96,13 +184,10 @@ export default function HomeScreen() {
   const workoutsGoal: number = dashboardData?.workouts_goal || 3;
   const workoutPct = Math.min(1, workoutsThisWeek / workoutsGoal);
 
-  const weightChartData = (dashboardData?.weight_history ?? []).map((p: any) => ({
-    value: p.weight_kg,
-    label: p.date.slice(5).replace('-', '/'),
-  }));
-  const weightSpacing = weightChartData.length > 1
-    ? Math.min(55, Math.max(28, Math.floor((CHART_W - 20) / Math.max(weightChartData.length - 1, 1))))
-    : 40;
+  // weight_history is always 5 entries (2 before, current, 2 after) from the backend
+  const rawWeightHistory: { week_start: string; weight_kg: number | null }[] =
+    dashboardData?.weight_history ?? [];
+  const hasAnyWeight = rawWeightHistory.some(p => p.weight_kg !== null);
 
   return (
     <ThemedView style={styles.container}>
@@ -131,29 +216,8 @@ export default function HomeScreen() {
                 <ThemedText style={styles.logWeightLink}>+ Log Weight</ThemedText>
               </TouchableOpacity>
             </View>
-            {weightChartData.length >= 1 ? (
-              <View style={styles.chartCenter}>
-                <LineChart
-                  data={weightChartData}
-                  height={100}
-                  width={CHART_W}
-                  curved
-                  color={Colors.primary}
-                  thickness={2}
-                  dataPointsColor={Colors.primary}
-                  dataPointsRadius={5}
-                  yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
-                  xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
-                  noOfSections={3}
-                  initialSpacing={20}
-                  spacing={weightSpacing}
-                  rulesColor={Colors.border}
-                  yAxisColor="transparent"
-                  xAxisColor={Colors.border}
-                  yAxisLabelWidth={38}
-                  scrollToEnd
-                />
-              </View>
+            {hasAnyWeight ? (
+              <WeightProgressChart data={rawWeightHistory} width={WEIGHT_CHART_W} />
             ) : (
               <View style={styles.chartEmpty}>
                 <ThemedText style={styles.chartEmptyText}>Log your weight to see progress</ThemedText>
@@ -305,10 +369,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     overflow: 'hidden',
-  },
-  chartCenter: {
-    alignItems: 'center',
-    marginTop: 8,
   },
   chartEmpty: {
     height: 80,

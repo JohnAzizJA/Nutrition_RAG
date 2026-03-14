@@ -47,6 +47,7 @@ class UpdateProfileRequest(BaseModel):
     goal: Literal["lose_weight", "maintain_weight", "gain_weight", "gain_muscle"]
     goal_weight_kg: float = Field(..., gt=0, le=500)
     weight_loss_per_week: float = Field(default=0.5, ge=0.25, le=1.0)
+    week_start_day: int = Field(default=0, ge=0, le=1)  # 0=Sunday, 1=Monday
 
 class UserResponse(BaseModel):
     id: int
@@ -60,6 +61,7 @@ class UserResponse(BaseModel):
     goal: str
     goal_weight_kg: float
     weight_loss_per_week: float
+    week_start_day: int = 0
 
     class Config:
         from_attributes = True
@@ -179,7 +181,8 @@ async def update_profile(request: UpdateProfileRequest, current_user: User = Dep
             activity_level=request.activity_level,
             goal=request.goal,
             goal_weight_kg=request.goal_weight_kg,
-            weight_loss_per_week=request.weight_loss_per_week
+            weight_loss_per_week=request.weight_loss_per_week,
+            week_start_day=request.week_start_day
         )
         if weight_changed:
             weight_log_repo.create(current_user.id, request.weight_kg)

@@ -24,6 +24,7 @@ class User(Base):
     goal = Column(String, nullable=False)
     goal_weight_kg = Column(Float, nullable=False)
     weight_loss_per_week = Column(Float, nullable=True)
+    week_start_day = Column(Integer, default=0, nullable=False, server_default='0')  # 0=Sunday, 1=Monday
     created_at = Column(DateTime, default=utc_now)
 
     conversations = relationship("Conversation", back_populates="user")

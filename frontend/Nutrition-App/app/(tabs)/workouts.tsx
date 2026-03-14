@@ -14,6 +14,9 @@ const SCREEN_W = Dimensions.get('window').width;
 // 20px listContainer padding × 2 + 16px card padding × 2 + 40px y-axis
 const CHART_W = SCREEN_W - 112;
 
+const formatWeekLabel = (dateStr: string) =>
+  new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
 // ─── Format helpers ───────────────────────────────────────────────────────────
 
 const formatDuration = (seconds?: number) => {
@@ -164,44 +167,43 @@ export default function WorkoutsScreen() {
     </Swipeable>
   );
 
+  // volumeHistory is always 5 entries (2 before, current, 2 after) from the backend
   const volumeChartData = volumeHistory.map((p) => ({
-    value: Math.round(p.volume_kg),
-    label: p.week_start.slice(5, 10).replace('-', '/'),
-    frontColor: Colors.secondary,
+    value: p.volume_kg,
+    label: formatWeekLabel(p.week_start),
+    frontColor: p.volume_kg > 0 ? Colors.secondary as string : 'transparent',
   }));
-  const barW = volumeChartData.length > 0
-    ? Math.max(16, Math.min(36, Math.floor((CHART_W - 20) / volumeChartData.length / 2)))
-    : 24;
-  const volSpacing = volumeChartData.length > 0
-    ? Math.max(10, Math.floor((CHART_W - barW * volumeChartData.length - 20) / (volumeChartData.length + 1)))
-    : 20;
+  const hasAnyVolume = volumeChartData.some(p => p.value > 0);
+  const N_BARS = volumeChartData.length || 5;
+  const barW = Math.max(16, Math.min(36, Math.floor((CHART_W - 20) / N_BARS / 2)));
+  const volSpacing = Math.max(10, Math.floor((CHART_W - barW * N_BARS - 20) / (N_BARS + 1)));
 
   const ListHeader = () => (
     <>
       {/* Volume Chart */}
       <View style={styles.chartCard}>
         <ThemedText style={styles.chartTitle}>Weekly Volume (kg)</ThemedText>
-        {volumeChartData.length > 0 ? (
-          <View style={styles.chartCenter}>
-            <BarChart
-              data={volumeChartData}
-              height={100}
-              width={CHART_W}
-              barWidth={barW}
-              spacing={volSpacing}
-              yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
-              xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
-              noOfSections={3}
-              initialSpacing={20}
-              yAxisColor="transparent"
-              xAxisColor={Colors.border}
-              rulesColor={Colors.border}
-              yAxisLabelWidth={38}
-              isAnimated
-              animationDuration={500}
-            />
-          </View>
-        ) : (
+        <View style={styles.chartCenter}>
+          <BarChart
+            data={volumeChartData}
+            height={100}
+            width={CHART_W}
+            barWidth={barW}
+            spacing={volSpacing}
+            yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
+            xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
+            noOfSections={3}
+            maxValue={hasAnyVolume ? undefined : 100}
+            initialSpacing={20}
+            yAxisColor="transparent"
+            xAxisColor={Colors.border}
+            rulesColor={Colors.border}
+            yAxisLabelWidth={38}
+            isAnimated
+            animationDuration={500}
+          />
+        </View>
+        {!hasAnyVolume && (
           <View style={styles.chartEmpty}>
             <ThemedText style={styles.chartEmptyText}>Complete your first workout to start tracking weekly volume</ThemedText>
           </View>
