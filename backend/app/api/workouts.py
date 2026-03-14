@@ -182,6 +182,48 @@ async def add_exercise(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add exercise: {str(e)}")
 
+class UpdateExerciseRequest(BaseModel):
+    sets: int = Field(..., ge=1, le=20)
+    reps: int = Field(..., ge=1, le=100)
+    weight_kg: Optional[float] = Field(None, ge=0, le=1000)
+    rest_time_seconds: Optional[int] = Field(None, ge=0, le=3600)
+    duration_seconds: Optional[int] = Field(None, ge=1, le=7200)
+
+@router.put("/workouts/{routine_id}/exercises/{exercise_id}")
+async def update_exercise(
+    routine_id: int,
+    exercise_id: int,
+    request: UpdateExerciseRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update exercise in routine"""
+    try:
+        exercise = workout_repo.update_exercise(
+            exercise_id=exercise_id,
+            routine_id=routine_id,
+            user_id=current_user.id,
+            sets=request.sets,
+            reps=request.reps,
+            weight_kg=request.weight_kg,
+            rest_time_seconds=request.rest_time_seconds,
+            duration_seconds=request.duration_seconds,
+        )
+        if not exercise:
+            raise HTTPException(status_code=404, detail="Exercise not found")
+        return {
+            "id": exercise.id,
+            "name": exercise.name,
+            "sets": exercise.sets,
+            "reps": exercise.reps,
+            "weight_kg": exercise.weight_kg,
+            "rest_time_seconds": exercise.rest_time_seconds,
+            "duration_seconds": exercise.duration_seconds,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update exercise: {str(e)}")
+
 @router.delete("/workouts/{routine_id}/exercises/{exercise_id}")
 async def delete_exercise(
     routine_id: int,

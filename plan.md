@@ -50,10 +50,10 @@
 *   [x] **Reactions System:** Implement long-tap interaction for users to react (Celebrate, Love, Sad, Angry, Funny) to announcements.
 
 ## Phase 6: Advanced AI Integrations & Localization
-*   [ ] **Egyptian Nutrition DB:** Supplement the existing food database with nutritional info specifically for Egyptian local foods (Koshary, Molokheya, Hamam, etc.).
 *   [ ] **Contextual AI:** Update LangGraph flow to fetch the user profile (stats, goals) from the database *before* generating responses for highly personalized advice.
-*   [ ] **AI Analytics:** Implement backend workers/prompts to generate insights analyzing user's eating and exercising habits over time.
-*   [ ] **Voice Input:** Integrate a speech-to-text model (e.g., Whisper) fine-tuned/prompted to understand **Egyptian Arabic dialect** and Franco-Arabic for voice meal logging.
 *   [ ] **Franco-Arabic RAG:** Ensure the AI coach system parses and converses robustly in Franco-Arabic when helping users with dietary and workout questions.
+*   [ ] **AI Analytics:** Implement backend workers/prompts to generate insights analyzing user's eating and exercising habits over time.
+*   [ ] **Egyptian Nutrition DB:** Supplement the existing food database with nutritional info specifically for Egyptian local foods (Koshary, Molokheya, Hamam, etc.).
+*   [ ] **Voice Input:** Integrate a speech-to-text model (e.g., Whisper) fine-tuned/prompted to understand **Egyptian Arabic dialect** and Franco-Arabic for voice meal logging.
 *   [ ] **Vision Input:** Integrate an Image/Vision LLM API (GPT-4o/Claude 3.5 Sonnet) to estimate calories/macros from plate photos.
 *   [ ] Deploy FastAPI backend to a cloud provider (e.g., Render, Railway, AWS).

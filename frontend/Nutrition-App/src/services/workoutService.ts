@@ -34,6 +34,14 @@ export interface AddExerciseRequest {
   duration_seconds?: number;
 }
 
+export interface UpdateExerciseRequest {
+  sets: number;
+  reps: number;
+  weight_kg?: number;
+  rest_time_seconds?: number;
+  duration_seconds?: number;
+}
+
 export const workoutService = {
   async getRoutines(): Promise<WorkoutRoutine[]> {
     const response = await axios.get(ENDPOINTS.WORKOUTS.LIST);
@@ -56,6 +64,11 @@ export const workoutService = {
 
   async addExercise(routineId: number, data: AddExerciseRequest): Promise<Exercise> {
     const response = await axios.post(ENDPOINTS.WORKOUTS.ADD_EXERCISE(routineId), data);
+    return response.data;
+  },
+
+  async updateExercise(routineId: number, exerciseId: number, data: UpdateExerciseRequest): Promise<Exercise> {
+    const response = await axios.put(ENDPOINTS.WORKOUTS.UPDATE_EXERCISE(routineId, exerciseId), data);
     return response.data;
   },
 

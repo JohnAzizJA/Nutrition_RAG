@@ -80,19 +80,96 @@ class UserRepository:
     
     def delete(self, user_id: int) -> bool:
         """Delete user and all associated data"""
+        from db.models import (
+            Conversation, WeightLog, MealLog, WorkoutRoutine, Follow,
+            WorkoutSession, WorkoutSessionSet, Exercise, MealPlan, MealPlanFood,
+            MealPlanCompletion, UserPRLog, UserWeightGoalAward, UserStreakState,
+            UserWeeklyCheck, UserCalorieCheck, CommunityMember, UserPoints,
+            CommunityAnnouncement, AnnouncementReaction, Community,
+        )
         with get_db() as db:
             try:
-                # Delete related data first
-                from db.models import Conversation, WeightLog, MealLog, WorkoutRoutine, Follow
-                
+                # Scoring / gamification tables
+                db.query(UserCalorieCheck).filter(UserCalorieCheck.user_id == user_id).delete()
+                db.query(UserWeeklyCheck).filter(UserWeeklyCheck.user_id == user_id).delete()
+                db.query(UserStreakState).filter(UserStreakState.user_id == user_id).delete()
+                db.query(UserWeightGoalAward).filter(UserWeightGoalAward.user_id == user_id).delete()
+                db.query(UserPRLog).filter(UserPRLog.user_id == user_id).delete()
+
+                # Community reactions / announcements / memberships this user has in any community
+                db.query(AnnouncementReaction).filter(AnnouncementReaction.user_id == user_id).delete()
+                db.query(CommunityAnnouncement).filter(CommunityAnnouncement.user_id == user_id).delete()
+                db.query(UserPoints).filter(UserPoints.user_id == user_id).delete()
+                db.query(CommunityMember).filter(CommunityMember.user_id == user_id).delete()
+
+                # Communities this user created — delete all children first, then the community
+                community_ids = [
+                    r[0] for r in db.query(Community.id).filter(Community.creator_id == user_id).all()
+                ]
+                if community_ids:
+                    ann_ids = [
+                        r[0] for r in db.query(CommunityAnnouncement.id)
+                        .filter(CommunityAnnouncement.community_id.in_(community_ids)).all()
+                    ]
+                    if ann_ids:
+                        db.query(AnnouncementReaction).filter(
+                            AnnouncementReaction.announcement_id.in_(ann_ids)
+                        ).delete(synchronize_session=False)
+                    db.query(CommunityAnnouncement).filter(
+                        CommunityAnnouncement.community_id.in_(community_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(UserPoints).filter(
+                        UserPoints.community_id.in_(community_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(CommunityMember).filter(
+                        CommunityMember.community_id.in_(community_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(Community).filter(Community.id.in_(community_ids)).delete(synchronize_session=False)
+
+                # Workout sessions and their sets
+                session_ids = [
+                    r[0] for r in db.query(WorkoutSession.id).filter(WorkoutSession.user_id == user_id).all()
+                ]
+                if session_ids:
+                    db.query(WorkoutSessionSet).filter(
+                        WorkoutSessionSet.session_id.in_(session_ids)
+                    ).delete(synchronize_session=False)
+                db.query(WorkoutSession).filter(WorkoutSession.user_id == user_id).delete()
+
+                # Workout routines and their exercises
+                routine_ids = [
+                    r[0] for r in db.query(WorkoutRoutine.id).filter(WorkoutRoutine.user_id == user_id).all()
+                ]
+                if routine_ids:
+                    db.query(Exercise).filter(
+                        Exercise.routine_id.in_(routine_ids)
+                    ).delete(synchronize_session=False)
+                db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
+
+                # Meal plans and their foods / completions
+                plan_ids = [
+                    r[0] for r in db.query(MealPlan.id).filter(MealPlan.user_id == user_id).all()
+                ]
+                if plan_ids:
+                    db.query(MealPlanFood).filter(
+                        MealPlanFood.plan_id.in_(plan_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(MealPlanCompletion).filter(
+                        MealPlanCompletion.plan_id.in_(plan_ids)
+                    ).delete(synchronize_session=False)
+                db.query(MealPlanCompletion).filter(MealPlanCompletion.user_id == user_id).delete()
+                db.query(MealPlan).filter(MealPlan.user_id == user_id).delete()
+
+                # Simple per-user tables
                 db.query(Conversation).filter(Conversation.user_id == user_id).delete()
                 db.query(WeightLog).filter(WeightLog.user_id == user_id).delete()
                 db.query(MealLog).filter(MealLog.user_id == user_id).delete()
                 db.query(WaterLog).filter(WaterLog.user_id == user_id).delete()
-                db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
-                db.query(Follow).filter((Follow.follower_id == user_id) | (Follow.following_id == user_id)).delete()
-                
-                # Delete user
+                db.query(Follow).filter(
+                    (Follow.follower_id == user_id) | (Follow.following_id == user_id)
+                ).delete()
+
+                # Finally delete the user
                 user = db.query(User).filter(User.id == user_id).first()
                 if user:
                     db.delete(user)
@@ -320,6 +397,33 @@ class WorkoutRepository:
                 return True
             return False
     
+    def update_exercise(self, exercise_id: int, routine_id: int, user_id: int,
+                        sets: int, reps: int,
+                        weight_kg: Optional[float] = None,
+                        rest_time_seconds: Optional[int] = None,
+                        duration_seconds: Optional[int] = None) -> Optional[Exercise]:
+        """Update exercise fields"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if not routine:
+                return None
+            exercise = db.query(Exercise).filter(
+                Exercise.id == exercise_id,
+                Exercise.routine_id == routine_id
+            ).first()
+            if exercise:
+                exercise.sets = sets
+                exercise.reps = reps
+                exercise.weight_kg = weight_kg
+                exercise.rest_time_seconds = rest_time_seconds
+                exercise.duration_seconds = duration_seconds
+                db.commit()
+                db.refresh(exercise)
+            return exercise
+
     def delete_exercise(self, exercise_id: int, routine_id: int, user_id: int) -> bool:
         """Delete exercise from routine"""
         with get_db() as db:

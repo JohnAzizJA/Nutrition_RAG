@@ -49,6 +49,7 @@ export const ENDPOINTS = {
     UPDATE: (id: number) => `/api/workouts/${id}`,
     DELETE: (id: number) => `/api/workouts/${id}`,
     ADD_EXERCISE: (routineId: number) => `/api/workouts/${routineId}/exercises`,
+    UPDATE_EXERCISE: (routineId: number, exerciseId: number) => `/api/workouts/${routineId}/exercises/${exerciseId}`,
     DELETE_EXERCISE: (routineId: number, exerciseId: number) => `/api/workouts/${routineId}/exercises/${exerciseId}`,
   },
   
