@@ -52,7 +52,7 @@
 ## Phase 6: Advanced AI Integrations & Localization
 *   [x] **Contextual AI:** Update LangGraph flow to fetch the user profile (stats, goals) from the database *before* generating responses for highly personalized advice.
 *   [x] **RAG Enhancement (Action Tools):** Give the AI tools to take actions in the app, such as logging a meal or fetching today's macros.
-*   [ ] **RAG Enhancement (Intent Routing):** Build a fast routing node at the graph start to categorize questions, bypassing the 70b model for simple queries.
+*   [x] **RAG Enhancement (Intent Routing):** Build a fast routing node at the graph start to categorize questions, bypassing the 70b model for simple queries.
 *   [ ] **RAG Enhancement (Error Handling):** Add fallback conditional edges so the LLM can self-correct when tools fail.
 *   [ ] **Franco-Arabic RAG:** Ensure the AI coach system parses and converses robustly in Franco-Arabic when helping users with dietary and workout questions.
 *   [ ] **AI Analytics:** Implement backend workers/prompts to generate insights analyzing user's eating and exercising habits over time.

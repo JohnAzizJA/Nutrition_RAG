@@ -213,39 +213,50 @@ Provide a helpful answer based on the context above.""")
             "response": response_text,
         }
     
+    def _router_node(self, state: GraphState) -> GraphState:
+        history = state.get("messages", [])
+        intent = self.llm_client.route(state["query"], history=history)
+        return {**state, "intent": intent}
+
+    def _route_after_router(self, state: GraphState) -> str:
+        return state.get("intent", "knowledge")
+
     def _route_after_agent(self, state: GraphState) -> str:
-        next_action = state.get("next_action", "retrieve")
-        if next_action == "tools":
-            return "tools"
-        return "retrieve"
-    
+        return "tools" if state.get("next_action") == "tools" else "retrieve"
+
     def _build_graph(self) -> StateGraph:
         workflow = StateGraph(GraphState)
-        
-        # Add nodes
+
+        workflow.add_node("router", self._router_node)
         workflow.add_node("agent", self._agent_node)
         workflow.add_node("tools", self._tool_node)
         workflow.add_node("retrieve", self._retrieve_node)
         workflow.add_node("generate", self._generate_node)
-        
-        # Define flow
-        workflow.set_entry_point("agent")
-        
-        # After agent: go to tools OR retrieve
+
+        workflow.set_entry_point("router")
+
+        # Router dispatches to agent (tool intent), retrieve (knowledge), or generate (chat)
+        workflow.add_conditional_edges(
+            "router",
+            self._route_after_router,
+            {
+                "tool": "agent",
+                "knowledge": "retrieve",
+                "chat": "generate",
+            }
+        )
+
+        # After agent: tools or retrieve
         workflow.add_conditional_edges(
             "agent",
             self._route_after_agent,
-            {
-                "tools": "tools",
-                "retrieve": "retrieve"
-            }
+            {"tools": "tools", "retrieve": "retrieve"}
         )
-        
-        # Both tools and retrieve go to generate
+
         workflow.add_edge("tools", "generate")
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", END)
-        
+
         return workflow.compile(checkpointer=self.checkpointer, store=self.store)
     
     def run(self, query: str, user_id: int = 1, thread_id: str = "default", user_profile: dict | None = None) -> str:
