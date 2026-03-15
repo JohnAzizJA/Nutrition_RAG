@@ -106,24 +106,26 @@ Goal Weight: {user_profile.get('goal_weight_kg')} kg"""
         messages = state.get("messages", [])
         system_prompt = self._build_system_prompt(state.get("user_profile"))
 
-        # Build messages with system prompt and conversation history
-        all_messages = [SystemMessage(content=system_prompt)] + messages + [HumanMessage(content=query)]
+        # On retry, include the tool error so the agent can self-correct
+        extra = []
+        if state.get("tool_retry_count", 0) > 0 and state.get("tool_results"):
+            extra = [HumanMessage(content=f"The previous tool call failed:\n{state['tool_results']}\nPlease try again with corrected arguments.")]
+
+        all_messages = [SystemMessage(content=system_prompt)] + messages + extra + [HumanMessage(content=query)]
 
         response = self.llm_client.invoke(all_messages)
-        
-        # Check if LLM wants to use tools
+
         if hasattr(response, 'tool_calls') and response.tool_calls:
             state["tool_calls"] = response.tool_calls
             state["next_action"] = "tools"
         else:
-            # No tools needed, retrieve docs for knowledge questions
             state["next_action"] = "retrieve"
-        
+
         return {
             **state,
             "messages": [HumanMessage(content=query)]
         }
-    
+
     def _tool_node(self, state: GraphState) -> GraphState:
         tool_map = {
             "calculate_bmi": calculate_bmi,
@@ -143,6 +145,7 @@ Goal Weight: {user_profile.get('goal_weight_kg')} kg"""
         user_id = (state.get("user_profile") or {}).get("id", 0)
 
         results = []
+        has_error = False
         for tool_call in state["tool_calls"]:
             tool_name = tool_call["name"]
             tool_args = dict(tool_call["args"])
@@ -156,10 +159,21 @@ Goal Weight: {user_profile.get('goal_weight_kg')} kg"""
                     results.append(f"{tool_name}: {result}")
                 except Exception as e:
                     results.append(f"{tool_name}: Error - {str(e)}")
+                    has_error = True
 
-        state["tool_results"] = "\n".join(results)
-        state["next_action"] = "generate"
-        return state
+        retry_count = state.get("tool_retry_count", 0)
+        # Route back to agent for self-correction if there were errors and retries remain
+        if has_error and retry_count < 2:
+            next_action = "retry"
+        else:
+            next_action = "generate"
+
+        return {
+            **state,
+            "tool_results": "\n".join(results),
+            "next_action": next_action,
+            "tool_retry_count": retry_count + (1 if has_error else 0),
+        }
     
     def _retrieve_node(self, state: GraphState) -> GraphState:
         query = state["query"]
@@ -253,7 +267,12 @@ Provide a helpful answer based on the context above.""")
             {"tools": "tools", "retrieve": "retrieve"}
         )
 
-        workflow.add_edge("tools", "generate")
+        # After tools: generate on success, back to agent on error (self-correction)
+        workflow.add_conditional_edges(
+            "tools",
+            lambda s: s.get("next_action", "generate"),
+            {"generate": "generate", "retry": "agent"}
+        )
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", END)
 
@@ -264,6 +283,7 @@ Provide a helpful answer based on the context above.""")
         initial_state = {
             "query": query,
             "user_profile": user_profile,
+            "tool_retry_count": 0,
         }
 
         config = {
