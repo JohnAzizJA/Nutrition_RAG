@@ -2,6 +2,7 @@ import os
 import httpx
 from langchain_core.tools import tool, InjectedToolArg
 from typing import Annotated
+from rag.egyptian_foods_lookup import search_egyptian_foods, format_results as format_egyptian_results
 
 ACTIVITY_MULTIPLIERS = {
     "sedentary": 1.2,
@@ -143,12 +144,18 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
 
 @tool
 def search_food(query: str, max_results: int = 5) -> str:
-    """Search the USDA food database for nutritional information about a food item.
+    """Search for nutritional information about a food item. Checks a local Egyptian food database first, then falls back to the USDA database.
 
     Args:
-        query: Food name or description to search for (e.g. 'chicken breast', 'brown rice')
+        query: Food name or description to search for (e.g. 'koshary', 'chicken breast', 'ful medames')
         max_results: Number of results to return (default 5, max 10)
     """
+    # 1. Check local Egyptian food database first
+    egyptian_matches = search_egyptian_foods(query, max_results=min(max_results, 10))
+    if egyptian_matches:
+        return format_egyptian_results(egyptian_matches, query)
+
+    # 2. Fall back to USDA API
     api_key = os.getenv("USDA_API_KEY")
     if not api_key:
         return "Food search unavailable: USDA API key not configured."

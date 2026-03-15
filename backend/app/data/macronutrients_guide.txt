@@ -1,0 +1,90 @@
+Macronutrients: Complete Guide to Proteins, Carbohydrates, and Fats
+
+OVERVIEW
+Macronutrients are the three primary nutrients that provide energy and building blocks for the body: protein, carbohydrates, and fats. Each gram of protein provides 4 calories, each gram of carbohydrate provides 4 calories, and each gram of fat provides 9 calories. Alcohol provides 7 calories per gram but is not a macronutrient. Understanding macronutrients is essential for achieving any nutrition or fitness goal.
+
+PROTEIN
+Protein is composed of amino acids and is the primary building material for muscle, skin, hair, enzymes, hormones, and immune cells. There are 20 amino acids; 9 are essential (must come from food).
+
+How much protein do you need?
+- Sedentary adults (general health): 0.8 g per kg of body weight per day
+- Moderately active adults: 1.2–1.6 g/kg
+- Regular strength trainers or athletes: 1.6–2.2 g/kg
+- During a calorie deficit (cutting phase): up to 2.2–2.5 g/kg to preserve muscle mass
+- Example: A 75 kg person doing resistance training needs approximately 120–165 g of protein per day
+
+High-quality protein sources:
+- Animal sources (complete proteins, containing all essential amino acids): chicken breast, turkey, eggs, fish (salmon, tuna, tilapia), lean beef, Greek yogurt, cottage cheese, whey protein
+- Plant sources: lentils, chickpeas, tofu, tempeh, edamame, quinoa, black beans. Most plant proteins are incomplete (missing one or more essential amino acids) but combining different plant foods throughout the day ensures adequate intake.
+
+Protein timing:
+- Spreading protein across 3–5 meals (25–40 g per meal) maximizes muscle protein synthesis compared to eating it all in one meal
+- Consuming 20–40 g of protein within 2 hours after resistance training accelerates muscle repair and growth
+- A slow-digesting protein (casein, found in cottage cheese or Greek yogurt) before bed can reduce overnight muscle breakdown
+
+Signs of inadequate protein intake: muscle loss, slow wound healing, hair thinning, weakened immunity, persistent hunger.
+
+CARBOHYDRATES
+Carbohydrates are the body's preferred and most efficient energy source, particularly for the brain and during high-intensity exercise.
+
+Types of carbohydrates:
+1. Simple carbohydrates (fast-digesting): sugars found in fruit, dairy, and processed foods. They raise blood glucose quickly. Natural sources like fruit also provide fiber, vitamins, and minerals.
+2. Complex carbohydrates (slow-digesting): found in whole grains, legumes, vegetables. They digest slowly, providing sustained energy and promoting satiety.
+3. Dietary fiber: indigestible carbohydrate that feeds gut bacteria, regulates blood sugar, lowers cholesterol, and promotes fullness. Target: 25–38 g per day.
+
+How much carbohydrate do you need?
+- General recommendation: 45–65% of total daily calories
+- Endurance athletes may need 55–70% of calories from carbs
+- Low-carb diets (under 26% of calories or under 130 g/day) can be effective for weight loss or blood sugar control in some individuals
+- Very low-carb/ketogenic diets (under 50 g/day) force the body into ketosis, burning fat for fuel. These require medical supervision for diabetics.
+
+Glycemic Index (GI) and Glycemic Load (GL):
+- GI measures how fast a food raises blood sugar (scale of 0–100)
+- Low GI (under 55): oats, lentils, sweet potato, most fruits, whole grain bread
+- High GI (over 70): white bread, white rice, sugary drinks, cornflakes
+- GL accounts for both GI and portion size — a more practical tool for meal planning
+- Choosing low-GI carbs generally improves satiety, blood sugar control, and sustained energy
+
+Best carbohydrate sources: brown rice, oats, sweet potatoes, quinoa, lentils, chickpeas, whole wheat bread, fruits, vegetables.
+
+Carbs to limit: white sugar, syrups, fruit juice, pastries, white bread, processed snacks.
+
+FATS
+Fat is essential for hormone production (including testosterone and estrogen), brain function, fat-soluble vitamin absorption (A, D, E, K), cell membrane integrity, and joint lubrication.
+
+Types of fat:
+1. Unsaturated fats (healthy): monounsaturated and polyunsaturated fats. Found in olive oil, avocado, nuts, seeds, fatty fish. Reduce LDL cholesterol and inflammation.
+2. Saturated fats (limit): found in red meat, butter, cheese, coconut oil, palm oil. Raise LDL cholesterol when consumed in excess. Limit to under 10% of total calories.
+3. Trans fats (avoid): industrially produced through hydrogenation. Found in margarine, fried fast food, packaged pastries. Raise LDL and lower HDL — no safe level of consumption.
+4. Omega-3 fatty acids: a type of polyunsaturated fat with powerful anti-inflammatory properties. Found in fatty fish (salmon, mackerel, sardines), flaxseed, walnuts, chia seeds. Target 1,000–2,000 mg EPA+DHA daily for cardiovascular and anti-inflammatory benefit; the minimum for deficiency prevention is 250–500 mg, but current guidelines (AHA 2023, Academy of Nutrition and Dietetics 2021) recommend higher intake for meaningful health effects.
+
+How much fat do you need?
+- Minimum: 15% of total daily calories (for hormone function)
+- Recommended range: 20–35% of total daily calories
+- Example: on a 2000 kcal diet, 44–78 g of fat per day
+- Very low-fat diets (under 15%) can impair hormone production and fat-soluble vitamin absorption
+
+FIBER
+Dietary fiber is technically a carbohydrate but deserves special attention:
+- Soluble fiber (oats, apples, legumes): dissolves in water, slows glucose absorption, lowers LDL cholesterol, feeds beneficial gut bacteria
+- Insoluble fiber (whole grains, vegetables): adds bulk to stool, prevents constipation, reduces colorectal cancer risk
+
+Daily fiber targets: 25 g for women, 38 g for men; most people consume only 15 g/day.
+
+TRACKING MACROS
+- To lose weight: create a calorie deficit of 300–500 kcal/day; prioritize high protein (2.0–2.5 g/kg) to preserve muscle
+- To gain muscle: calorie surplus of 200–400 kcal/day; 1.6–2.2 g/kg protein; adequate carbs to fuel training
+- To maintain weight: match calories to TDEE (Total Daily Energy Expenditure); balanced macros
+- Tracking tools: food diary apps, food scales for accuracy
+- Flexible dieting (IIFYM — If It Fits Your Macros): focuses on hitting daily macro targets rather than food restriction; evidence supports it for body composition goals when calories are controlled
+
+HYDRATION AND MACROS
+Water is not a macronutrient but affects nutrient absorption. Protein digestion increases water needs. A general starting point is 35–45 ml per kg of body weight daily; however, ACSM 2023 guidance emphasizes individualized hydration based on sweat rate, climate, and training intensity rather than fixed formulas. Urine color (target pale yellow) is the most practical daily hydration indicator.
+
+---
+REFERENCES
+- World Health Organization. Healthy Diet (2020). https://www.who.int/news-room/fact-sheets/detail/healthy-diet
+- U.S. Department of Agriculture. Dietary Guidelines for Americans 2020–2025. https://www.dietaryguidelines.gov
+- Stokes T, et al. Recent Perspectives Regarding the Role of Dietary Protein for the Promotion of Muscle Hypertrophy with Resistance Exercise Training. Nutrients (2018). https://pubmed.ncbi.nlm.nih.gov/29534031/
+- Jäger R, et al. International Society of Sports Nutrition Position Stand: Protein and Exercise. JISSN (2017). https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8
+- National Academies of Sciences, Engineering, and Medicine. Dietary Reference Intakes. https://www.nationalacademies.org/our-work/dietary-reference-intakes

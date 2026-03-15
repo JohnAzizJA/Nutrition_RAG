@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from rag.vector_store import VectorStore
 
 if __name__ == "__main__":

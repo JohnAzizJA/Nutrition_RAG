@@ -1,0 +1,165 @@
+Workout Programming: Training Splits, Sample Programs, and Progression
+
+CHOOSING A TRAINING SPLIT
+A training split determines which muscle groups you train on which days. The best split is the one you can consistently follow, recover from, and progressively overload.
+
+FULL BODY (3 days/week)
+Best for: beginners, people with limited time, returning trainees.
+Each session trains all major muscle groups. High frequency per muscle (3x/week) accelerates early adaptations.
+
+Sample Full Body Program (Beginner, 3 days/week — e.g., Mon/Wed/Fri):
+Session A:
+- Squat: 3 sets × 5 reps
+- Bench Press: 3 × 5
+- Barbell Row: 3 × 5
+- Overhead Press: 2 × 8
+- Plank: 3 × 30 seconds
+
+Session B:
+- Deadlift: 1 × 5 (heavy single working set)
+- Incline Dumbbell Press: 3 × 8
+- Lat Pulldown: 3 × 8
+- Dumbbell Lunges: 3 × 10 each
+- Dumbbell Curl: 2 × 12
+
+Alternate A-B-A one week, B-A-B the next. Add 2.5 kg to upper body lifts and 5 kg to lower body lifts each session you successfully complete all reps.
+
+UPPER / LOWER SPLIT (4 days/week)
+Best for: intermediate trainees, those with 4 training days available. Trains each muscle group twice per week.
+
+Sample Upper/Lower (4 days: Mon/Tue/Thu/Fri):
+Upper A (strength focus):
+- Bench Press: 4 × 4–6
+- Barbell Row: 4 × 4–6
+- Overhead Press: 3 × 6–8
+- Pull-Ups: 3 × max reps
+- Tricep Dips: 3 × 8–10
+
+Lower A (strength focus):
+- Back Squat: 4 × 4–6
+- Romanian Deadlift: 3 × 8
+- Leg Press: 3 × 10
+- Walking Lunges: 3 × 10 each
+- Calf Raises: 4 × 15
+
+Upper B (hypertrophy focus):
+- Incline Dumbbell Press: 4 × 10–12
+- Cable Row: 4 × 10–12
+- Dumbbell Shoulder Press: 3 × 12
+- Lat Pulldown: 3 × 12
+- Face Pulls: 3 × 15
+- Bicep Curls: 3 × 12
+- Tricep Pushdowns: 3 × 12
+
+Lower B (hypertrophy focus):
+- Leg Press: 4 × 12–15
+- Bulgarian Split Squat: 3 × 10 each
+- Leg Curl: 3 × 12
+- Leg Extension: 3 × 15
+- Seated Calf Raises: 4 × 15
+
+PUSH / PULL / LEGS (PPL — 6 days/week)
+Best for: intermediate to advanced trainees, 5–6 training days per week. High volume; each muscle trained twice per week.
+
+Push Day (chest, shoulders, triceps):
+- Bench Press: 4 × 6–10
+- Incline Dumbbell Press: 4 × 10–12
+- Cable Lateral Raise: 3 × 15
+- Overhead Press: 3 × 8–10
+- Tricep Pushdowns: 3 × 12
+- Skull Crushers: 3 × 10
+
+Pull Day (back, biceps, rear delts):
+- Deadlift: 3 × 5 (or 4 × 8 for hypertrophy)
+- Pull-Ups: 4 × 6–10
+- Barbell Row: 4 × 8
+- Seated Cable Row: 3 × 12
+- Face Pulls: 3 × 15
+- Bicep Curls: 3 × 12
+- Hammer Curls: 3 × 12
+
+Legs Day (quads, hamstrings, glutes, calves):
+- Back Squat: 4 × 6–10
+- Romanian Deadlift: 4 × 10
+- Leg Press: 3 × 12
+- Leg Curl: 3 × 12
+- Leg Extension: 3 × 15
+- Calf Raises: 5 × 15
+
+PPL schedule options:
+- 6 days: Push/Pull/Legs/Push/Pull/Legs/Rest
+- 5 days: Push/Pull/Legs/Rest/Push/Pull/Rest (then continue)
+
+BODYWEIGHT TRAINING
+No gym required. Progressive overload is achieved through harder exercise variations, added reps, or tempo manipulation.
+
+Beginner bodyweight routine (3 days/week):
+- Push-Ups: 3 × max reps (progress to pike push-ups → archer push-ups → pseudo planche)
+- Inverted Rows: 3 × max (use a table edge or low bar)
+- Bodyweight Squats: 3 × 15–20 (progress to Bulgarian split squat → pistol squat)
+- Hip Hinges / Glute Bridge: 3 × 15
+- Dead Hangs: 3 × max time
+- Plank: 3 × 45 seconds
+
+HOME DUMBBELL-ONLY PROGRAM (3 days/week):
+Day 1 (Push/Legs):
+- Dumbbell Squat: 4 × 12
+- Dumbbell Goblet Squat: 3 × 15
+- Dumbbell Bench Press (floor): 4 × 10
+- Dumbbell Shoulder Press: 3 × 12
+- Tricep Kickbacks: 3 × 12
+
+Day 2 (Pull):
+- Dumbbell Romanian Deadlift: 4 × 10
+- Dumbbell Row: 4 × 10 each
+- Dumbbell Pullovers: 3 × 12
+- Bicep Curls: 3 × 12
+- Rear Delt Flyes: 3 × 15
+
+Day 3 (Full Body):
+- Dumbbell Lunges: 3 × 12 each
+- Incline Push-Ups: 3 × 15
+- Dumbbell Deadlift: 3 × 10
+- Lateral Raises: 3 × 15
+- Hammer Curls: 3 × 12
+
+CARDIO PROGRAMMING
+Adding cardio to a resistance training program:
+- 2–3 sessions of LISS (30–45 min of brisk walking, cycling) per week for general health and fat loss
+- 1–2 sessions of HIIT per week for cardiovascular improvement and time efficiency
+- Do cardio after weight training or on separate days to avoid impairing strength performance
+- Current research (Schoenfeld & Krieger 2020, updated 2023) shows that up to 2.5 hours of LISS cardio weekly has minimal interference with muscle gain when protein intake and calorie targets are met. The primary concern is total recovery capacity, not competing molecular signals. Excessive cardio beyond this threshold may impair recovery if overall calorie intake isn't adjusted upward.
+
+BEGINNER COUCH-TO-5K PLAN (Running for beginners):
+Week 1–2: Walk 3 min / Run 1 min, repeat 6 times (30 min total, 3 days/week)
+Week 3–4: Walk 2 min / Run 2 min, repeat 6 times
+Week 5–6: Walk 1 min / Run 3 min, repeat 6 times
+Week 7–8: Walk 1 min / Run 5 min, repeat 4 times
+Week 9–10: Run continuously for 20–30 minutes
+
+TRACKING PROGRESS
+Log every workout (exercises, sets, reps, weight). Review every 4 weeks:
+- Are your lifts improving? If yes, continue the program.
+- Stalled for 2+ weeks on a lift? Deload, technique check, or add an extra rest day.
+- Are you losing muscle during a cut? Increase protein, reduce cardio, ensure sleep.
+
+---
+REFERENCES
+- American College of Sports Medicine. ACSM's Guidelines for Exercise Testing and Prescription, 11th ed. (2022). https://www.acsm.org/education-resources/books/acsm-guidelines-exercise-testing-prescription
+- Krieger JW. Single vs. Multiple Sets of Resistance Exercise for Muscle Hypertrophy. JSCR (2010). https://pubmed.ncbi.nlm.nih.gov/19661829/
+- Schoenfeld BJ, et al. Strength and Hypertrophy Adaptations Between Low- vs. High-Load Resistance Training. JSCR (2017). https://pubmed.ncbi.nlm.nih.gov/28834797/
+- Ralston GW, et al. The Effect of Weekly Set Volume on Strength Gain. Sports Medicine (2017). https://pubmed.ncbi.nlm.nih.gov/28819746/
+
+REST PERIODS BETWEEN SETS
+- Heavy compound lifts (squat, deadlift, bench): 2–4 minutes
+- Moderate compound and accessory lifts: 90–120 seconds
+- Isolation exercises (curls, lateral raises): 60–90 seconds
+- Shorter rest periods increase metabolic stress (one driver of hypertrophy) but reduce the weight you can lift
+
+EXERCISE SUBSTITUTIONS
+If equipment is unavailable:
+- Barbell Squat → Goblet Squat, Bulgarian Split Squat, Leg Press
+- Bench Press → Push-Ups, Dumbbell Chest Press, Cable Flye
+- Deadlift → Romanian Deadlift, Trap Bar Deadlift, Dumbbell Deadlift
+- Pull-Ups → Lat Pulldown, Dumbbell Row, Machine Row
+- Overhead Press → Dumbbell Shoulder Press, Arnold Press, Landmine Press

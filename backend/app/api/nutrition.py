@@ -8,6 +8,7 @@ from db.models import User
 from db.repositories import MealLogRepository
 import scoring
 from api.dashboard import calculate_logging_streak
+from rag.egyptian_foods_lookup import search_egyptian_foods
 
 router = APIRouter()
 meal_repo = MealLogRepository()
@@ -23,29 +24,55 @@ class LogFoodRequest(BaseModel):
     fat_g: float
 
 
+def _egyptian_to_food_item(food: dict) -> dict:
+    """Convert an Egyptian DB entry to the USDA FoodItem shape the frontend expects."""
+    return {
+        "fdcId": f"EGY_{food['name'].lower().replace(' ', '_')}",
+        "description": food["name"],
+        "source": "egyptian",
+        "foodNutrients": [
+            {"nutrientId": 1008, "value": food["calories_per_100g"]},
+            {"nutrientId": 1003, "value": food["protein_g"]},
+            {"nutrientId": 1005, "value": food["carbs_g"]},
+            {"nutrientId": 1004, "value": food["fat_g"]},
+        ],
+    }
+
+
 @router.get("/search-foods")
 async def search_foods(query: str, current_user: User = Depends(get_current_user)):
-    """Search foods using USDA API"""
-    api_key = os.getenv("USDA_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="USDA API key not configured")
+    """Search foods — checks Egyptian DB first, then USDA."""
+    # 1. Egyptian DB (sync, in-memory — very fast)
+    egyptian_matches = search_egyptian_foods(query, max_results=5)
+    egyptian_items = [_egyptian_to_food_item(f) for f in egyptian_matches]
 
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.nal.usda.gov/fdc/v1/foods/search",
-                params={
-                    "query": query,
-                    "api_key": api_key,
-                    "dataType": ["Foundation", "SR Legacy"],
-                    "pageSize": 10,
-                    "nutrients": [1008, 1003, 1005, 1004]
-                }
-            )
-            response.raise_for_status()
-            return response.json()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to search foods: {str(e)}")
+    # 2. USDA API
+    api_key = os.getenv("USDA_API_KEY")
+    usda_items = []
+    if api_key:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.get(
+                    "https://api.nal.usda.gov/fdc/v1/foods/search",
+                    params={
+                        "query": query,
+                        "api_key": api_key,
+                        "dataType": ["Foundation", "SR Legacy"],
+                        "pageSize": 10,
+                        "nutrients": [1008, 1003, 1005, 1004],
+                    },
+                )
+                response.raise_for_status()
+                usda_items = response.json().get("foods", [])
+        except Exception:
+            pass  # USDA failure is non-fatal when Egyptian results exist
+
+    # Egyptian results appear first
+    combined = egyptian_items + usda_items
+    if not combined:
+        raise HTTPException(status_code=503, detail="Food search temporarily unavailable.")
+
+    return {"foods": combined}
 
 
 @router.post("/log-food")

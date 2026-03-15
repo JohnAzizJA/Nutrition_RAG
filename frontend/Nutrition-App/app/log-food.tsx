@@ -32,8 +32,8 @@ export default function LogFoodScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [amounts, setAmounts] = useState<{ [key: number]: string }>({});
-  const [units, setUnits] = useState<{ [key: number]: Unit }>({});
+  const [amounts, setAmounts] = useState<{ [key: string]: string }>({});
+  const [units, setUnits] = useState<{ [key: string]: Unit }>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function LogFoodScreen() {
     }
   };
 
-  const getUnit = (fdcId: number): Unit => units[fdcId] ?? 'g';
+  const getUnit = (fdcId: string | number): Unit => units[String(fdcId)] ?? 'g';
 
   const calculateNutrients = (food: FoodItem, grams: number) => {
     const n = food.foodNutrients;
@@ -75,12 +75,13 @@ export default function LogFoodScreen() {
 
   const addFood = async (food: FoodItem) => {
     setError(null);
-    const raw = parseFloat(amounts[food.fdcId] || '0');
+    const key = String(food.fdcId);
+    const raw = parseFloat(amounts[key] || '0');
     if (!(raw > 0)) {
       setError('Enter a valid amount first.');
       return;
     }
-    const grams = toGrams(raw, getUnit(food.fdcId));
+    const grams = toGrams(raw, getUnit(key));
     const nutrients = calculateNutrients(food, grams);
 
     try {
@@ -113,25 +114,34 @@ export default function LogFoodScreen() {
   };
 
   const renderFoodItem = ({ item }: { item: FoodItem }) => {
-    const raw   = parseFloat(amounts[item.fdcId] || '0');
-    const unit  = getUnit(item.fdcId);
+    const key   = String(item.fdcId);
+    const raw   = parseFloat(amounts[key] || '0');
+    const unit  = getUnit(key);
     const grams = raw > 0 ? toGrams(raw, unit) : 0;
     const nutrients = grams > 0 ? calculateNutrients(item, grams) : null;
     const showConversion = unit !== 'g' && raw > 0;
+    const isEgyptian = item.source === 'egyptian';
 
     return (
       <View style={styles.foodItem}>
         <View style={styles.foodInfo}>
-          <ThemedText style={styles.foodName} numberOfLines={2}>
-            {item.description}
-          </ThemedText>
+          <View style={styles.nameRow}>
+            <ThemedText style={styles.foodName} numberOfLines={2}>
+              {item.description}
+            </ThemedText>
+            {isEgyptian && (
+              <View style={styles.egyptianBadge}>
+                <ThemedText style={styles.egyptianBadgeText}>🇪🇬</ThemedText>
+              </View>
+            )}
+          </View>
 
           <View style={styles.inputRow}>
             <TextInput
               style={styles.amountInput}
               placeholder="Amount"
-              value={amounts[item.fdcId] || ''}
-              onChangeText={text => setAmounts(prev => ({ ...prev, [item.fdcId]: text }))}
+              value={amounts[key] || ''}
+              onChangeText={text => setAmounts(prev => ({ ...prev, [key]: text }))}
               keyboardType="numeric"
               placeholderTextColor={Colors.placeholder}
             />
@@ -140,7 +150,7 @@ export default function LogFoodScreen() {
                 <TouchableOpacity
                   key={u.key}
                   style={[styles.unitPill, unit === u.key && styles.unitPillActive]}
-                  onPress={() => setUnits(prev => ({ ...prev, [item.fdcId]: u.key }))}
+                  onPress={() => setUnits(prev => ({ ...prev, [key]: u.key }))}
                 >
                   <ThemedText style={[styles.unitLabel, unit === u.key && styles.unitLabelActive]}>
                     {u.label}
@@ -206,7 +216,7 @@ export default function LogFoodScreen() {
 
       <FlatList
         data={foods}
-        keyExtractor={item => item.fdcId.toString()}
+        keyExtractor={item => String(item.fdcId)}
         renderItem={renderFoodItem}
         style={styles.list}
         showsVerticalScrollIndicator={false}
@@ -261,7 +271,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   foodInfo: { flex: 1, marginRight: 12, gap: 6 },
-  foodName: { fontSize: 15, fontWeight: '600', color: Colors.dark },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  foodName: { fontSize: 15, fontWeight: '600', color: Colors.dark, flex: 1 },
+  egyptianBadge: {
+    backgroundColor: Colors.secondary + '18',
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  egyptianBadgeText: { fontSize: 13 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   amountInput: {
     backgroundColor: Colors.background,

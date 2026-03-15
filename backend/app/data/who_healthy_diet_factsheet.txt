@@ -57,3 +57,7 @@ Micronutrients are essential vitamins and minerals – there are about 30 in tot
 Encourage a diet with a wide variety of nutrient‑dense foods, including fruits, vegetables, whole grains, legumes, nuts, seeds, and lean animal‑source foods, to ensure adequate intake of key vitamins and minerals.
 Promote the consumption of micronutrient‑rich foods regularly – for example, beans or lean meats to support iron intake; dark‑green leafy vegetables to improve vitamin A status; or iodized salt to avoid iodine deficiency.
 In countries where micronutrient deficiencies are highly prevalent (20% or higher), integrate large‑scale food fortification into national public health strategies by fortifying widely-consumed staples and condiments – such as flour, rice, oil, salt, or sugar – with key micronutrients (e.g., iron, folic acid, vitamin A, iodine, and zinc).
+
+---
+REFERENCE
+- World Health Organization. Healthy Diet Fact Sheet N°394 (2020). https://www.who.int/news-room/fact-sheets/detail/healthy-diet

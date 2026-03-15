@@ -15,7 +15,7 @@ class DocumentProcessor:
         if path.suffix == ".pdf":
             loader = PyPDFLoader(file_path)
         else:
-            loader = TextLoader(file_path)
+            loader = TextLoader(file_path, encoding="utf-8")
         
         documents = loader.load()
         chunks = self.splitter.split_documents(documents)

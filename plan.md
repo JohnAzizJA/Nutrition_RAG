@@ -6,7 +6,7 @@
 * [x] LangGraph workflow (Agent, Tools, Retrieve, Generate nodes).
 * [x] Implement calculation tools (BMI, BMR, TDEE, Macros).
 * [x] **Migration:** Transition LLM client from `Ollama` to `Groq` for faster inference.
-* [ ] **Migration:** Move vector storage from `ChromaDB` to `Supabase pgvector`.
+* [x] **Migration:** Move vector storage from `ChromaDB` to `Supabase pgvector`. 339 chunks from 13 documents ingested with HNSW index and cosine similarity.
 
 ## Phase 2: User Memory & Structured Data, FastAPI
 * [x] Implement conversational memory (checkpointer) in LangGraph using Supabase/PostgreSQL to store thread states.
@@ -54,9 +54,9 @@
 *   [x] **RAG Enhancement (Action Tools):** Give the AI tools to take actions in the app, such as logging a meal or fetching today's macros.
 *   [x] **RAG Enhancement (Intent Routing):** Build a fast routing node at the graph start to categorize questions, bypassing the 70b model for simple queries.
 *   [x] **RAG Enhancement (Error Handling):** Add fallback conditional edges so the LLM can self-correct when tools fail.
-*   [ ] **Franco-Arabic RAG:** Ensure the AI coach system parses and converses robustly in Franco-Arabic when helping users with dietary and workout questions.
-*   [ ] **AI Analytics:** Implement backend workers/prompts to generate insights analyzing user's eating and exercising habits over time.
-*   [ ] **Egyptian Nutrition DB:** Supplement the existing food database with nutritional info specifically for Egyptian local foods (Koshary, Molokheya, Hamam, etc.).
+*   [x] **Egyptian Nutrition DB:** Supplement the existing food database with nutritional info specifically for Egyptian local foods (Koshary, Molokheya, Hamam, etc.). Local JSON database with 40+ foods; `search_food` tool checks it first before USDA fallback. 10 comprehensive RAG knowledge documents added (macros, weight management, diabetes, fitness, workout programs, sports nutrition, meal planning, health conditions, micronutrients, Egyptian cuisine, supplements, gut health).
 *   [ ] **Voice Input:** Integrate a speech-to-text model (e.g., Whisper) fine-tuned/prompted to understand **Egyptian Arabic dialect** for voice meal logging.
-*   [ ] **Vision Input:** Integrate an Image/Vision LLM API (GPT-4o/Claude 3.5 Sonnet) to estimate calories/macros from plate photos.
+*   [ ] **Apple Health Integration:** Integrate with Apple Health to fetch user's health data (steps, sleep, calories burned, etc.) and sync it with the app, and log workouts to Apple Health.
+*   [ ] **Spotify Integration:** Integrate with Spotify to allow the user to switch between songs during workouts.
+*   [ ] **Franco-Arabic RAG:** Ensure the AI coach system parses and converses robustly in Franco-Arabic when helping users with dietary and workout questions.
 *   [ ] Deploy FastAPI backend to a cloud provider (e.g., Render, Railway, AWS).

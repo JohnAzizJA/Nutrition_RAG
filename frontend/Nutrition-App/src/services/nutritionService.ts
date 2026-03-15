@@ -7,9 +7,10 @@ export interface FoodNutrient {
 }
 
 export interface FoodItem {
-  fdcId: number;
+  fdcId: string | number;
   description: string;
   foodNutrients: FoodNutrient[];
+  source?: string; // "egyptian" | undefined (USDA)
 }
 
 export interface SearchFoodsResponse {
