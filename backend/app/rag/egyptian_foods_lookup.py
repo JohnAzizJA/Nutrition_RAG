@@ -14,7 +14,7 @@ def _load() -> list[dict]:
     return _foods
 
 
-def search_egyptian_foods(query: str, max_results: int = 5) -> list[dict]:
+def search_egyptian_foods(query: str, max_results: int = 5, min_score: int = 0) -> list[dict]:
     """Search the local Egyptian food database. Returns matching food dicts or empty list."""
     q = query.lower().strip()
     foods = _load()
@@ -34,18 +34,24 @@ def search_egyptian_foods(query: str, max_results: int = 5) -> list[dict]:
         # Query appears anywhere in any term
         elif any(q in term for term in all_terms):
             scored.append((1, food))
-        # Any individual word of the query matches a term word
+        # Word overlap: require ≥60% of query words to appear in at least one term.
+        # This prevents a single shared word (e.g. "chicken" in "chicken shawarma")
+        # from matching unrelated foods when the full query is specific (e.g. "chicken breast").
         else:
             words = q.split()
-            if words and any(
-                any(w in term for w in words)
-                for term in all_terms
-            ):
+            if len(words) >= 2:
+                matching = sum(
+                    1 for w in words
+                    if any(w in term for term in all_terms)
+                )
+                if matching / len(words) >= 0.6:
+                    scored.append((0, food))
+            elif words and any(words[0] in term for term in all_terms):
                 scored.append((0, food))
 
-    # Sort by score descending, return top N
+    # Sort by score descending, filter by min_score, return top N
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [food for _, food in scored[:max_results]]
+    return [food for score, food in scored if score >= min_score][:max_results]
 
 
 def format_results(foods: list[dict], query: str) -> str:

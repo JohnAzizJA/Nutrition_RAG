@@ -12,7 +12,7 @@ from rag.llm_client import LLMClient
 from rag.tools import (
     calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets,
     get_todays_nutrition, get_streak, get_workout_history, get_weekly_volume,
-    search_food, log_meal, log_water, log_weight,
+    search_food,
 )
 
 load_dotenv()
@@ -20,7 +20,6 @@ load_dotenv()
 # Tools that need user_id injected server-side
 USER_ID_TOOLS = {
     "get_todays_nutrition", "get_streak", "get_workout_history", "get_weekly_volume",
-    "log_meal", "log_water", "log_weight",
 }
 
 MAX_HISTORY_MESSAGES = 20  # ~10 conversation turns
@@ -54,9 +53,6 @@ class RAGGraph:
             "get_workout_history": get_workout_history,
             "get_weekly_volume": get_weekly_volume,
             "search_food": search_food,
-            "log_meal": log_meal,
-            "log_water": log_water,
-            "log_weight": log_weight,
         }
 
         self.base_system_prompt = """You are an expert nutrition and fitness coach assistant.
@@ -69,24 +65,15 @@ Guidelines:
 - Be concise but informative
 - Remind users to consult healthcare professionals for medical conditions
 
-You have access to the following tools:
+You have access to the following read-only tools:
 - calculate_bmi / calculate_bmr / calculate_tdee / calculate_targets: nutrition calculations
-- search_food: look up nutritional info from the USDA database
+- search_food: look up nutritional info for any food (Egyptian or USDA database)
 - get_todays_nutrition: fetch what the user has eaten today
 - get_streak: fetch the user's current logging streak
 - get_workout_history: fetch recent workout sessions
 - get_weekly_volume: fetch weekly training volume
-- log_meal: log a meal to the food diary
-- log_water: add glasses of water to today's intake
-- log_weight: record the user's current body weight
 
-IMPORTANT — meal logging rules:
-1. When a user wants to log a meal, first call search_food to find the item.
-2. Present the nutritional info (calories, protein, carbs, fat).
-3. If the user did not specify a meal type (breakfast, lunch, dinner, snack), ask which one before proceeding.
-4. Once you have the nutritional info and meal type, ask "Shall I log this?" or similar for confirmation.
-5. Only call log_meal after the user explicitly confirms (e.g. "yes", "go ahead", "log it").
-6. Never log a meal without user confirmation.
+You cannot log meals, water, or weight — direct the user to the app's Calorie Tracker or voice logging feature for that.
 
 If user asks for calculations but doesn't provide stats, use the user profile above if available, otherwise ask.
 

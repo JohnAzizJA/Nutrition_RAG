@@ -17,6 +17,18 @@ export interface SearchFoodsResponse {
   foods: FoodItem[];
 }
 
+export interface VoiceLogResult {
+  id: number;
+  transcript: string;
+  food_name: string;
+  meal_type: string;
+  grams: number;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+}
+
 export interface LogFoodRequest {
   food_name: string;
   meal_type?: string;
@@ -70,5 +82,18 @@ export const nutritionService = {
 
   async deleteMeal(mealId: number): Promise<void> {
     await axios.delete(ENDPOINTS.NUTRITION.DELETE_MEAL(mealId));
+  },
+
+  async voiceLog(audioUri: string): Promise<VoiceLogResult> {
+    const formData = new FormData();
+    formData.append('audio', {
+      uri: audioUri,
+      type: 'audio/m4a',
+      name: 'recording.m4a',
+    } as any);
+    const response = await axios.post(ENDPOINTS.NUTRITION.VOICE_LOG, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
   },
 };

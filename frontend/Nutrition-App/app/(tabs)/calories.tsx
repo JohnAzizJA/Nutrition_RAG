@@ -1,13 +1,15 @@
-import { useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, View, ScrollView, Alert } from 'react-native';
+import { useState, useCallback, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, View, ScrollView, Alert, Animated, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { Audio } from 'expo-av';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { calculationService, nutritionService, mealPlanService, MealPlan } from '@/src/services';
+import { VoiceLogResult } from '@/src/services/nutritionService';
 import { Swipeable } from 'react-native-gesture-handler';
 
 const MEAL_PLAN_KEY = 'mealPlanEnabled';
@@ -22,6 +24,13 @@ export default function CaloriesScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
   const [mealPlanEnabled, setMealPlanEnabled] = useState(false);
+
+  // Voice recording state
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceResult, setVoiceResult] = useState<VoiceLogResult | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -52,7 +61,54 @@ export default function CaloriesScreen() {
       setPlans(plansData);
     } catch (e) {
       console.error('Failed to fetch data:', e);
+    }
+  };
+
+  // ── Voice recording ─────────────────────────────────────────────────────────
+  const startRecording = async () => {
+    setVoiceError(null);
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        setVoiceError('Microphone permission is required for voice logging.');
+        return;
+      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(rec);
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      ).start();
+    } catch {
+      setVoiceError('Could not start recording. Please try again.');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+    pulseAnim.stopAnimation();
+    pulseAnim.setValue(1);
+    setVoiceLoading(true);
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = recording.getURI();
+      setRecording(null);
+      if (!uri) throw new Error('No audio recorded.');
+      const result = await nutritionService.voiceLog(uri);
+      setVoiceResult(result);
+      loadAll(); // refresh macros/meals
+    } catch (e: any) {
+      const msg = e?.response?.data?.detail || 'Voice logging failed. Please try again.';
+      setVoiceError(msg);
+      setRecording(null);
     } finally {
+      setVoiceLoading(false);
     }
   };
 
@@ -194,20 +250,24 @@ export default function CaloriesScreen() {
     </>
   );
 
-  // ── Meal Plan mode ─────────────────────────────────────────────────────────
-  if (mealPlanEnabled) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
-          <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
-          </TouchableOpacity>
-        </View>
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}>
-          {TopSection}
+  return (
+    <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        {TopSection}
+
+        {mealPlanEnabled ? (
+          // ── Meal Plan mode ────────────────────────────────────────────────
           <View style={styles.planSection}>
             <View style={styles.planSectionHeader}>
               <ThemedText style={styles.sectionTitle}>My Meal Plans</ThemedText>
@@ -276,68 +336,114 @@ export default function CaloriesScreen() {
               ))
             )}
           </View>
-        </ScrollView>
-      </ThemedView>
-    );
-  }
-
-  // ── Normal mode ────────────────────────────────────────────────────────────
-  return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}>
-        {TopSection}
-
-        <View style={styles.mealsSection}>
-          {MEAL_TYPES.map(mealType => {
-            const mealItems = nutrition?.meals?.filter((m: any) => m.meal_type === mealType.toLowerCase()) || [];
-            const totals = sectionTotals(mealType);
-            return (
-              <View key={mealType} style={styles.mealTypeSection}>
-                <View style={styles.mealTypeHeader}>
-                  <View style={styles.mealTypeLeft}>
-                    <ThemedText style={styles.mealTypeTitle}>{mealType}</ThemedText>
-                    {totals.cal > 0 && (
-                      <ThemedText style={styles.mealTypeTotals}>
-                        {totals.cal} kcal · {totals.p}g P · {totals.c}g C
-                      </ThemedText>
-                    )}
-                  </View>
-                  <TouchableOpacity
-                    style={styles.addMealButton}
-                    onPress={() => router.push(`/log-food?mealType=${mealType.toLowerCase()}`)}
-                  >
-                    <Ionicons name="add" size={20} color={Colors.primary} />
-                  </TouchableOpacity>
-                </View>
-
-                {mealItems.length > 0 ? (
-                  mealItems.map((meal: any) => (
-                    <Swipeable key={meal.id} renderRightActions={() => renderDeleteAction(meal.id)}>
-                      <View style={styles.mealItem}>
-                        <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
-                        <ThemedText style={styles.mealNutrients}>
-                          {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+        ) : (
+          // ── Normal mode ───────────────────────────────────────────────────
+          <View style={styles.mealsSection}>
+            {MEAL_TYPES.map(mealType => {
+              const mealItems = nutrition?.meals?.filter((m: any) => m.meal_type === mealType.toLowerCase()) || [];
+              const totals = sectionTotals(mealType);
+              return (
+                <View key={mealType} style={styles.mealTypeSection}>
+                  <View style={styles.mealTypeHeader}>
+                    <View style={styles.mealTypeLeft}>
+                      <ThemedText style={styles.mealTypeTitle}>{mealType}</ThemedText>
+                      {totals.cal > 0 && (
+                        <ThemedText style={styles.mealTypeTotals}>
+                          {totals.cal} kcal · {totals.p}g P · {totals.c}g C
                         </ThemedText>
-                      </View>
-                    </Swipeable>
-                  ))
-                ) : (
-                  <View style={styles.emptyMealState}>
-                    <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.addMealButton}
+                      onPress={() => router.push(`/log-food?mealType=${mealType.toLowerCase()}`)}
+                    >
+                      <Ionicons name="add" size={20} color={Colors.primary} />
+                    </TouchableOpacity>
                   </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
+
+                  {mealItems.length > 0 ? (
+                    mealItems.map((meal: any) => (
+                      <Swipeable key={meal.id} renderRightActions={() => renderDeleteAction(meal.id)}>
+                        <View style={styles.mealItem}>
+                          <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
+                          <ThemedText style={styles.mealNutrients}>
+                            {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+                          </ThemedText>
+                        </View>
+                      </Swipeable>
+                    ))
+                  ) : (
+                    <View style={styles.emptyMealState}>
+                      <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
+
+      {/* ── Mic FAB ─────────────────────────────────────────────────────── */}
+      <Animated.View style={[styles.micFab, recording && styles.micFabRecording, { transform: [{ scale: recording ? pulseAnim : 1 }] }]}>
+        <TouchableOpacity
+          style={styles.micFabInner}
+          onPress={recording ? stopRecording : startRecording}
+          disabled={voiceLoading}
+        >
+          {voiceLoading ? (
+            <ActivityIndicator size="small" color={Colors.white} />
+          ) : (
+            <Ionicons name={recording ? 'stop' : 'mic'} size={26} color={Colors.white} />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* ── Success Modal ────────────────────────────────────────────────── */}
+      <Modal visible={!!voiceResult} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconRow}>
+              <Ionicons name="checkmark-circle" size={40} color={Colors.primary} />
+            </View>
+            <ThemedText style={styles.modalTitle}>Logged via Voice!</ThemedText>
+            {voiceResult && (
+              <>
+                <ThemedText style={styles.modalTranscript}>"{voiceResult.transcript}"</ThemedText>
+                <ThemedText style={styles.modalFood}>{voiceResult.food_name}</ThemedText>
+                <ThemedText style={styles.modalMacros}>
+                  {voiceResult.grams}g · {voiceResult.calories} kcal{'\n'}
+                  {voiceResult.protein_g}g P · {voiceResult.carbs_g}g C · {voiceResult.fat_g}g F
+                </ThemedText>
+                <View style={styles.modalMealBadge}>
+                  <ThemedText style={styles.modalMealBadgeText}>
+                    {voiceResult.meal_type.charAt(0).toUpperCase() + voiceResult.meal_type.slice(1)}
+                  </ThemedText>
+                </View>
+              </>
+            )}
+            <TouchableOpacity style={styles.modalBtn} onPress={() => setVoiceResult(null)}>
+              <ThemedText style={styles.modalBtnText}>Done</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Error Modal ──────────────────────────────────────────────────── */}
+      <Modal visible={!!voiceError} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconRow}>
+              <Ionicons name="alert-circle" size={40} color={Colors.danger} />
+            </View>
+            <ThemedText style={styles.modalTitle}>Voice Log Failed</ThemedText>
+            <ThemedText style={styles.modalErrorText}>{voiceError}</ThemedText>
+            <TouchableOpacity style={[styles.modalBtn, styles.modalBtnDanger]} onPress={() => setVoiceError(null)}>
+              <ThemedText style={styles.modalBtnText}>Close</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -466,4 +572,70 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginBottom: 14,
   },
+
+  // Mic FAB
+  micFab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    elevation: 5,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  micFabRecording: { backgroundColor: Colors.danger },
+  micFabInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Modals
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  modalCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalIconRow: { marginBottom: 4 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.dark, textAlign: 'center' },
+  modalTranscript: { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic', textAlign: 'center' },
+  modalFood: { fontSize: 17, fontWeight: '700', color: Colors.dark, textAlign: 'center' },
+  modalMacros: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  modalMealBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  modalMealBadgeText: { fontSize: 13, fontWeight: '700', color: Colors.white },
+  modalErrorText: { fontSize: 14, color: Colors.danger, textAlign: 'center', lineHeight: 20 },
+  modalBtn: {
+    marginTop: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalBtnDanger: { backgroundColor: Colors.danger },
+  modalBtnText: { fontSize: 15, fontWeight: '700', color: Colors.white },
 });

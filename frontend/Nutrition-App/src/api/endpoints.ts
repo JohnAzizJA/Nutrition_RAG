@@ -20,6 +20,7 @@ export const ENDPOINTS = {
   NUTRITION: {
     SEARCH_FOODS: '/api/search-foods',
     LOG_FOOD: '/api/log-food',
+    VOICE_LOG: '/api/voice-log',
     DAILY_NUTRITION: '/api/daily-nutrition',
     DELETE_MEAL: (id: number) => `/api/meals/${id}`,
   },

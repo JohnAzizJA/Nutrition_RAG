@@ -150,8 +150,10 @@ def search_food(query: str, max_results: int = 5) -> str:
         query: Food name or description to search for (e.g. 'koshary', 'chicken breast', 'ful medames')
         max_results: Number of results to return (default 5, max 10)
     """
-    # 1. Check local Egyptian food database first
-    egyptian_matches = search_egyptian_foods(query, max_results=min(max_results, 10))
+    # 1. Check Egyptian DB — only use it when the query clearly names an Egyptian food
+    # (exact or starts-with match, score ≥ 2). Loose substring matches fall through
+    # to USDA so generic foods like "chicken breast" or "pizza" are looked up accurately.
+    egyptian_matches = search_egyptian_foods(query, max_results=min(max_results, 10), min_score=2)
     if egyptian_matches:
         return format_egyptian_results(egyptian_matches, query)
 
@@ -298,97 +300,3 @@ def get_weekly_volume(
     except Exception as e:
         return f"Error fetching weekly volume: {str(e)}"
 
-
-# ── Write action tools ────────────────────────────────────────────────────────
-
-@tool
-def log_meal(
-    food_name: str,
-    calories: float,
-    protein_g: float,
-    carbs_g: float,
-    fat_g: float,
-    meal_type: str = "snack",
-    user_id: Annotated[int, InjectedToolArg] = 0,
-) -> str:
-    """Log a meal to the user's food diary. Only call this after the user has confirmed they want to log the item.
-
-    Args:
-        food_name: Name of the food item
-        calories: Calories in kcal
-        protein_g: Protein in grams
-        carbs_g: Carbohydrates in grams
-        fat_g: Fat in grams
-        meal_type: One of 'breakfast', 'lunch', 'dinner', 'snack'
-    """
-    from db.repositories import MealLogRepository
-    if calories < 0 or protein_g < 0 or carbs_g < 0 or fat_g < 0:
-        return "Error: nutritional values cannot be negative."
-    if calories > 5000:
-        return "Error: calorie value seems unrealistic. Please verify."
-    valid_meal_types = {"breakfast", "lunch", "dinner", "snack"}
-    meal_type = meal_type.lower() if meal_type.lower() in valid_meal_types else "snack"
-    try:
-        repo = MealLogRepository()
-        repo.create(
-            user_id=user_id,
-            food_name=food_name,
-            calories=calories,
-            protein_g=protein_g,
-            carbs_g=carbs_g,
-            fat_g=fat_g,
-            meal_type=meal_type,
-            entry_method="ai_chat",
-        )
-        return (
-            f"Logged '{food_name}' as {meal_type}: "
-            f"{round(calories, 1)} kcal | Protein: {round(protein_g, 1)}g | "
-            f"Carbs: {round(carbs_g, 1)}g | Fat: {round(fat_g, 1)}g"
-        )
-    except Exception as e:
-        return f"Error logging meal: {str(e)}"
-
-
-@tool
-def log_water(
-    glasses: int,
-    user_id: Annotated[int, InjectedToolArg] = 0,
-) -> str:
-    """Add glasses of water to the user's water intake for today.
-
-    Args:
-        glasses: Number of glasses to add (1 glass ≈ 250 ml)
-    """
-    from db.repositories import WaterLogRepository
-    from datetime import date
-    if glasses <= 0:
-        return "Error: number of glasses must be at least 1."
-    if glasses > 30:
-        return "Error: that seems like too many glasses. Please verify."
-    try:
-        repo = WaterLogRepository()
-        log = repo.create_or_update(user_id=user_id, glasses=glasses, target_date=date.today())
-        return f"Logged {glasses} glass{'es' if glasses != 1 else ''} of water. Total today: {log.glasses} glasses."
-    except Exception as e:
-        return f"Error logging water: {str(e)}"
-
-
-@tool
-def log_weight(
-    weight_kg: float,
-    user_id: Annotated[int, InjectedToolArg] = 0,
-) -> str:
-    """Log the user's current body weight.
-
-    Args:
-        weight_kg: Current weight in kilograms
-    """
-    from db.repositories import WeightLogRepository
-    if weight_kg <= 0 or weight_kg > 500:
-        return "Error: weight value seems invalid. Please provide a realistic weight in kg."
-    try:
-        repo = WeightLogRepository()
-        repo.create(user_id=user_id, weight_kg=weight_kg)
-        return f"Logged your weight: {round(weight_kg, 1)} kg."
-    except Exception as e:
-        return f"Error logging weight: {str(e)}"

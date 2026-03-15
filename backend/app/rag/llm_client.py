@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from rag.tools import (
     calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets,
     get_todays_nutrition, get_streak, get_workout_history, get_weekly_volume,
-    search_food, log_meal, log_water, log_weight,
+    search_food,
 )
 
 load_dotenv()
@@ -40,7 +40,7 @@ class LLMClient:
         self.tools = [
             calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets,
             get_todays_nutrition, get_streak, get_workout_history, get_weekly_volume,
-            search_food, log_meal, log_water, log_weight,
+            search_food,
         ]
         self.llm_with_tools = self.llm_for_tools.bind_tools(self.tools)
 
@@ -58,11 +58,8 @@ class LLMClient:
         """
         system = (
             "Classify the user's message into exactly one of these intents:\n"
-            "- tool: user wants to log food/water/weight, get today's nutrition, check streak, "
-            "view workout history, search food info, or calculate BMI/BMR/TDEE/targets. "
-            "IMPORTANT: if the previous assistant message was asking the user to confirm an action "
-            "(e.g. logging a meal), and the user replies affirmatively (yes, ok, sure, go ahead, etc.), "
-            "classify as 'tool'.\n"
+            "- tool: user wants to get today's nutrition, check streak, view workout history, "
+            "search food nutritional info, or calculate BMI/BMR/TDEE/targets.\n"
             "- knowledge: user has a nutrition or fitness question that requires factual information "
             "(e.g. 'what foods are high in protein', 'is keto good for weight loss')\n"
             "- chat: general conversation, greetings, or simple questions with no tool or knowledge need\n\n"
