@@ -137,6 +137,56 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
     }
 
 
+# ── Food search tool ─────────────────────────────────────────────────────────
+
+@tool
+def search_food(query: str, max_results: int = 5) -> str:
+    """Search the USDA food database for nutritional information about a food item.
+
+    Args:
+        query: Food name or description to search for (e.g. 'chicken breast', 'brown rice')
+        max_results: Number of results to return (default 5, max 10)
+    """
+    import os, requests
+    api_key = os.getenv("USDA_API_KEY")
+    if not api_key:
+        return "Food search unavailable: USDA API key not configured."
+    try:
+        response = requests.get(
+            "https://api.nal.usda.gov/fdc/v1/foods/search",
+            params={
+                "query": query,
+                "api_key": api_key,
+                "dataType": ["Foundation", "SR Legacy"],
+                "pageSize": min(max_results, 10),
+                "nutrients": [1008, 1003, 1005, 1004],
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+        foods = data.get("foods", [])
+        if not foods:
+            return f"No results found for '{query}'."
+
+        NUTRIENT_IDS = {1008: "calories", 1003: "protein_g", 1005: "carbs_g", 1004: "fat_g"}
+        lines = [f"Top {len(foods)} results for '{query}' (per 100g):"]
+        for food in foods:
+            nutrients = {NUTRIENT_IDS[n["nutrientId"]]: n["value"]
+                         for n in food.get("foodNutrients", [])
+                         if n["nutrientId"] in NUTRIENT_IDS}
+            cal  = round(nutrients.get("calories", 0), 1)
+            prot = round(nutrients.get("protein_g", 0), 1)
+            carb = round(nutrients.get("carbs_g", 0), 1)
+            fat  = round(nutrients.get("fat_g", 0), 1)
+            lines.append(
+                f"• {food['description']}: {cal} kcal | Protein: {prot}g | Carbs: {carb}g | Fat: {fat}g"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error searching for food: {str(e)}"
+
+
 # ── Read-only action tools ────────────────────────────────────────────────────
 
 @tool
@@ -239,3 +289,98 @@ def get_weekly_volume(
         return "\n".join(lines)
     except Exception as e:
         return f"Error fetching weekly volume: {str(e)}"
+
+
+# ── Write action tools ────────────────────────────────────────────────────────
+
+@tool
+def log_meal(
+    food_name: str,
+    calories: float,
+    protein_g: float,
+    carbs_g: float,
+    fat_g: float,
+    meal_type: str = "snack",
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Log a meal to the user's food diary. Only call this after the user has confirmed they want to log the item.
+
+    Args:
+        food_name: Name of the food item
+        calories: Calories in kcal
+        protein_g: Protein in grams
+        carbs_g: Carbohydrates in grams
+        fat_g: Fat in grams
+        meal_type: One of 'breakfast', 'lunch', 'dinner', 'snack'
+    """
+    from db.repositories import MealLogRepository
+    if calories < 0 or protein_g < 0 or carbs_g < 0 or fat_g < 0:
+        return "Error: nutritional values cannot be negative."
+    if calories > 5000:
+        return "Error: calorie value seems unrealistic. Please verify."
+    valid_meal_types = {"breakfast", "lunch", "dinner", "snack"}
+    meal_type = meal_type.lower() if meal_type.lower() in valid_meal_types else "snack"
+    try:
+        repo = MealLogRepository()
+        repo.create(
+            user_id=user_id,
+            food_name=food_name,
+            calories=calories,
+            protein_g=protein_g,
+            carbs_g=carbs_g,
+            fat_g=fat_g,
+            meal_type=meal_type,
+            entry_method="ai_chat",
+        )
+        return (
+            f"Logged '{food_name}' as {meal_type}: "
+            f"{round(calories, 1)} kcal | Protein: {round(protein_g, 1)}g | "
+            f"Carbs: {round(carbs_g, 1)}g | Fat: {round(fat_g, 1)}g"
+        )
+    except Exception as e:
+        return f"Error logging meal: {str(e)}"
+
+
+@tool
+def log_water(
+    glasses: int,
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Add glasses of water to the user's water intake for today.
+
+    Args:
+        glasses: Number of glasses to add (1 glass ≈ 250 ml)
+    """
+    from db.repositories import WaterLogRepository
+    from datetime import date
+    if glasses <= 0:
+        return "Error: number of glasses must be at least 1."
+    if glasses > 30:
+        return "Error: that seems like too many glasses. Please verify."
+    try:
+        repo = WaterLogRepository()
+        log = repo.create_or_update(user_id=user_id, glasses=glasses, target_date=date.today())
+        return f"Logged {glasses} glass{'es' if glasses != 1 else ''} of water. Total today: {log.glasses} glasses."
+    except Exception as e:
+        return f"Error logging water: {str(e)}"
+
+
+@tool
+def log_weight(
+    weight_kg: float,
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Log the user's current body weight.
+
+    Args:
+        weight_kg: Current weight in kilograms
+    """
+    from db.repositories import WeightLogRepository
+    if weight_kg <= 0 or weight_kg > 500:
+        return "Error: weight value seems invalid. Please provide a realistic weight in kg."
+    try:
+        repo = WeightLogRepository()
+        repo.create(user_id=user_id, weight_kg=weight_kg)
+        return f"Logged your weight: {round(weight_kg, 1)} kg."
+    except Exception as e:
+        return f"Error logging weight: {str(e)}"
