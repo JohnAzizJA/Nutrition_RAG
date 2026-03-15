@@ -1,3 +1,7 @@
+import os
+import atexit
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.store.postgres import PostgresStore
@@ -11,24 +15,23 @@ from rag.tools import (
     search_food, log_meal, log_water, log_weight,
 )
 
+load_dotenv()
+
 # Tools that need user_id injected server-side
 USER_ID_TOOLS = {
     "get_todays_nutrition", "get_streak", "get_workout_history", "get_weekly_volume",
     "log_meal", "log_water", "log_weight",
 }
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+MAX_HISTORY_MESSAGES = 20  # ~10 conversation turns
+
 
 class RAGGraph:
     def __init__(self):
         self.vector_store = VectorStore()
         self.llm_client = LLMClient()
-        
-        # Get database URL
+
         db_url = os.getenv("DATABASE_URL")
-        
         self._checkpointer_cm = PostgresSaver.from_conn_string(db_url)
         self.checkpointer = self._checkpointer_cm.__enter__()
 
@@ -37,8 +40,24 @@ class RAGGraph:
 
         self.checkpointer.setup()
         self.store.setup()
-        
-        self.graph = self._build_graph()
+
+        atexit.register(self._cleanup)
+
+        # Built once at startup, not on every tool call
+        self.tool_map = {
+            "calculate_bmi": calculate_bmi,
+            "calculate_bmr": calculate_bmr,
+            "calculate_tdee": calculate_tdee,
+            "calculate_targets": calculate_targets,
+            "get_todays_nutrition": get_todays_nutrition,
+            "get_streak": get_streak,
+            "get_workout_history": get_workout_history,
+            "get_weekly_volume": get_weekly_volume,
+            "search_food": search_food,
+            "log_meal": log_meal,
+            "log_water": log_water,
+            "log_weight": log_weight,
+        }
 
         self.base_system_prompt = """You are an expert nutrition and fitness coach assistant.
 
@@ -72,7 +91,16 @@ IMPORTANT — meal logging rules:
 If user asks for calculations but doesn't provide stats, use the user profile above if available, otherwise ask.
 
 Respond in a friendly, helpful tone while maintaining scientific accuracy."""
-    
+
+        self.graph = self._build_graph()
+
+    def _cleanup(self):
+        try:
+            self._checkpointer_cm.__exit__(None, None, None)
+            self._store_cm.__exit__(None, None, None)
+        except Exception:
+            pass
+
     def _build_system_prompt(self, user_profile: dict | None) -> str:
         if not user_profile:
             return self.base_system_prompt
@@ -101,142 +129,144 @@ Goal Weight: {user_profile.get('goal_weight_kg')} kg"""
             profile_block += f" | Target rate: {user_profile.get('weight_loss_per_week')} kg/week"
         return profile_block + "\n\n" + self.base_system_prompt
 
-    def _agent_node(self, state: GraphState) -> GraphState:
+    def _truncate_history(self, messages: list) -> list:
+        return messages[-MAX_HISTORY_MESSAGES:] if len(messages) > MAX_HISTORY_MESSAGES else messages
+
+    # ── Nodes ──────────────────────────────────────────────────────────────────
+
+    def _router_node(self, state: GraphState) -> dict:
+        history = self._truncate_history(state.get("messages", []))
+        intent = self.llm_client.route(state["query"], history=history)
+        return {"intent": intent}
+
+    def _agent_node(self, state: GraphState) -> dict:
         query = state["query"]
-        messages = state.get("messages", [])
+        history = self._truncate_history(state.get("messages", []))
         system_prompt = self._build_system_prompt(state.get("user_profile"))
+        is_retry = state.get("tool_retry_count", 0) > 0
 
-        # On retry, include the tool error so the agent can self-correct
         extra = []
-        if state.get("tool_retry_count", 0) > 0 and state.get("tool_results"):
-            extra = [HumanMessage(content=f"The previous tool call failed:\n{state['tool_results']}\nPlease try again with corrected arguments.")]
+        if is_retry and state.get("tool_errors"):
+            succeeded_results = state.get("tool_results", "")
+            succeeded_names = [
+                line.split(":")[0].strip()
+                for line in succeeded_results.splitlines() if line
+            ]
+            error_ctx = f"Some tool calls failed:\n{state['tool_errors']}\n\n"
+            if succeeded_names:
+                error_ctx += f"Already succeeded — do NOT call again: {', '.join(succeeded_names)}\n\n"
+            error_ctx += "Please retry only the failed tools with corrected arguments."
+            extra = [HumanMessage(content=error_ctx)]
 
-        all_messages = [SystemMessage(content=system_prompt)] + messages + extra + [HumanMessage(content=query)]
-
+        all_messages = [SystemMessage(content=system_prompt)] + history + extra + [HumanMessage(content=query)]
         response = self.llm_client.invoke(all_messages)
 
-        if hasattr(response, 'tool_calls') and response.tool_calls:
-            state["tool_calls"] = response.tool_calls
-            state["next_action"] = "tools"
+        updates: dict = {}
+        if hasattr(response, "tool_calls") and response.tool_calls:
+            updates["tool_calls"] = response.tool_calls
+            updates["next_action"] = "tools"
         else:
-            state["next_action"] = "retrieve"
+            updates["next_action"] = "retrieve"
 
-        return {
-            **state,
-            "messages": [HumanMessage(content=query)]
-        }
+        # Add the human message to persisted history only on the first pass (not retries)
+        if not is_retry:
+            updates["messages"] = [HumanMessage(content=query)]
 
-    def _tool_node(self, state: GraphState) -> GraphState:
-        tool_map = {
-            "calculate_bmi": calculate_bmi,
-            "calculate_bmr": calculate_bmr,
-            "calculate_tdee": calculate_tdee,
-            "calculate_targets": calculate_targets,
-            "get_todays_nutrition": get_todays_nutrition,
-            "get_streak": get_streak,
-            "get_workout_history": get_workout_history,
-            "get_weekly_volume": get_weekly_volume,
-            "search_food": search_food,
-            "log_meal": log_meal,
-            "log_water": log_water,
-            "log_weight": log_weight,
-        }
+        return updates
 
+    def _execute_tool(self, tool_call: dict, user_id: int) -> tuple[str, str | None, str | None]:
+        """Run a single tool call. Returns (name, result, error)."""
+        tool_name = tool_call["name"]
+        tool_args = dict(tool_call["args"])
+        if tool_name in USER_ID_TOOLS:
+            tool_args["user_id"] = user_id
+        if tool_name not in self.tool_map:
+            return tool_name, None, f"Unknown tool: {tool_name}"
+        try:
+            result = self.tool_map[tool_name].invoke(tool_args)
+            return tool_name, str(result), None
+        except Exception as e:
+            return tool_name, None, str(e)
+
+    def _tool_node(self, state: GraphState) -> dict:
         user_id = (state.get("user_profile") or {}).get("id", 0)
+        successes: list[str] = []
+        failures: list[str] = []
 
-        results = []
-        has_error = False
-        for tool_call in state["tool_calls"]:
-            tool_name = tool_call["name"]
-            tool_args = dict(tool_call["args"])
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {
+                executor.submit(self._execute_tool, tc, user_id): tc
+                for tc in state["tool_calls"]
+            }
+            for future in as_completed(futures):
+                tool_name, result, error = future.result()
+                if error:
+                    failures.append(f"{tool_name}: {error}")
+                else:
+                    successes.append(f"{tool_name}: {result}")
 
-            if tool_name in USER_ID_TOOLS:
-                tool_args["user_id"] = user_id
-
-            if tool_name in tool_map:
-                try:
-                    result = tool_map[tool_name].invoke(tool_args)
-                    results.append(f"{tool_name}: {result}")
-                except Exception as e:
-                    results.append(f"{tool_name}: Error - {str(e)}")
-                    has_error = True
+        # Accumulate successes across retries so they aren't lost
+        prev_results = state.get("tool_results", "")
+        all_results = "\n".join(filter(None, [prev_results] + successes))
 
         retry_count = state.get("tool_retry_count", 0)
-        # Route back to agent for self-correction if there were errors and retries remain
-        if has_error and retry_count < 2:
-            next_action = "retry"
-        else:
-            next_action = "generate"
+        has_failures = bool(failures)
+        next_action = "retry" if has_failures and retry_count < 2 else "generate"
 
         return {
-            **state,
-            "tool_results": "\n".join(results),
+            "tool_results": all_results,
+            "tool_errors": "\n".join(failures),
             "next_action": next_action,
-            "tool_retry_count": retry_count + (1 if has_error else 0),
+            "tool_retry_count": retry_count + (1 if has_failures else 0),
         }
-    
-    def _retrieve_node(self, state: GraphState) -> GraphState:
-        query = state["query"]
-        retrieved_docs = self.vector_store.query(query, n_results=3)
-        state["retrieved_docs"] = retrieved_docs
-        state["next_action"] = "generate"
-        return state
-    
-    def _generate_node(self, state: GraphState) -> GraphState:
+
+    def _retrieve_node(self, state: GraphState) -> dict:
+        docs = self.vector_store.query(state["query"], n_results=3)
+        return {"retrieved_docs": docs}
+
+    def _generate_node(self, state: GraphState) -> dict:
         query = state["query"]
         docs = state.get("retrieved_docs", [])
         tool_results = state.get("tool_results", "")
-        
-        # Build context from available sources
+        history = self._truncate_history(state.get("messages", []))
+        system_prompt = self._build_system_prompt(state.get("user_profile"))
+
         context_parts = []
-        
         if tool_results:
-            context_parts.append(f"Calculation Results:\n{tool_results}")
-        
+            context_parts.append(f"Tool Results:\n{tool_results}")
         if docs:
             docs_text = "\n\n".join(docs) if isinstance(docs[0], str) else "\n\n".join(d["text"] for d in docs)
-            context_parts.append(f"Knowledge Base Context:\n{docs_text}")
-        
-        context = "\n\n".join(context_parts) if context_parts else "No additional context available."
-        
-        # Build messages properly
-        messages = [
-            SystemMessage(content=self._build_system_prompt(state.get("user_profile"))),
-            *state.get("messages", []),
-            HumanMessage(content=f"""Context:
-{context}
+            context_parts.append(f"Knowledge Base:\n{docs_text}")
 
-User Question: {query}
-
-Provide a helpful answer based on the context above.""")
-        ]
-        
-        response = self.llm_client.generate(messages)
-        
-        # Extract content
-        if hasattr(response, 'content'):
-            response_text = response.content
+        if context_parts:
+            context = "\n\n".join(context_parts)
+            user_msg = HumanMessage(content=f"Context:\n{context}\n\nUser Question: {query}\n\nProvide a helpful answer based on the context above.")
         else:
-            response_text = str(response)
-        
-        state["next_action"] = "end"
-        
+            # Pure chat or empty retrieval — respond naturally without context framing
+            user_msg = HumanMessage(content=query)
+
+        full_messages = [SystemMessage(content=system_prompt)] + history + [user_msg]
+        response = self.llm_client.generate(full_messages)
+        response_text = response.content if hasattr(response, "content") else str(response)
+
         return {
-            **state,
-            "messages": [AIMessage(content=response_text)],
+            # Store both the raw user query and AI reply in history
+            "messages": [HumanMessage(content=query), AIMessage(content=response_text)],
             "response": response_text,
         }
-    
-    def _router_node(self, state: GraphState) -> GraphState:
-        history = state.get("messages", [])
-        intent = self.llm_client.route(state["query"], history=history)
-        return {**state, "intent": intent}
+
+    # ── Routing ────────────────────────────────────────────────────────────────
 
     def _route_after_router(self, state: GraphState) -> str:
         return state.get("intent", "knowledge")
 
     def _route_after_agent(self, state: GraphState) -> str:
         return "tools" if state.get("next_action") == "tools" else "retrieve"
+
+    def _route_after_tools(self, state: GraphState) -> str:
+        return state.get("next_action", "generate")
+
+    # ── Graph ──────────────────────────────────────────────────────────────────
 
     def _build_graph(self) -> StateGraph:
         workflow = StateGraph(GraphState)
@@ -249,49 +279,33 @@ Provide a helpful answer based on the context above.""")
 
         workflow.set_entry_point("router")
 
-        # Router dispatches to agent (tool intent), retrieve (knowledge), or generate (chat)
         workflow.add_conditional_edges(
-            "router",
-            self._route_after_router,
-            {
-                "tool": "agent",
-                "knowledge": "retrieve",
-                "chat": "generate",
-            }
+            "router", self._route_after_router,
+            {"tool": "agent", "knowledge": "retrieve", "chat": "generate"},
         )
-
-        # After agent: tools or retrieve
         workflow.add_conditional_edges(
-            "agent",
-            self._route_after_agent,
-            {"tools": "tools", "retrieve": "retrieve"}
+            "agent", self._route_after_agent,
+            {"tools": "tools", "retrieve": "retrieve"},
         )
-
-        # After tools: generate on success, back to agent on error (self-correction)
         workflow.add_conditional_edges(
-            "tools",
-            lambda s: s.get("next_action", "generate"),
-            {"generate": "generate", "retry": "agent"}
+            "tools", self._route_after_tools,
+            {"generate": "generate", "retry": "agent"},
         )
         workflow.add_edge("retrieve", "generate")
         workflow.add_edge("generate", END)
 
         return workflow.compile(checkpointer=self.checkpointer, store=self.store)
-    
+
     def run(self, query: str, user_id: int = 1, thread_id: str = "default", user_profile: dict | None = None) -> str:
-        """Run the RAG pipeline with conversation memory and long-term storage"""
-        initial_state = {
-            "query": query,
-            "user_profile": user_profile,
-            "tool_retry_count": 0,
-        }
-
-        config = {
-            "configurable": {
-                "thread_id": thread_id,
-                "user_id": str(user_id)
-            }
-        }
-
-        result = self.graph.invoke(initial_state, config=config)
+        """Run the RAG pipeline with conversation memory."""
+        result = self.graph.invoke(
+            {
+                "query": query,
+                "user_profile": user_profile,
+                "tool_retry_count": 0,
+                "tool_errors": "",
+                "tool_results": "",
+            },
+            config={"configurable": {"thread_id": thread_id, "user_id": str(user_id)}},
+        )
         return result["response"]

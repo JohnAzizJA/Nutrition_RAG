@@ -1,3 +1,5 @@
+import os
+import httpx
 from langchain_core.tools import tool, InjectedToolArg
 from typing import Annotated
 
@@ -147,22 +149,21 @@ def search_food(query: str, max_results: int = 5) -> str:
         query: Food name or description to search for (e.g. 'chicken breast', 'brown rice')
         max_results: Number of results to return (default 5, max 10)
     """
-    import os, requests
     api_key = os.getenv("USDA_API_KEY")
     if not api_key:
         return "Food search unavailable: USDA API key not configured."
     try:
-        response = requests.get(
-            "https://api.nal.usda.gov/fdc/v1/foods/search",
-            params={
-                "query": query,
-                "api_key": api_key,
-                "dataType": ["Foundation", "SR Legacy"],
-                "pageSize": min(max_results, 10),
-                "nutrients": [1008, 1003, 1005, 1004],
-            },
-            timeout=10,
-        )
+        with httpx.Client(timeout=10) as client:
+            response = client.get(
+                "https://api.nal.usda.gov/fdc/v1/foods/search",
+                params={
+                    "query": query,
+                    "api_key": api_key,
+                    "dataType": ["Foundation", "SR Legacy"],
+                    "pageSize": min(max_results, 10),
+                    "nutrients": [1008, 1003, 1005, 1004],
+                },
+            )
         response.raise_for_status()
         data = response.json()
         foods = data.get("foods", [])

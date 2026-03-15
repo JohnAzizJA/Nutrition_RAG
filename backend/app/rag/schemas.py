@@ -10,5 +10,6 @@ class GraphState(TypedDict):
     intent: Literal["tool", "knowledge", "chat"]
     next_action: Literal["retrieve", "tools", "generate", "end"]
     tool_retry_count: int
+    tool_errors: str
     response: str
     user_profile: Optional[dict]
