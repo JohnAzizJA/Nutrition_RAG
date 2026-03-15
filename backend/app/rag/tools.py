@@ -1,4 +1,5 @@
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolArg
+from typing import Annotated
 
 ACTIVITY_MULTIPLIERS = {
     "sedentary": 1.2,
@@ -134,3 +135,107 @@ def calculate_targets(weight_kg: float, height_cm: float, age: int, gender: str,
         "target_carbs_g": round(target_carbs_g, 1),
         "target_fat_g": round(target_fat_g, 1),
     }
+
+
+# ── Read-only action tools ────────────────────────────────────────────────────
+
+@tool
+def get_todays_nutrition(
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Get the user's nutrition totals for today — calories, protein, carbs, and fat consumed so far."""
+    from db.repositories import MealLogRepository
+    from datetime import datetime, timezone
+    try:
+        repo = MealLogRepository()
+        meals = repo.get_user_logs(user_id)
+        today = datetime.now(timezone.utc).date()
+        todays = [m for m in meals if m.logged_at.date() == today]
+        if not todays:
+            return "No meals logged today yet."
+        calories = round(sum(m.calories for m in todays), 1)
+        protein  = round(sum(m.protein_g for m in todays), 1)
+        carbs    = round(sum(m.carbs_g   for m in todays), 1)
+        fat      = round(sum(m.fat_g     for m in todays), 1)
+        lines = [f"Today's nutrition ({len(todays)} meal{'s' if len(todays) != 1 else ''} logged):"]
+        for m in todays:
+            lines.append(f"  • {m.food_name}: {round(m.calories, 1)} kcal")
+        lines.append(f"Total: {calories} kcal | Protein: {protein}g | Carbs: {carbs}g | Fat: {fat}g")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching nutrition: {str(e)}"
+
+
+@tool
+def get_streak(
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Get the user's current meal logging streak in days."""
+    from api.dashboard import calculate_logging_streak
+    try:
+        streak = calculate_logging_streak(user_id)
+        if streak == 0:
+            return "Your current logging streak is 0 days. Log a meal today to start your streak!"
+        return f"Your current logging streak is {streak} day{'s' if streak != 1 else ''}. Keep it up!"
+    except Exception as e:
+        return f"Error fetching streak: {str(e)}"
+
+
+@tool
+def get_workout_history(
+    days: int = 7,
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Get the user's workout session history for the last N days.
+
+    Args:
+        days: How many days to look back (e.g. 7 for last week, 30 for last month)
+    """
+    from db.repositories import WorkoutSessionRepository
+    from datetime import datetime, timedelta, timezone
+    try:
+        repo = WorkoutSessionRepository()
+        sessions = repo.get_user_sessions(user_id, limit=100)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        filtered = [
+            s for s in sessions
+            if s.started_at and (
+                s.started_at.replace(tzinfo=timezone.utc)
+                if s.started_at.tzinfo is None else s.started_at
+            ) >= cutoff
+        ]
+        if not filtered:
+            return f"No workouts found in the last {days} days."
+        lines = [f"Workouts in the last {days} days ({len(filtered)} session{'s' if len(filtered) != 1 else ''}):"]
+        for s in filtered:
+            date_str = s.started_at.strftime("%b %d")
+            duration = f"{s.duration_seconds // 60} min" if s.duration_seconds else "in progress"
+            lines.append(f"• {date_str} — {s.routine_name} ({duration})")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching workout history: {str(e)}"
+
+
+@tool
+def get_weekly_volume(
+    user_id: Annotated[int, InjectedToolArg] = 0,
+) -> str:
+    """Get the user's weekly training volume (kg lifted) across the current 5-week window."""
+    from db.repositories import WorkoutSessionRepository
+    from datetime import date, timedelta
+    try:
+        today = date.today()
+        days_back = (today.weekday() + 1) % 7  # Sunday-start default
+        current = today - timedelta(days=days_back)
+        week_starts = [current + timedelta(weeks=i) for i in range(-2, 3)]
+        repo = WorkoutSessionRepository()
+        data = repo.get_weekly_volume(user_id, week_starts)
+        if all(w["volume_kg"] == 0 for w in data):
+            return "No training volume data found for the past 5 weeks."
+        lines = ["Weekly training volume:"]
+        for w in data:
+            marker = " ← this week" if w["week_start"] == str(current) else ""
+            lines.append(f"• Week of {w['week_start']}: {w['volume_kg']} kg{marker}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching weekly volume: {str(e)}"

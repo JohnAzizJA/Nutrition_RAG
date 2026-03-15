@@ -110,6 +110,7 @@ async def chat(
         
         # Build user profile dict for context injection
         user_profile = {
+            "id": current_user.id,
             "name": current_user.name,
             "age": current_user.age,
             "gender": current_user.gender,

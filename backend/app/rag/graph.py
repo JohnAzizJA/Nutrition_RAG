@@ -5,7 +5,15 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from rag.schemas import GraphState
 from rag.vector_store import VectorStore
 from rag.llm_client import LLMClient
-from rag.tools import calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets
+from rag.tools import (
+    calculate_bmi, calculate_bmr, calculate_tdee, calculate_targets,
+    get_todays_nutrition, get_streak, get_workout_history, get_weekly_volume,
+)
+
+# Tools that need user_id injected server-side
+READ_ACTION_TOOLS = {
+    "get_todays_nutrition", "get_streak", "get_workout_history", "get_weekly_volume",
+}
 import os
 from dotenv import load_dotenv
 
@@ -107,12 +115,21 @@ Goal Weight: {user_profile.get('goal_weight_kg')} kg"""
             "calculate_bmr": calculate_bmr,
             "calculate_tdee": calculate_tdee,
             "calculate_targets": calculate_targets,
+            "get_todays_nutrition": get_todays_nutrition,
+            "get_streak": get_streak,
+            "get_workout_history": get_workout_history,
+            "get_weekly_volume": get_weekly_volume,
         }
+
+        user_id = (state.get("user_profile") or {}).get("id", 0)
 
         results = []
         for tool_call in state["tool_calls"]:
             tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
+            tool_args = dict(tool_call["args"])
+
+            if tool_name in READ_ACTION_TOOLS:
+                tool_args["user_id"] = user_id
 
             if tool_name in tool_map:
                 try:
