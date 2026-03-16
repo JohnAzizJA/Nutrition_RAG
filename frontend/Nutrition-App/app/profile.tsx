@@ -164,7 +164,6 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await userService.deleteAccount();
-              Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
               await logout();
               router.replace('/welcome');
             } catch (error) {
@@ -268,73 +267,75 @@ export default function ProfileScreen() {
         {/* App Settings */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>App Settings</ThemedText>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
-                <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+          <View style={styles.cardsContainer}>
+            <View style={styles.card}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
+                  <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.cardLabel}>Daily Meal Plan</ThemedText>
+                  <ThemedText style={styles.cardSubValue}>Plan your meals ahead of time</ThemedText>
+                </View>
               </View>
-              <View>
-                <ThemedText style={styles.settingLabel}>Daily Meal Plan</ThemedText>
-                <ThemedText style={styles.settingSubLabel}>Plan your meals ahead of time</ThemedText>
-              </View>
+              <Switch
+                value={mealPlanEnabled}
+                onValueChange={toggleMealPlan}
+                trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
+                thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
+              />
             </View>
-            <Switch
-              value={mealPlanEnabled}
-              onValueChange={toggleMealPlan}
-              trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
-              thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
-            />
-          </View>
 
-          <View style={[styles.settingRow, { marginTop: 8 }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: Colors.secondary + '20' }]}>
-                <Ionicons name="today-outline" size={20} color={Colors.secondary} />
+            <View style={styles.card}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.secondary + '20' }]}>
+                  <Ionicons name="today-outline" size={20} color={Colors.secondary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.cardLabel}>Week Starts On</ThemedText>
+                  <ThemedText style={styles.cardSubValue}>Affects weekly stats & charts</ThemedText>
+                </View>
               </View>
-              <View>
-                <ThemedText style={styles.settingLabel}>Week Starts On</ThemedText>
-                <ThemedText style={styles.settingSubLabel}>Affects weekly stats & charts</ThemedText>
+              <View style={styles.weekToggle}>
+                {(['Sun', 'Mon'] as const).map((label, idx) => (
+                  <TouchableOpacity
+                    key={label}
+                    style={[styles.weekChip, (user?.week_start_day ?? 0) === idx && styles.weekChipActive]}
+                    onPress={() => handleWeekStartChange(idx)}
+                  >
+                    <ThemedText style={(user?.week_start_day ?? 0) === idx ? styles.weekChipTextActive : styles.weekChipText}>
+                      {label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
-            <View style={styles.weekToggle}>
-              {(['Sun', 'Mon'] as const).map((label, idx) => (
+
+            <View style={styles.card}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: SPOTIFY_GREEN + '20' }]}>
+                  <Ionicons name="musical-notes" size={20} color={SPOTIFY_GREEN} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.cardLabel}>Spotify</ThemedText>
+                  <ThemedText style={styles.cardSubValue}>
+                    {spotifyConnected ? 'Connected — controls workout music' : 'Connect to control music during workouts'}
+                  </ThemedText>
+                </View>
+              </View>
+              {spotifyLoading ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
                 <TouchableOpacity
-                  key={label}
-                  style={[styles.weekChip, (user?.week_start_day ?? 0) === idx && styles.weekChipActive]}
-                  onPress={() => handleWeekStartChange(idx)}
+                  style={[styles.spotifyBtn, { backgroundColor: spotifyConnected ? Colors.background : SPOTIFY_GREEN }]}
+                  onPress={handleSpotifyToggle}
                 >
-                  <ThemedText style={[(user?.week_start_day ?? 0) === idx ? styles.weekChipTextActive : styles.weekChipText]}>
-                    {label}
+                  <ThemedText style={[styles.spotifyBtnText, { color: spotifyConnected ? Colors.textMuted : Colors.white }]}>
+                    {spotifyConnected ? 'Disconnect' : 'Connect'}
                   </ThemedText>
                 </TouchableOpacity>
-              ))}
+              )}
             </View>
-          </View>
-
-          <View style={[styles.settingRow, { marginTop: 8 }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: SPOTIFY_GREEN + '20' }]}>
-                <Ionicons name="musical-notes" size={20} color={SPOTIFY_GREEN} />
-              </View>
-              <View>
-                <ThemedText style={styles.settingLabel}>Spotify</ThemedText>
-                <ThemedText style={styles.settingSubLabel}>
-                  {spotifyConnected ? 'Connected — controls workout music' : 'Connect to control music during workouts'}
-                </ThemedText>
-              </View>
-            </View>
-            {spotifyLoading ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <TouchableOpacity
-                style={[styles.spotifyBtn, { backgroundColor: spotifyConnected ? Colors.background : SPOTIFY_GREEN }]}
-                onPress={handleSpotifyToggle}
-              >
-                <ThemedText style={[styles.spotifyBtnText, { color: spotifyConnected ? Colors.textMuted : Colors.white }]}>
-                  {spotifyConnected ? 'Disconnect' : 'Connect'}
-                </ThemedText>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
 
@@ -567,6 +568,11 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     textTransform: 'capitalize',
   },
+  cardSubValue: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -669,29 +675,11 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: '600',
   },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 14,
-  },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     flex: 1,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.dark,
-  },
-  settingSubLabel: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',

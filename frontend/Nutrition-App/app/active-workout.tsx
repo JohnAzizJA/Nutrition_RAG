@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet, View, TouchableOpacity, Alert, ScrollView,
-  TextInput, Modal, AppState, KeyboardAvoidingView, Platform,
+  TextInput, Modal, AppState, KeyboardAvoidingView, Platform, BackHandler,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { SpotifyMiniPlayer } from '@/src/components/SpotifyMiniPlayer';
@@ -26,8 +26,6 @@ interface LoggedSet {
   durationSeconds?: number;
 }
 
-type WeightUnit = 'kg' | 'lbs';
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatTime = (seconds: number) => {
@@ -38,15 +36,12 @@ const formatTime = (seconds: number) => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-const kgToLbs = (kg: number) => Math.round(kg * 2.205 * 10) / 10;
-const lbsToKg = (lbs: number) => Math.round((lbs / 2.205) * 100) / 100;
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
-  const { routineId, routineName } = useLocalSearchParams<{ routineId: string; routineName: string }>();
   const insets = useSafeAreaInsets();
+  const { routineId, routineName } = useLocalSearchParams<{ routineId: string; routineName: string }>();
   const {
     isConnected: spotifyConnected,
     playerState: spotifyPlayerState,
@@ -61,7 +56,6 @@ export default function ActiveWorkoutScreen() {
     disconnect: spotifyDisconnect,
   } = useSpotify();
   const playerVisible = spotifyConnected && spotifyPlayerState !== null;
-
   // Session state
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [routine, setRoutine] = useState<WorkoutRoutine | null>(null);
@@ -87,9 +81,6 @@ export default function ActiveWorkoutScreen() {
   // Logged sets
   const [loggedSets, setLoggedSets] = useState<LoggedSet[]>([]);
 
-  // Weight unit
-  const [unit, setUnit] = useState<WeightUnit>('kg');
-
   // Log set modal
   const [modalVisible, setModalVisible] = useState(false);
   const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
@@ -103,6 +94,28 @@ export default function ActiveWorkoutScreen() {
   const [editWeight, setEditWeight] = useState('');
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ─── Cancel alert ─────────────────────────────────────────────────────────────
+
+  const showCancelAlert = () => {
+    Alert.alert(
+      'Cancel Workout',
+      'Are you sure? Your progress will not be saved.',
+      [
+        { text: 'Keep Going', style: 'cancel' },
+        { text: 'Cancel Workout', style: 'destructive', onPress: () => router.back() },
+      ]
+    );
+  };
+
+  // Android hardware back — show alert, never navigate directly
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      showCancelAlert();
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
 
   // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -226,7 +239,7 @@ export default function ActiveWorkoutScreen() {
     let weightKg: number | undefined;
     if (!isTimed && inputWeight) {
       const w = parseFloat(inputWeight);
-      weightKg = unit === 'lbs' ? lbsToKg(w) : w;
+      weightKg = w;
     }
     const reps = isTimed ? undefined : (parseInt(inputReps) || undefined);
     const durationSeconds = isTimed ? activeExercise.duration_seconds : undefined;
@@ -312,9 +325,7 @@ export default function ActiveWorkoutScreen() {
   const openEditModal = (set: LoggedSet) => {
     setEditingSet(set);
     setEditReps(set.reps?.toString() ?? '');
-    setEditWeight(set.weightKg != null
-      ? (unit === 'lbs' ? kgToLbs(set.weightKg).toString() : set.weightKg.toString())
-      : '');
+    setEditWeight(set.weightKg != null ? set.weightKg.toString() : '');
     setEditModalVisible(true);
   };
 
@@ -322,9 +333,7 @@ export default function ActiveWorkoutScreen() {
     if (!editingSet || !sessionId) return;
 
     const newReps = editReps ? parseInt(editReps) : undefined;
-    const newWeightKg = editWeight
-      ? (unit === 'lbs' ? lbsToKg(parseFloat(editWeight)) : parseFloat(editWeight))
-      : undefined;
+    const newWeightKg = editWeight ? parseFloat(editWeight) : undefined;
 
     if (!newReps) {
       Alert.alert('Error', 'Please enter reps');
@@ -421,7 +430,7 @@ export default function ActiveWorkoutScreen() {
               <ThemedText style={styles.metaText}>{exercise.sets} sets × {exercise.reps} reps</ThemedText>
               {exercise.weight_kg ? (
                 <ThemedText style={styles.metaText}>
-                  {unit === 'lbs' ? `${kgToLbs(exercise.weight_kg)} lbs` : `${exercise.weight_kg} kg`} target
+                  {exercise.weight_kg} kg target
                 </ThemedText>
               ) : null}
             </>
@@ -459,7 +468,7 @@ export default function ActiveWorkoutScreen() {
                     Set {s.setNumber}
                     {s.durationSeconds ? ` · ${formatTime(s.durationSeconds)}` : ''}
                     {s.reps ? ` · ${s.reps} reps` : ''}
-                    {s.weightKg ? ` · ${unit === 'lbs' ? `${kgToLbs(s.weightKg)} lbs` : `${s.weightKg} kg`}` : ''}
+                    {s.weightKg ? ` · ${s.weightKg} kg` : ''}
                   </ThemedText>
                   {/* Edit/delete only for non-timed sets */}
                   {!s.durationSeconds && (
@@ -501,15 +510,13 @@ export default function ActiveWorkoutScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <SafeAreaView edges={['top']} style={{ backgroundColor: Colors.white }}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="close" size={24} color={Colors.dark} />
-            </TouchableOpacity>
-            <ThemedText style={styles.headerTitle}>Starting...</ThemedText>
-            <View style={{ width: 24 }} />
-          </View>
-        </SafeAreaView>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="close" size={24} color={Colors.dark} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Starting...</ThemedText>
+          <View style={{ width: 24 }} />
+        </View>
       </View>
     );
   }
@@ -518,18 +525,18 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header — SafeAreaView handles notch/status-bar padding reliably */}
-      <SafeAreaView edges={['top']} style={{ backgroundColor: Colors.white }}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => {
-            Alert.alert('Cancel Workout', 'Are you sure? Your progress will not be saved.', [
-              { text: 'Keep Going', style: 'cancel' },
-              { text: 'Cancel Workout', style: 'destructive', onPress: () => router.back() },
-            ]);
-          }}>
+      {/* Disable iOS swipe-back — only the X button and Finish can exit */}
+      <Stack.Screen options={{ gestureEnabled: false }} />
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerSide}>
+          <TouchableOpacity onPress={showCancelAlert}>
             <Ionicons name="close" size={24} color={Colors.dark} />
           </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>{routine?.name ?? 'Workout'}</ThemedText>
+        </View>
+        <ThemedText style={styles.headerTitle} numberOfLines={1}>{routine?.name ?? 'Workout'}</ThemedText>
+        <View style={styles.headerSide}>
           <TouchableOpacity
             style={[styles.finishButton, finishing && styles.finishButtonDisabled]}
             onPress={handleFinish}
@@ -538,29 +545,12 @@ export default function ActiveWorkoutScreen() {
             <ThemedText style={styles.finishButtonText}>{finishing ? 'Saving...' : 'Finish'}</ThemedText>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
 
-      {/* Stopwatch + controls bar */}
+      {/* Stopwatch bar */}
       <View style={styles.statusBar}>
-        <View style={styles.stopwatchBlock}>
-          <Ionicons name="time-outline" size={18} color={Colors.primary} />
-          <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>
-        </View>
-
-        <View style={styles.unitToggle}>
-          <TouchableOpacity
-            style={[styles.unitBtn, unit === 'kg' && styles.unitBtnActive]}
-            onPress={() => setUnit('kg')}
-          >
-            <ThemedText style={[styles.unitBtnText, unit === 'kg' && styles.unitBtnTextActive]}>kg</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.unitBtn, unit === 'lbs' && styles.unitBtnActive]}
-            onPress={() => setUnit('lbs')}
-          >
-            <ThemedText style={[styles.unitBtnText, unit === 'lbs' && styles.unitBtnTextActive]}>lbs</ThemedText>
-          </TouchableOpacity>
-        </View>
+        <Ionicons name="time-outline" size={18} color={Colors.primary} />
+        <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>
       </View>
 
       {/* Rest timer banner */}
@@ -586,7 +576,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Spotify mini-player */}
       {playerVisible && (
-        <View style={[styles.playerContainer, { paddingBottom: insets.bottom }]}>
+        <View style={styles.playerContainer}>
           <SpotifyMiniPlayer
             playerState={spotifyPlayerState!}
             isSeeking={spotifyIsSeeking}
@@ -647,18 +637,12 @@ export default function ActiveWorkoutScreen() {
                     />
                   </View>
                   <View style={styles.modalField}>
-                    <ThemedText style={styles.modalLabel}>Weight ({unit})</ThemedText>
+                    <ThemedText style={styles.modalLabel}>Weight (kg)</ThemedText>
                     <TextInput
                       style={styles.modalInput}
                       value={inputWeight}
                       onChangeText={setInputWeight}
-                      placeholder={
-                        activeExercise?.weight_kg
-                          ? (unit === 'lbs'
-                            ? kgToLbs(activeExercise.weight_kg).toString()
-                            : activeExercise.weight_kg.toString())
-                          : '0'
-                      }
+                      placeholder={activeExercise?.weight_kg?.toString() ?? '0'}
                       placeholderTextColor={Colors.placeholder}
                       keyboardType="decimal-pad"
                       maxLength={6}
@@ -713,7 +697,7 @@ export default function ActiveWorkoutScreen() {
                 />
               </View>
               <View style={styles.modalField}>
-                <ThemedText style={styles.modalLabel}>Weight ({unit})</ThemedText>
+                <ThemedText style={styles.modalLabel}>Weight (kg)</ThemedText>
                 <TextInput
                   style={styles.modalInput}
                   value={editWeight}
@@ -757,18 +741,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 12,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
+  headerSide: {
+    width: 70,
+    alignItems: 'flex-start',
+  },
   headerTitle: {
+    flex: 1,
     fontSize: 17,
     fontWeight: '600',
     color: Colors.dark,
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 8,
   },
   finishButton: {
     backgroundColor: Colors.primary,
@@ -787,45 +774,20 @@ const styles = StyleSheet.create({
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: Colors.white,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-  },
-  stopwatchBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   stopwatchText: {
     fontSize: 28,
     fontWeight: '700',
     color: Colors.primary,
     fontVariant: ['tabular-nums'],
-  },
-  unitToggle: {
-    flexDirection: 'row',
-    backgroundColor: Colors.border,
-    borderRadius: 8,
-    padding: 2,
-  },
-  unitBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  unitBtnActive: {
-    backgroundColor: Colors.white,
-  },
-  unitBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textMuted,
-  },
-  unitBtnTextActive: {
-    color: Colors.dark,
+    paddingTop: 5,
   },
   restBanner: {
     flexDirection: 'row',
