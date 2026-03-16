@@ -43,7 +43,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[styles.wrapper, { bottom: insets.bottom + 16 }]}>
-      <BlurView intensity={80} tint="light" style={styles.blur}>
+      <BlurView intensity={95} tint="light" style={styles.blur}>
         <View style={styles.sheen} />
         <View style={styles.row}>
           {state.routes.map((route, index) => {
@@ -95,14 +95,14 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: BAR_HEIGHT / 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: 'rgba(255,255,255,0.70)',
     overflow: 'hidden',
   },
   sheen: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: Platform.OS === 'android'
-      ? 'rgba(255,255,255,0.78)'
-      : 'rgba(255,255,255,0.30)',
+      ? 'rgba(255,255,255,0.60)'
+      : 'rgba(255,255,255,0.12)',
     borderRadius: BAR_HEIGHT / 2,
   },
   row: {

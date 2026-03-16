@@ -245,7 +245,7 @@ export default function HomeScreen() {
 
           {/* Calorie ring card */}
           <View style={styles.calorieCardOuter}>
-            <BlurView intensity={60} tint="light" style={styles.calorieCard}>
+            <BlurView intensity={85} tint="light" style={styles.calorieCard}>
               <View style={styles.glassSheen} />
               <View style={styles.calorieLeft}>
                 <CalorieRing consumed={consumedCalories} target={targetCalories} />
@@ -275,7 +275,7 @@ export default function HomeScreen() {
 
           {/* Weight Progress Graph */}
           <View style={styles.weightCardOuter}>
-            <BlurView intensity={60} tint="light" style={styles.weightCard}>
+            <BlurView intensity={85} tint="light" style={styles.weightCard}>
               <View style={styles.glassSheen} />
               <View style={styles.weightHeader}>
                 <ThemedText style={styles.weightTitle}>Weight Progress</ThemedText>
@@ -296,7 +296,7 @@ export default function HomeScreen() {
           <View style={styles.overviewRow}>
             {/* Streak */}
             <View style={styles.overviewCardOuter}>
-              <BlurView intensity={60} tint="light" style={styles.overviewCard}>
+              <BlurView intensity={85} tint="light" style={styles.overviewCard}>
                 <View style={styles.glassSheen} />
                 <Ionicons name="flame" size={24} color={Colors.iconStreak} />
                 <ThemedText style={styles.cardValue}>{dashboardData?.streak || 0}</ThemedText>
@@ -306,7 +306,7 @@ export default function HomeScreen() {
 
             {/* Workouts this week */}
             <View style={styles.overviewCardOuter}>
-              <BlurView intensity={60} tint="light" style={styles.overviewCard}>
+              <BlurView intensity={85} tint="light" style={styles.overviewCard}>
                 <View style={styles.glassSheen} />
                 <Ionicons name="barbell" size={24} color={Colors.primary} />
                 <ThemedText style={styles.cardValue}>
@@ -331,7 +331,7 @@ export default function HomeScreen() {
 
           {/* Water — full width */}
           <View style={styles.waterCardOuter}>
-            <BlurView intensity={60} tint="light" style={styles.waterCard}>
+            <BlurView intensity={85} tint="light" style={styles.waterCard}>
               <View style={styles.glassSheen} />
               <View style={[styles.liquidFill, { height: waterPct * 120, backgroundColor: Colors.iconWater + '25' }]} />
               <View style={styles.waterInner}>
@@ -363,7 +363,7 @@ export default function HomeScreen() {
 
           {/* Apple Health coming soon */}
           <View style={styles.comingSoonCardOuter}>
-            <BlurView intensity={60} tint="light" style={styles.comingSoonCard}>
+            <BlurView intensity={85} tint="light" style={styles.comingSoonCard}>
               <View style={styles.glassSheen} />
               <Ionicons name="heart-circle-outline" size={22} color={Colors.danger} />
               <View style={{ flex: 1, marginLeft: 12 }}>
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   // ─── Shared glass sheen ───
   glassSheen: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.76)' : 'rgba(255,255,255,0.26)',
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   // ─── Calorie ring card ───
   calorieCardOuter: {
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.52)',
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   calorieLeft: {
     marginRight: 20,
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     padding: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.52)',
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   chartEmpty: {
     height: 80,
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.52)',
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   cardValue: {
     fontSize: 24,
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.52)',
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   liquidFill: {
     position: 'absolute',
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     padding: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.52)',
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   comingSoonTitle: {
     fontSize: 14,
