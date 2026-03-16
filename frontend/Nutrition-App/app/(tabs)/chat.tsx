@@ -86,12 +86,13 @@ export default function ChatScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <ThemedText type="title" style={styles.title}>Chats</ThemedText>
         <TouchableOpacity onPress={() => router.push('/profile')}>
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
-      </View>
+      </BlurView>
 
       {conversations.length === 0 ? (
         <View style={styles.emptyState}>
@@ -106,6 +107,7 @@ export default function ChatScreen() {
           <FlatList
             data={conversations}
             keyExtractor={(item) => item.thread_id}
+            contentContainerStyle={{ paddingTop: 16 }}
             renderItem={({ item }) => (
               <Swipeable
                 renderRightActions={() => renderDeleteAction(item.thread_id)}
@@ -155,12 +157,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   title: {
     fontSize: 32,

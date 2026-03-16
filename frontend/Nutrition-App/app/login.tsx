@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
@@ -52,6 +53,9 @@ export default function LoginScreen() {
         <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
 
+        <View style={styles.formOuter}>
+          <BlurView intensity={85} tint="light" style={styles.formGlass}>
+            <View style={styles.glassSheen} />
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>Email</ThemedText>
@@ -114,6 +118,8 @@ export default function LoginScreen() {
             </ThemedText>
           </TouchableOpacity>
         </View>
+          </BlurView>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -145,6 +151,25 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     marginBottom: 40,
+  },
+  formOuter: {
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  formGlass: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+    padding: 24,
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   form: {
     gap: 16,

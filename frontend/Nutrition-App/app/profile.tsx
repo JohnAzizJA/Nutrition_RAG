@@ -179,13 +179,14 @@ export default function ProfileScreen() {
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>Profile</ThemedText>
         <View style={{ width: 24 }} />
-      </View>
+      </BlurView>
 
       <ScrollView style={styles.content}>
         {/* Profile Section */}
@@ -365,7 +366,9 @@ export default function ProfileScreen() {
       {/* Edit Modal */}
       <Modal visible={editModal.visible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalContentOuter}>
+          <BlurView intensity={65} tint="extraLight" style={styles.modalContent}>
+            <View style={styles.glassSheen} />
             <ThemedText style={styles.modalTitle}>Edit {editModal.field?.replace(/_/g, ' ')}</ThemedText>
             
             {editModal.field === 'gender' ? (
@@ -457,7 +460,8 @@ export default function ProfileScreen() {
                 <ThemedText style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</ThemedText>
               </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
+        </View>
         </View>
       </Modal>
     </ThemedView>
@@ -469,15 +473,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 16,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -598,12 +605,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: Colors.white,
+  modalContentOuter: {
     borderRadius: 16,
-    padding: 24,
     width: '80%',
     maxWidth: 400,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   modalTitle: {
     fontSize: 18,

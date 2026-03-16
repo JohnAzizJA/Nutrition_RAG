@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { BlurView } from 'expo-blur';
 import { communityService, CommunityInfo, CommunityMember } from '@/src/services/communityService';
 import { getErrorMessage } from '@/src/utils/errorUtils';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -116,30 +117,33 @@ export default function CommunityInfoScreen() {
     const isSelf = user?.id === item.user_id;
     const canRemove = isSelf || isCreator;
     return (
-      <View style={styles.memberRow}>
-        <View style={styles.memberAvatar}>
-          <ThemedText style={styles.memberAvatarText}>
-            {item.username.charAt(0).toUpperCase()}
-          </ThemedText>
-        </View>
-        <View style={styles.memberInfo}>
-          <ThemedText style={styles.memberName}>
-            {item.username}{isSelf ? ' (you)' : ''}
-            {item.user_id === info?.creator_id ? ' 👑' : ''}
-          </ThemedText>
-          <ThemedText style={styles.memberJoined}>
-            Joined {new Date(item.joined_at).toLocaleDateString()}
-          </ThemedText>
-        </View>
-        {canRemove && (
-          <TouchableOpacity onPress={() => handleRemoveMember(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons
-              name={isSelf ? 'exit-outline' : 'remove-circle-outline'}
-              size={22}
-              color={Colors.danger}
-            />
-          </TouchableOpacity>
-        )}
+      <View style={styles.memberRowOuter}>
+        <BlurView intensity={85} tint="light" style={styles.memberRow}>
+          <View style={styles.glassSheen} />
+          <View style={styles.memberAvatar}>
+            <ThemedText style={styles.memberAvatarText}>
+              {item.username.charAt(0).toUpperCase()}
+            </ThemedText>
+          </View>
+          <View style={styles.memberInfo}>
+            <ThemedText style={styles.memberName}>
+              {item.username}{isSelf ? ' (you)' : ''}
+              {item.user_id === info?.creator_id ? ' 👑' : ''}
+            </ThemedText>
+            <ThemedText style={styles.memberJoined}>
+              Joined {new Date(item.joined_at).toLocaleDateString()}
+            </ThemedText>
+          </View>
+          {canRemove && (
+            <TouchableOpacity onPress={() => handleRemoveMember(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons
+                name={isSelf ? 'exit-outline' : 'remove-circle-outline'}
+                size={22}
+                color={Colors.danger}
+              />
+            </TouchableOpacity>
+          )}
+        </BlurView>
       </View>
     );
   };
@@ -147,13 +151,14 @@ export default function CommunityInfoScreen() {
   if (loading || !info) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.header}>
+        <BlurView intensity={80} tint="light" style={styles.header}>
+          <View style={styles.headerSheen} />
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={Colors.dark} />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>Community Info</ThemedText>
           <View style={{ width: 24 }} />
-        </View>
+        </BlurView>
         <View style={styles.center}>
           <ActivityIndicator color={Colors.primary} />
         </View>
@@ -163,7 +168,8 @@ export default function CommunityInfoScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
@@ -175,7 +181,7 @@ export default function CommunityInfoScreen() {
         ) : (
           <View style={{ width: 24 }} />
         )}
-      </View>
+      </BlurView>
 
       <FlatList
         data={info.members}
@@ -184,17 +190,20 @@ export default function CommunityInfoScreen() {
         ListHeaderComponent={
           <>
             {/* Community details */}
-            <View style={styles.detailCard}>
-              <View style={styles.communityIcon}>
-                <Ionicons name="people" size={32} color={Colors.primary} />
-              </View>
-              <ThemedText style={styles.communityName}>{info.name}</ThemedText>
-              {info.description ? (
-                <ThemedText style={styles.communityDesc}>{info.description}</ThemedText>
-              ) : null}
-              <ThemedText style={styles.memberCount}>
-                {info.members.length} member{info.members.length !== 1 ? 's' : ''}
-              </ThemedText>
+            <View style={styles.detailCardOuter}>
+              <BlurView intensity={85} tint="light" style={styles.detailCard}>
+                <View style={styles.glassSheen} />
+                <View style={styles.communityIcon}>
+                  <Ionicons name="people" size={32} color={Colors.primary} />
+                </View>
+                <ThemedText style={styles.communityName}>{info.name}</ThemedText>
+                {info.description ? (
+                  <ThemedText style={styles.communityDesc}>{info.description}</ThemedText>
+                ) : null}
+                <ThemedText style={styles.memberCount}>
+                  {info.members.length} member{info.members.length !== 1 ? 's' : ''}
+                </ThemedText>
+              </BlurView>
             </View>
 
             {/* Members header + add button */}
@@ -266,15 +275,18 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -286,16 +298,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
   listContent: {
+    paddingTop: 16,
     paddingBottom: 40,
   },
-  detailCard: {
-    backgroundColor: Colors.white,
+  detailCardOuter: {
     margin: 20,
     borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  detailCard: {
+    borderRadius: 20,
     padding: 24,
+    overflow: 'hidden',
     alignItems: 'center',
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   communityIcon: {
     width: 72,
@@ -350,16 +377,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  memberRowOuter: {
+    marginHorizontal: 20,
+    marginBottom: 8,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: Colors.white,
-    marginHorizontal: 20,
-    marginBottom: 8,
     borderRadius: 14,
+    overflow: 'hidden',
     gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   memberAvatar: {
     width: 44,

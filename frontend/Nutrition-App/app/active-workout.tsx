@@ -533,7 +533,8 @@ export default function ActiveWorkoutScreen() {
       <Stack.Screen options={{ gestureEnabled: false }} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerSheen} />
         <View style={styles.headerSide}>
           <TouchableOpacity onPress={showCancelAlert}>
             <Ionicons name="close" size={24} color={Colors.dark} />
@@ -549,7 +550,7 @@ export default function ActiveWorkoutScreen() {
             <ThemedText style={styles.finishButtonText}>{finishing ? 'Saving...' : 'Finish'}</ThemedText>
           </TouchableOpacity>
         </View>
-      </View>
+      </BlurView>
 
       {/* Stopwatch bar */}
       <View style={styles.statusBar}>
@@ -740,15 +741,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerSide: {
     width: 70,

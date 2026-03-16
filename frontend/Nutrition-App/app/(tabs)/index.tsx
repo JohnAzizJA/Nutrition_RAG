@@ -196,12 +196,13 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.header}>
+        <BlurView intensity={80} tint="light" style={styles.header}>
+          <View style={styles.headerSheen} />
           <ThemedText type="title" style={styles.title}>Dashboard</ThemedText>
           <TouchableOpacity onPress={() => router.push('/profile')}>
             <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
           </TouchableOpacity>
-        </View>
+        </BlurView>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -224,7 +225,8 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <View>
           <ThemedText style={styles.greeting}>{getGreeting()},</ThemedText>
           <ThemedText type="title" style={styles.title}>{user?.name}</ThemedText>
@@ -232,12 +234,12 @@ export default function HomeScreen() {
         <TouchableOpacity onPress={() => router.push('/profile')}>
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
-      </View>
+      </BlurView>
 
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
       >
         {/* Overview */}
         <View style={styles.section}>
@@ -386,6 +388,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -393,7 +399,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 12,
-    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   greeting: {
     fontSize: 14,

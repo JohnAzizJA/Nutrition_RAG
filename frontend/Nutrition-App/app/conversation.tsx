@@ -133,7 +133,8 @@ export default function ConversationScreen() {
     >
       <ThemedView style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <BlurView intensity={80} tint="light" style={styles.header}>
+          <View style={styles.headerSheen} />
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={Colors.dark} />
           </TouchableOpacity>
@@ -144,7 +145,7 @@ export default function ConversationScreen() {
             <ThemedText style={styles.headerTitle}>AI Coach</ThemedText>
           </View>
           <View style={{ width: 24 }} />
-        </View>
+        </BlurView>
 
         {/* Messages */}
         {messages.length === 0 && !sending ? (
@@ -228,15 +229,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerCenter: {
     flexDirection: 'row',

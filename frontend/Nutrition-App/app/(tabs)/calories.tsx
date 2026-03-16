@@ -172,18 +172,18 @@ export default function CaloriesScreen() {
     const items = nutrition?.meals?.filter((m: any) => m.meal_type === type.toLowerCase()) || [];
     return {
       cal: Math.round(items.reduce((s: number, m: any) => s + m.calories, 0)),
-      p:   +(items.reduce((s: number, m: any) => s + m.protein_g, 0)).toFixed(1),
-      c:   +(items.reduce((s: number, m: any) => s + m.carbs_g, 0)).toFixed(1),
+      p: +(items.reduce((s: number, m: any) => s + m.protein_g, 0)).toFixed(1),
+      c: +(items.reduce((s: number, m: any) => s + m.carbs_g, 0)).toFixed(1),
     };
   };
 
   // ── Completed plan macro contribution ─────────────────────────────────────
   const completedPlanTotals = plans.filter(p => p.completed).reduce(
     (acc, p) => ({
-      calories:  acc.calories  + p.total_calories,
+      calories: acc.calories + p.total_calories,
       protein_g: acc.protein_g + p.total_protein_g,
-      carbs_g:   acc.carbs_g   + p.total_carbs_g,
-      fat_g:     acc.fat_g     + p.total_fat_g,
+      carbs_g: acc.carbs_g + p.total_carbs_g,
+      fat_g: acc.fat_g + p.total_fat_g,
     }),
     { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
   );
@@ -232,10 +232,10 @@ export default function CaloriesScreen() {
 
       <View style={styles.macroGrid}>
         {[
-          { label: 'Calories', current: (nutrition?.totals?.calories || 0) + completedPlanTotals.calories,  target: targets?.target_calories  || 0, unit: 'kcal', color: Colors.iconCalories },
-          { label: 'Protein',  current: (nutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g, target: targets?.target_protein_g || 0, unit: 'g',    color: Colors.iconProtein },
-          { label: 'Carbs',    current: (nutrition?.totals?.carbs_g   || 0) + completedPlanTotals.carbs_g,   target: targets?.target_carbs_g   || 0, unit: 'g',    color: Colors.iconCarbs },
-          { label: 'Fats',     current: (nutrition?.totals?.fat_g     || 0) + completedPlanTotals.fat_g,     target: targets?.target_fat_g     || 0, unit: 'g',    color: Colors.iconFats },
+          { label: 'Calories', current: (nutrition?.totals?.calories || 0) + completedPlanTotals.calories, target: targets?.target_calories || 0, unit: 'kcal', color: Colors.iconCalories },
+          { label: 'Protein', current: (nutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g, target: targets?.target_protein_g || 0, unit: 'g', color: Colors.iconProtein },
+          { label: 'Carbs', current: (nutrition?.totals?.carbs_g || 0) + completedPlanTotals.carbs_g, target: targets?.target_carbs_g || 0, unit: 'g', color: Colors.iconCarbs },
+          { label: 'Fats', current: (nutrition?.totals?.fat_g || 0) + completedPlanTotals.fat_g, target: targets?.target_fat_g || 0, unit: 'g', color: Colors.iconFats },
         ].map(({ label, current, target, unit, color }) => {
           const pct = target > 0 ? Math.min(1, current / target) : 0;
           const isOver = target > 0 && current > target;
@@ -260,17 +260,18 @@ export default function CaloriesScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
         <TouchableOpacity onPress={() => router.push('/profile')}>
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
-      </View>
+      </BlurView>
 
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}
       >
         {TopSection}
 
@@ -419,29 +420,32 @@ export default function CaloriesScreen() {
       {/* ── Success Modal ────────────────────────────────────────────────── */}
       <Modal visible={!!voiceResult} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalIconRow}>
-              <Ionicons name="checkmark-circle" size={40} color={Colors.primary} />
-            </View>
-            <ThemedText style={styles.modalTitle}>Logged via Voice!</ThemedText>
-            {voiceResult && (
-              <>
-                <ThemedText style={styles.modalTranscript}>"{voiceResult.transcript}"</ThemedText>
-                <ThemedText style={styles.modalFood}>{voiceResult.food_name}</ThemedText>
-                <ThemedText style={styles.modalMacros}>
-                  {voiceResult.grams}g · {voiceResult.calories} kcal{'\n'}
-                  {voiceResult.protein_g}g P · {voiceResult.carbs_g}g C · {voiceResult.fat_g}g F
-                </ThemedText>
-                <View style={styles.modalMealBadge}>
-                  <ThemedText style={styles.modalMealBadgeText}>
-                    {voiceResult.meal_type.charAt(0).toUpperCase() + voiceResult.meal_type.slice(1)}
+          <View style={styles.modalCardOuter}>
+            <BlurView intensity={65} tint="extraLight" style={styles.modalCard}>
+              <View style={styles.glassSheen} />
+              <View style={styles.modalIconRow}>
+                <Ionicons name="checkmark-circle" size={40} color={Colors.primary} />
+              </View>
+              <ThemedText style={styles.modalTitle}>Logged via Voice!</ThemedText>
+              {voiceResult && (
+                <>
+                  <ThemedText style={styles.modalTranscript}>"{voiceResult.transcript}"</ThemedText>
+                  <ThemedText style={styles.modalFood}>{voiceResult.food_name}</ThemedText>
+                  <ThemedText style={styles.modalMacros}>
+                    {voiceResult.grams}g · {voiceResult.calories} kcal{'\n'}
+                    {voiceResult.protein_g}g P · {voiceResult.carbs_g}g C · {voiceResult.fat_g}g F
                   </ThemedText>
-                </View>
-              </>
-            )}
-            <TouchableOpacity style={styles.modalBtn} onPress={() => setVoiceResult(null)}>
-              <ThemedText style={styles.modalBtnText}>Done</ThemedText>
-            </TouchableOpacity>
+                  <View style={styles.modalMealBadge}>
+                    <ThemedText style={styles.modalMealBadgeText}>
+                      {voiceResult.meal_type.charAt(0).toUpperCase() + voiceResult.meal_type.slice(1)}
+                    </ThemedText>
+                  </View>
+                </>
+              )}
+              <TouchableOpacity style={styles.modalBtn} onPress={() => setVoiceResult(null)}>
+                <ThemedText style={styles.modalBtnText}>Done</ThemedText>
+              </TouchableOpacity>
+            </BlurView>
           </View>
         </View>
       </Modal>
@@ -449,15 +453,18 @@ export default function CaloriesScreen() {
       {/* ── Error Modal ──────────────────────────────────────────────────── */}
       <Modal visible={!!voiceError} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalIconRow}>
-              <Ionicons name="alert-circle" size={40} color={Colors.danger} />
-            </View>
-            <ThemedText style={styles.modalTitle}>Voice Log Failed</ThemedText>
-            <ThemedText style={styles.modalErrorText}>{voiceError}</ThemedText>
-            <TouchableOpacity style={[styles.modalBtn, styles.modalBtnDanger]} onPress={() => setVoiceError(null)}>
-              <ThemedText style={styles.modalBtnText}>Close</ThemedText>
-            </TouchableOpacity>
+          <View style={styles.modalCardOuter}>
+            <BlurView intensity={65} tint="extraLight" style={styles.modalCard}>
+              <View style={styles.glassSheen} />
+              <View style={styles.modalIconRow}>
+                <Ionicons name="alert-circle" size={40} color={Colors.danger} />
+              </View>
+              <ThemedText style={styles.modalTitle}>Voice Log Failed</ThemedText>
+              <ThemedText style={styles.modalErrorText}>{voiceError}</ThemedText>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnDanger]} onPress={() => setVoiceError(null)}>
+                <ThemedText style={styles.modalBtnText}>Close</ThemedText>
+              </TouchableOpacity>
+            </BlurView>
           </View>
         </View>
       </Modal>
@@ -467,13 +474,18 @@ export default function CaloriesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   scrollContainer: { flex: 1, paddingHorizontal: 20 },
   title: { fontSize: 32, fontWeight: 'bold', color: Colors.dark },
@@ -644,13 +656,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
+  modalCardOuter: {
+    borderRadius: 20,
+    width: '100%',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
   modalCard: {
-    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 28,
-    width: '100%',
+    overflow: 'hidden',
     alignItems: 'center',
     gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   modalIconRow: { marginBottom: 4 },
   modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.dark, textAlign: 'center' },

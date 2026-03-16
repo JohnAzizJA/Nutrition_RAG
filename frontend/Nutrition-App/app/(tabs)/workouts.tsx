@@ -273,12 +273,13 @@ export default function WorkoutsScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.header}>
+        <BlurView intensity={80} tint="light" style={styles.header}>
+          <View style={styles.headerSheen} />
           <ThemedText type="title" style={styles.title}>Workouts</ThemedText>
           <TouchableOpacity onPress={() => router.push('/profile')}>
             <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
           </TouchableOpacity>
-        </View>
+        </BlurView>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -322,13 +323,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   title: {
     fontSize: 32,
@@ -342,6 +348,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 16,
   },
   glassSheen: {
     ...StyleSheet.absoluteFillObject,
