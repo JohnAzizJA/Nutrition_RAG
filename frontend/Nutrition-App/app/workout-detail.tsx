@@ -550,14 +550,14 @@ const styles = StyleSheet.create({
   },
   editInput: {
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 14,
     fontWeight: '600',
     color: Colors.dark,
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
   },
   emptyState: {

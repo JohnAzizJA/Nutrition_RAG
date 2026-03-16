@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   StyleSheet, View, TextInput, TouchableOpacity,
-  ActivityIndicator, ScrollView,
+  ActivityIndicator, ScrollView, Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -191,13 +192,18 @@ export default function CreateMealPlanScreen() {
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Plan name */}
-        <TextInput
-          style={styles.nameInput}
-          placeholder="Meal plan name (e.g. My Breakfast)"
-          value={name}
-          onChangeText={setName}
-          placeholderTextColor={Colors.placeholder}
-        />
+        <View style={styles.nameInputOuter}>
+          <BlurView intensity={95} tint="light" style={styles.nameInputGlass}>
+            <View style={styles.inputSheen} />
+            <TextInput
+              style={styles.nameInput}
+              placeholder="Meal plan name (e.g. My Breakfast)"
+              value={name}
+              onChangeText={setName}
+              placeholderTextColor={Colors.placeholder}
+            />
+          </BlurView>
+        </View>
 
         {error && (
           <View style={styles.errorBanner}>
@@ -241,13 +247,18 @@ export default function CreateMealPlanScreen() {
         {/* Food search */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Add Food</ThemedText>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search food..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={Colors.placeholder}
-          />
+          <View style={styles.searchInputOuter}>
+            <BlurView intensity={95} tint="light" style={styles.searchInputGlass}>
+              <View style={styles.inputSheen} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search food..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={Colors.placeholder}
+              />
+            </BlurView>
+          </View>
           {searching && <ActivityIndicator color={Colors.primary} style={{ marginTop: 8 }} />}
           {searchResults.map(item => {
             const raw   = parseFloat(amounts[item.fdcId] || '0');
@@ -309,22 +320,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: Colors.dark },
   saveBtn: { fontSize: 15, fontWeight: '700', color: Colors.primary },
   scroll: { flex: 1 },
-  nameInput: {
-    backgroundColor: Colors.white,
+  nameInputOuter: {
     margin: 16,
+    borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  nameInputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  nameInput: {
     padding: 14,
-    borderRadius: 10,
     fontSize: 16,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -361,15 +386,25 @@ const styles = StyleSheet.create({
   foodRowName: { fontSize: 14, fontWeight: '600', color: Colors.dark },
   foodRowMacros: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   removeBtn: { padding: 4 },
+  searchInputOuter: {
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  searchInputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
   searchInput: {
-    backgroundColor: Colors.white,
     padding: 12,
-    borderRadius: 8,
     fontSize: 15,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 8,
   },
   searchResult: {
     flexDirection: 'row',
@@ -383,7 +418,7 @@ const styles = StyleSheet.create({
   searchResultName: { fontSize: 14, fontWeight: '600', color: Colors.dark },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   amountInput: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 6,
     paddingVertical: 5,
     paddingHorizontal: 8,
@@ -392,7 +427,7 @@ const styles = StyleSheet.create({
     width: 60,
     textAlign: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   unitRow: { flexDirection: 'row', gap: 3 },
   unitPill: {

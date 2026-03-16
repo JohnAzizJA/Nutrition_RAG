@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Alert, ScrollView, Switch, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
@@ -101,13 +102,14 @@ export default function AddExerciseScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>Add Exercise</ThemedText>
         <View style={{ width: 24 }} />
-      </View>
+      </BlurView>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.iconContainer}>
@@ -118,14 +120,19 @@ export default function AddExerciseScreen() {
 
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>Exercise Name *</ThemedText>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Push-ups, Squats, Plank"
-            placeholderTextColor={Colors.placeholder}
-            maxLength={100}
-          />
+          <View style={styles.inputOuter}>
+            <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+              <View style={styles.inputSheen} />
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g., Push-ups, Squats, Plank"
+                placeholderTextColor={Colors.placeholder}
+                maxLength={100}
+              />
+            </BlurView>
+          </View>
         </View>
 
         {/* Timed exercise toggle */}
@@ -146,40 +153,55 @@ export default function AddExerciseScreen() {
           <>
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Sets *</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={timedSets}
-                onChangeText={setTimedSets}
-                placeholder="3"
-                placeholderTextColor={Colors.placeholder}
-                keyboardType="numeric"
-                maxLength={2}
-              />
+              <View style={styles.inputOuter}>
+                <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                  <View style={styles.inputSheen} />
+                  <TextInput
+                    style={styles.input}
+                    value={timedSets}
+                    onChangeText={setTimedSets}
+                    placeholder="3"
+                    placeholderTextColor={Colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </BlurView>
+              </View>
             </View>
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Duration per Set *</ThemedText>
               <View style={styles.row}>
                 <View style={[styles.halfWidth, { marginRight: 8 }]}>
-                  <TextInput
-                    style={styles.input}
-                    value={durationMinutes}
-                    onChangeText={setDurationMinutes}
-                    placeholder="Minutes"
-                    placeholderTextColor={Colors.placeholder}
-                    keyboardType="numeric"
-                    maxLength={2}
-                  />
+                  <View style={styles.inputOuter}>
+                    <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                      <View style={styles.inputSheen} />
+                      <TextInput
+                        style={styles.input}
+                        value={durationMinutes}
+                        onChangeText={setDurationMinutes}
+                        placeholder="Minutes"
+                        placeholderTextColor={Colors.placeholder}
+                        keyboardType="numeric"
+                        maxLength={2}
+                      />
+                    </BlurView>
+                  </View>
                 </View>
                 <View style={styles.halfWidth}>
-                  <TextInput
-                    style={styles.input}
-                    value={durationSeconds}
-                    onChangeText={setDurationSeconds}
-                    placeholder="Seconds"
-                    placeholderTextColor={Colors.placeholder}
-                    keyboardType="numeric"
-                    maxLength={2}
-                  />
+                  <View style={styles.inputOuter}>
+                    <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                      <View style={styles.inputSheen} />
+                      <TextInput
+                        style={styles.input}
+                        value={durationSeconds}
+                        onChangeText={setDurationSeconds}
+                        placeholder="Seconds"
+                        placeholderTextColor={Colors.placeholder}
+                        keyboardType="numeric"
+                        maxLength={2}
+                      />
+                    </BlurView>
+                  </View>
                 </View>
               </View>
             </View>
@@ -189,67 +211,92 @@ export default function AddExerciseScreen() {
             <View style={styles.row}>
               <View style={[styles.inputContainer, styles.halfWidth]}>
                 <ThemedText style={styles.label}>Sets *</ThemedText>
-                <TextInput
-                  style={styles.input}
-                  value={sets}
-                  onChangeText={setSets}
-                  placeholder="3"
-                  placeholderTextColor={Colors.placeholder}
-                  keyboardType="numeric"
-                  maxLength={2}
-                />
+                <View style={styles.inputOuter}>
+                  <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                    <View style={styles.inputSheen} />
+                    <TextInput
+                      style={styles.input}
+                      value={sets}
+                      onChangeText={setSets}
+                      placeholder="3"
+                      placeholderTextColor={Colors.placeholder}
+                      keyboardType="numeric"
+                      maxLength={2}
+                    />
+                  </BlurView>
+                </View>
               </View>
               <View style={[styles.inputContainer, styles.halfWidth]}>
                 <ThemedText style={styles.label}>Reps *</ThemedText>
-                <TextInput
-                  style={styles.input}
-                  value={reps}
-                  onChangeText={setReps}
-                  placeholder="12"
-                  placeholderTextColor={Colors.placeholder}
-                  keyboardType="numeric"
-                  maxLength={3}
-                />
+                <View style={styles.inputOuter}>
+                  <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                    <View style={styles.inputSheen} />
+                    <TextInput
+                      style={styles.input}
+                      value={reps}
+                      onChangeText={setReps}
+                      placeholder="12"
+                      placeholderTextColor={Colors.placeholder}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                  </BlurView>
+                </View>
               </View>
             </View>
 
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Weight (kg) - Optional</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={weight}
-                onChangeText={setWeight}
-                placeholder="Enter weight in kg"
-                placeholderTextColor={Colors.placeholder}
-                keyboardType="decimal-pad"
-                maxLength={6}
-              />
+              <View style={styles.inputOuter}>
+                <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                  <View style={styles.inputSheen} />
+                  <TextInput
+                    style={styles.input}
+                    value={weight}
+                    onChangeText={setWeight}
+                    placeholder="Enter weight in kg"
+                    placeholderTextColor={Colors.placeholder}
+                    keyboardType="decimal-pad"
+                    maxLength={6}
+                  />
+                </BlurView>
+              </View>
             </View>
 
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Rest Time - Optional</ThemedText>
               <View style={styles.row}>
                 <View style={[styles.halfWidth, { marginRight: 8 }]}>
-                  <TextInput
-                    style={styles.input}
-                    value={restMinutes}
-                    onChangeText={setRestMinutes}
-                    placeholder="Minutes"
-                    placeholderTextColor={Colors.placeholder}
-                    keyboardType="numeric"
-                    maxLength={2}
-                  />
+                  <View style={styles.inputOuter}>
+                    <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                      <View style={styles.inputSheen} />
+                      <TextInput
+                        style={styles.input}
+                        value={restMinutes}
+                        onChangeText={setRestMinutes}
+                        placeholder="Minutes"
+                        placeholderTextColor={Colors.placeholder}
+                        keyboardType="numeric"
+                        maxLength={2}
+                      />
+                    </BlurView>
+                  </View>
                 </View>
                 <View style={styles.halfWidth}>
-                  <TextInput
-                    style={styles.input}
-                    value={restSeconds}
-                    onChangeText={setRestSeconds}
-                    placeholder="Seconds"
-                    placeholderTextColor={Colors.placeholder}
-                    keyboardType="numeric"
-                    maxLength={2}
-                  />
+                  <View style={styles.inputOuter}>
+                    <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                      <View style={styles.inputSheen} />
+                      <TextInput
+                        style={styles.input}
+                        value={restSeconds}
+                        onChangeText={setRestSeconds}
+                        placeholder="Seconds"
+                        placeholderTextColor={Colors.placeholder}
+                        keyboardType="numeric"
+                        maxLength={2}
+                      />
+                    </BlurView>
+                  </View>
                 </View>
               </View>
             </View>
@@ -275,15 +322,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -314,14 +364,28 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: Colors.white,
+  inputOuter: {
     borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  input: {
     padding: 16,
     fontSize: 16,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -335,12 +399,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   toggleSubtext: {
     fontSize: 12,

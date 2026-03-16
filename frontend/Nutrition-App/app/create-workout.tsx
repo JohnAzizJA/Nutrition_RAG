@@ -58,29 +58,39 @@ export default function CreateWorkoutScreen() {
         
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>Routine Name *</ThemedText>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter routine name"
-            placeholderTextColor={Colors.placeholder}
-            maxLength={100}
-          />
+          <View style={styles.inputOuter}>
+            <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+              <View style={styles.inputSheen} />
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter routine name"
+                placeholderTextColor={Colors.placeholder}
+                maxLength={100}
+              />
+            </BlurView>
+          </View>
         </View>
         
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>Description (Optional)</ThemedText>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Describe your workout routine"
-            placeholderTextColor={Colors.placeholder}
-            multiline
-            numberOfLines={4}
-            maxLength={500}
-            textAlignVertical="top"
-          />
+          <View style={styles.inputOuter}>
+            <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+              <View style={styles.inputSheen} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Describe your workout routine"
+                placeholderTextColor={Colors.placeholder}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                textAlignVertical="top"
+              />
+            </BlurView>
+          </View>
         </View>
         
         <TouchableOpacity
@@ -148,14 +158,28 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: Colors.white,
+  inputOuter: {
     borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  input: {
     padding: 16,
     fontSize: 16,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   textArea: {
     minHeight: 100,

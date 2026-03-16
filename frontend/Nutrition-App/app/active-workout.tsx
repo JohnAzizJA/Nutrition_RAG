@@ -994,14 +994,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalInput: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 10,
     padding: 14,
     fontSize: 22,
     fontWeight: '700',
     color: Colors.dark,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     textAlign: 'center',
   },
   timedInfo: {

@@ -183,9 +183,9 @@ const styles = StyleSheet.create({
     color: Colors.dark,
   },
   input: {
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 10,
     padding: 14,
     fontSize: 16,

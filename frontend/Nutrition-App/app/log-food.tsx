@@ -198,13 +198,18 @@ export default function LogFoodScreen() {
         <View style={{ width: 24 }} />
       </BlurView>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search for food..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholderTextColor={Colors.placeholder}
-      />
+      <View style={styles.searchInputOuter}>
+        <BlurView intensity={95} tint="light" style={styles.searchInputGlass}>
+          <View style={styles.glassSheen} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for food..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={Colors.placeholder}
+          />
+        </BlurView>
+      </View>
 
       {error && (
         <View style={styles.errorBanner}>
@@ -247,15 +252,25 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: Colors.dark },
-  searchInput: {
-    backgroundColor: Colors.white,
+  searchInputOuter: {
     margin: 16,
+    borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  searchInputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  searchInput: {
     padding: 12,
-    borderRadius: 8,
     fontSize: 16,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -299,7 +314,7 @@ const styles = StyleSheet.create({
   egyptianBadgeText: { fontSize: 13 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   amountInput: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 6,
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -308,7 +323,7 @@ const styles = StyleSheet.create({
     width: 72,
     textAlign: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   unitRow: { flexDirection: 'row', gap: 4 },
   unitPill: {

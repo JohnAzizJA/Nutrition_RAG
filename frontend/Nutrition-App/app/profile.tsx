@@ -631,12 +631,14 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   input: {
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
+    color: Colors.dark,
   },
   optionsContainer: {
     marginBottom: 16,

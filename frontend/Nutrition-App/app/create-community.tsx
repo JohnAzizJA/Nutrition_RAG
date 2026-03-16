@@ -56,30 +56,40 @@ export default function CreateCommunityScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.field}>
             <ThemedText style={styles.label}>Community Name *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Morning Warriors"
-              placeholderTextColor={Colors.placeholder}
-              maxLength={100}
-              autoFocus
-            />
+            <View style={styles.inputOuter}>
+              <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                <View style={styles.inputSheen} />
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. Morning Warriors"
+                  placeholderTextColor={Colors.placeholder}
+                  maxLength={100}
+                  autoFocus
+                />
+              </BlurView>
+            </View>
           </View>
 
           <View style={styles.field}>
             <ThemedText style={styles.label}>Description (optional)</ThemedText>
-            <TextInput
-              style={[styles.input, styles.textarea]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="What's this community about?"
-              placeholderTextColor={Colors.placeholder}
-              maxLength={500}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+            <View style={styles.inputOuter}>
+              <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                <View style={styles.inputSheen} />
+                <TextInput
+                  style={[styles.input, styles.textarea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="What's this community about?"
+                  placeholderTextColor={Colors.placeholder}
+                  maxLength={500}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </BlurView>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -136,11 +146,25 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: Colors.white,
+  inputOuter: {
     borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  input: {
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
