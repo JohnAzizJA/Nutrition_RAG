@@ -8,13 +8,19 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { calculationService, userService } from '@/src/services';
+
+// Spotify brand green — Spotify Brand Guidelines
+const SPOTIFY_GREEN = '#1DB954';
 
 const MEAL_PLAN_KEY = 'mealPlanEnabled';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, updateUser } = useAuth();
+  const { isConnected: spotifyConnected, connect: spotifyConnect, disconnect: spotifyDisconnect } = useSpotify();
+  const [spotifyLoading, setSpotifyLoading] = useState(false);
   const [targets, setTargets] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState<{visible: boolean, field: string, value: any}>({visible: false, field: '', value: ''});
@@ -29,6 +35,21 @@ export default function ProfileScreen() {
   const toggleMealPlan = async (value: boolean) => {
     setMealPlanEnabled(value);
     await SecureStore.setItemAsync(MEAL_PLAN_KEY, value ? 'true' : 'false');
+  };
+
+  const handleSpotifyToggle = async () => {
+    setSpotifyLoading(true);
+    try {
+      if (spotifyConnected) {
+        await spotifyDisconnect();
+      } else {
+        await spotifyConnect();
+      }
+    } catch {
+      Alert.alert('Spotify', 'Something went wrong. Please try again.');
+    } finally {
+      setSpotifyLoading(false);
+    }
   };
 
   const handleWeekStartChange = async (day: number) => {
@@ -283,6 +304,32 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          <View style={[styles.settingRow, { marginTop: 8 }]}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: SPOTIFY_GREEN + '20' }]}>
+                <Ionicons name="musical-notes" size={20} color={SPOTIFY_GREEN} />
+              </View>
+              <View>
+                <ThemedText style={styles.settingLabel}>Spotify</ThemedText>
+                <ThemedText style={styles.settingSubLabel}>
+                  {spotifyConnected ? 'Connected — controls workout music' : 'Connect to control music during workouts'}
+                </ThemedText>
+              </View>
+            </View>
+            {spotifyLoading ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <TouchableOpacity
+                style={[styles.spotifyBtn, { backgroundColor: spotifyConnected ? Colors.background : SPOTIFY_GREEN }]}
+                onPress={handleSpotifyToggle}
+              >
+                <ThemedText style={[styles.spotifyBtnText, { color: spotifyConnected ? Colors.textMuted : Colors.white }]}>
+                  {spotifyConnected ? 'Disconnect' : 'Connect'}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -679,5 +726,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Colors.white,
+  },
+  spotifyBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  spotifyBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

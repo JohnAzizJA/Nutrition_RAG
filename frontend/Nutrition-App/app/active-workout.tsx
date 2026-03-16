@@ -5,9 +5,12 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
+import { SpotifyMiniPlayer } from '@/src/components/SpotifyMiniPlayer';
 import { Colors } from '@/constants/theme';
+import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { workoutService, workoutSessionService, Exercise, WorkoutRoutine } from '@/src/services';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -41,6 +44,21 @@ const lbsToKg = (lbs: number) => Math.round((lbs / 2.205) * 100) / 100;
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
   const { routineId, routineName } = useLocalSearchParams<{ routineId: string; routineName: string }>();
+  const insets = useSafeAreaInsets();
+  const {
+    isConnected: spotifyConnected,
+    playerState: spotifyPlayerState,
+    isSeeking: spotifyIsSeeking,
+    togglePlayPause: spotifyTogglePlayPause,
+    skipToNext: spotifySkipNext,
+    skipToPrevious: spotifySkipPrevious,
+    onSeekStart: spotifySeekStart,
+    onSeekEnd: spotifySeekEnd,
+    toggleShuffle: spotifyToggleShuffle,
+    cycleRepeatMode: spotifyCycleRepeat,
+    disconnect: spotifyDisconnect,
+  } = useSpotify();
+  const playerVisible = spotifyConnected && spotifyPlayerState !== null;
 
   // Session state
   const [sessionId, setSessionId] = useState<number | null>(null);
@@ -397,10 +415,32 @@ export default function ActiveWorkoutScreen() {
       )}
 
       {/* Exercise list */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.contentContainer, playerVisible && { paddingBottom: 160 }]}
+      >
         {routine?.exercises?.map(renderExerciseCard)}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Spotify mini-player */}
+      {playerVisible && (
+        <View style={[styles.playerContainer, { paddingBottom: insets.bottom }]}>
+          <SpotifyMiniPlayer
+            playerState={spotifyPlayerState!}
+            isSeeking={spotifyIsSeeking}
+            onTogglePlayPause={spotifyTogglePlayPause}
+            onSkipNext={spotifySkipNext}
+            onSkipPrevious={spotifySkipPrevious}
+            onSeekStart={spotifySeekStart}
+            onSeekEnd={spotifySeekEnd}
+            onToggleShuffle={spotifyToggleShuffle}
+            onCycleRepeat={spotifyCycleRepeat}
+            onDisconnect={spotifyDisconnect}
+          />
+        </View>
+      )}
 
       {/* Log Set Modal */}
       <Modal
@@ -486,6 +526,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  playerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   header: {
     flexDirection: 'row',

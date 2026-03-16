@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { AuthProvider } from '@/src/contexts/AuthContext';
+import { SpotifyProvider } from '@/src/contexts/SpotifyContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -13,6 +14,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
+        <SpotifyProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false}}>
             <Stack.Screen name="index" />
@@ -25,6 +27,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>
+        </SpotifyProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
