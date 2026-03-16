@@ -11,6 +11,7 @@ export interface UpdateProfileRequest {
   goal: 'lose_weight' | 'maintain_weight' | 'gain_weight' | 'gain_muscle';
   goal_weight_kg: number;
   weight_loss_per_week: number;
+  week_start_day: number;
 }
 
 export const userService = {

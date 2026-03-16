@@ -6,6 +6,14 @@ from db.repositories import MealLogRepository, WaterLogRepository, MealPlanRepos
 from datetime import datetime, timezone, timedelta, date
 import scoring
 
+
+def _week_window(week_start_day: int, n_before: int = 2, n_after: int = 2):
+    """Return a list of `n_before + 1 + n_after` week-start dates centred on the current week."""
+    today = date.today()
+    days_back = (today.weekday() + 1) % 7 if week_start_day == 0 else today.weekday()
+    current = today - timedelta(days=days_back)
+    return [current + timedelta(weeks=i) for i in range(-n_before, n_after + 1)]
+
 router = APIRouter()
 meal_repo = MealLogRepository()
 water_repo = WaterLogRepository()
@@ -39,14 +47,11 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
         water_log = water_repo.get_by_date(current_user.id, today)
         water_intake = water_log.glasses if water_log else 0
 
-        workouts_this_week = session_repo.get_sessions_this_week(current_user.id)
+        workouts_this_week = session_repo.get_sessions_this_week(current_user.id, current_user.week_start_day)
         workouts_goal = ACTIVITY_WORKOUTS_MAP.get(current_user.activity_level, 3)
 
-        weight_logs = weight_repo.get_user_logs(current_user.id, limit=8)
-        weight_history = [
-            {"date": str(log.logged_at.date()), "weight_kg": log.weight_kg}
-            for log in reversed(weight_logs)
-        ]
+        week_starts = _week_window(current_user.week_start_day)
+        weight_history = weight_repo.get_weekly_weights(current_user.id, week_starts)
 
         return {
             "streak": streak,

@@ -1,0 +1,109 @@
+Fitness Training Principles: Science of Exercise and Physical Performance
+
+THE FOUNDATIONAL PRINCIPLES OF TRAINING
+
+1. PROGRESSIVE OVERLOAD
+The most important principle in all of fitness. Your body adapts to stress by becoming stronger, bigger, or more efficient. Once adaptation occurs, you must increase the stress to continue progressing.
+
+How to apply progressive overload:
+- Increase weight lifted (most common for strength)
+- Increase repetitions with the same weight
+- Increase sets (volume)
+- Decrease rest periods
+- Improve exercise technique and range of motion
+- Increase workout frequency
+
+Without progressive overload, you maintain fitness but do not improve. This is why following the same workout with the same weights for months produces no results.
+
+2. SPECIFICITY (SAID PRINCIPLE)
+Specific Adaptation to Imposed Demands: the body adapts specifically to the type of stress placed on it. To get stronger, you must lift weights. To improve running endurance, you must run. Cross-training has benefits but cannot replace sport-specific training for elite performance.
+
+3. RECOVERY AND SUPERCOMPENSATION
+Training breaks down muscle tissue and depletes energy stores. Recovery is when adaptation actually occurs. Overtraining (insufficient recovery) leads to performance decline, injury, hormonal disruption, and burnout.
+
+Recovery requires:
+- Sleep: 7–9 hours per night. Growth hormone is primarily secreted during deep sleep, driving muscle repair. Sleep deprivation after training dramatically reduces muscle protein synthesis.
+- Nutrition: adequate protein (1.6–2.2 g/kg), sufficient carbohydrates to replenish glycogen, and total calorie sufficiency
+- Rest days: muscles need 48–72 hours to fully recover after an intense session. Splitting workouts by muscle group (PPL, upper/lower) allows training 4–6 days per week while still allowing adequate recovery per muscle.
+- Active recovery: light walking, stretching, swimming on rest days enhances blood flow and speeds recovery without causing additional damage
+
+Signs of overtraining: persistent fatigue, declining performance, elevated resting heart rate, increased illness, irritability, sleep disruption, loss of motivation.
+
+4. REVERSIBILITY (USE IT OR LOSE IT)
+Fitness gains are lost without continued training. Cardiovascular fitness decreases noticeably within 2 weeks of complete inactivity. Strength is lost more slowly (3–4 weeks before significant decline). Technique and movement patterns are retained longest. Returning to training after a break should begin at reduced volume/intensity to prevent injury.
+
+5. INDIVIDUALITY
+Two people following the same program will achieve different results due to genetics, prior training history, lifestyle, recovery quality, and adherence. A program that works well for one person may not be optimal for another.
+
+TYPES OF TRAINING
+
+RESISTANCE TRAINING (STRENGTH/HYPERTROPHY)
+Resistance training involves working muscles against an external load (barbell, dumbbells, cables, machines, bodyweight). It is essential for building and maintaining muscle mass, increasing bone density, improving metabolic rate, and preventing injury.
+
+Rep ranges and their primary adaptations:
+- 1–5 reps at 85–100% of 1RM: maximal strength (neural adaptations, increased motor unit recruitment)
+- 6–12 reps at 65–85% of 1RM: hypertrophy (muscle size increase); optimal range for bodybuilding
+- 12–20+ reps at 50–65% of 1RM: muscular endurance; also produces significant hypertrophy at higher volumes
+
+Evidence shows that hypertrophy occurs across a wide rep range (5–30 reps) as long as sets are taken close to failure. Total weekly volume (sets per muscle group) is the primary driver of hypertrophy.
+
+Recommended training volume for hypertrophy: 10–20 sets per muscle group per week, with progressive overload across training blocks.
+
+CARDIOVASCULAR TRAINING
+Cardio improves heart and lung efficiency, increases VO2 max, burns calories, and reduces cardiovascular disease risk.
+
+Types:
+- Low-Intensity Steady State (LISS): 45–90 minutes at 50–65% max heart rate. Examples: brisk walking, easy cycling. Low stress, excellent for fat oxidation, minimal recovery cost.
+- Moderate-Intensity Continuous Training (MICT): 30–60 minutes at 65–80% max heart rate. Examples: jogging, swimming. Standard cardio zone.
+- High-Intensity Interval Training (HIIT): alternating short bursts of near-maximal effort (20–40 seconds) with recovery periods (40–120 seconds). Total session 15–30 minutes. Highly time-efficient; significant EPOC (afterburn effect); higher recovery cost.
+
+HIIT vs. LISS: Both improve cardiovascular fitness. HIIT is more time-efficient but cannot be done daily due to its recovery demand. LISS can be performed on rest days from strength training with minimal interference.
+
+For fat loss: both are effective when combined with a calorie deficit. Cardio type matters less than consistency and total energy expenditure.
+
+FLEXIBILITY AND MOBILITY
+- Flexibility: the passive range of motion of a joint
+- Mobility: the active, controlled range of motion — more functionally relevant for athletic performance
+
+Static stretching (holding a stretch 30–60 seconds) after workouts improves flexibility and can mildly reduce DOMS. The older concern that static stretching reduces power output has been refined by recent meta-analyses (2021–2024): brief static stretching under 60 seconds per muscle group on already-warm tissue causes only minimal (2–3%) power reduction and is acceptable pre-workout if followed by dynamic warm-up. Avoid prolonged static stretching (>60 sec/muscle) immediately before heavy strength or power work.
+
+Dynamic stretching and warm-up movements before training increase body temperature, improve joint lubrication, and reduce injury risk. Spend 5–10 minutes on a dynamic warm-up before every session.
+
+HEART RATE ZONES
+- Zone 1 (50–60% max HR): very light activity, recovery walks
+- Zone 2 (60–70% max HR): fat oxidation zone, conversational pace; builds aerobic base
+- Zone 3 (70–80% max HR): aerobic zone, moderate effort
+- Zone 4 (80–90% max HR): anaerobic threshold, lactate accumulates; hard effort
+- Zone 5 (90–100% max HR): maximum effort, sprint intervals
+
+Max heart rate estimation: 220 − age (approximate). Accurate measurements require lab testing.
+
+WARM-UP AND COOL-DOWN
+Warm-up (5–10 minutes): increases core temperature, improves muscle elasticity and joint lubrication, activates the nervous system. Include light cardio followed by dynamic movements (leg swings, arm circles, bodyweight squats).
+
+Cool-down (5–10 minutes): gradual heart rate reduction, static stretching, foam rolling. Reduces post-workout soreness and aids mental transition from training.
+
+TRAINING FREQUENCY
+- Beginners: 2–3 full-body sessions per week. Adequate stimulus for rapid neurological and early muscular adaptations.
+- Intermediate: 3–5 days per week with split programming (Upper/Lower or PPL)
+- Advanced: 5–6 days per week; high specificity
+
+Each muscle group should be trained 2 times per week minimum for optimal hypertrophy.
+
+PERIODIZATION
+Periodization is the structured variation of training variables (volume, intensity, exercise selection) over time to maximize adaptation and prevent plateaus.
+
+Linear periodization: gradually increase intensity and decrease volume over weeks. Simple, effective for beginners.
+Undulating periodization (DUP): varies rep ranges within each week (e.g., heavy day, moderate day, light day). More advanced; reduces monotony and provides varied stimulus.
+Block periodization: focus on one quality at a time (accumulation → intensification → realization). Common in powerlifting and Olympic lifting.
+
+DELOAD WEEKS
+A planned week of reduced training volume (reduce sets by 40–50%) or intensity after 4–8 weeks of hard training. Allows full connective tissue and nervous system recovery, prevents accumulative fatigue, and often results in performance improvements after returning to full training.
+
+---
+REFERENCES
+- World Health Organization. Physical Activity Fact Sheet (2022). https://www.who.int/news-room/fact-sheets/detail/physical-activity
+- American College of Sports Medicine. ACSM's Guidelines for Exercise Testing and Prescription, 11th ed. (2022). https://www.acsm.org/education-resources/books/acsm-guidelines-exercise-testing-prescription
+- Schoenfeld BJ. The Mechanisms of Muscle Hypertrophy and Their Application to Resistance Training. Journal of Strength and Conditioning Research (2010). https://pubmed.ncbi.nlm.nih.gov/20847704/
+- Schoenfeld BJ, et al. Dose-response relationship between weekly resistance training volume and increases in muscle mass. JSSM (2017). https://pubmed.ncbi.nlm.nih.gov/28834797/
+- Garber CE, et al. ACSM Position Stand: Quantity and Quality of Exercise. Medicine & Science in Sports & Exercise (2011). https://pubmed.ncbi.nlm.nih.gov/21694556/

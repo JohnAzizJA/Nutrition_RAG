@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutService } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 export default function CreateWorkoutScreen() {
   const router = useRouter();
@@ -30,7 +32,7 @@ export default function CreateWorkoutScreen() {
         { text: 'OK', onPress: () => router.replace(`/workout-detail?id=${routine.id}`) }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to create workout routine');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to create workout routine. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -38,13 +40,14 @@ export default function CreateWorkoutScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>Create Workout</ThemedText>
         <View style={{ width: 24 }} />
-      </View>
+      </BlurView>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.iconContainer}>
@@ -55,29 +58,39 @@ export default function CreateWorkoutScreen() {
         
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>Routine Name *</ThemedText>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter routine name"
-            placeholderTextColor={Colors.placeholder}
-            maxLength={100}
-          />
+          <View style={styles.inputOuter}>
+            <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+              <View style={styles.inputSheen} />
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter routine name"
+                placeholderTextColor={Colors.placeholder}
+                maxLength={100}
+              />
+            </BlurView>
+          </View>
         </View>
         
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>Description (Optional)</ThemedText>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Describe your workout routine"
-            placeholderTextColor={Colors.placeholder}
-            multiline
-            numberOfLines={4}
-            maxLength={500}
-            textAlignVertical="top"
-          />
+          <View style={styles.inputOuter}>
+            <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+              <View style={styles.inputSheen} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Describe your workout routine"
+                placeholderTextColor={Colors.placeholder}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                textAlignVertical="top"
+              />
+            </BlurView>
+          </View>
         </View>
         
         <TouchableOpacity
@@ -103,15 +116,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -142,14 +158,28 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: Colors.white,
+  inputOuter: {
     borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  input: {
     padding: 16,
     fontSize: 16,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   textArea: {
     minHeight: 100,

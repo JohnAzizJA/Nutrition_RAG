@@ -1,13 +1,17 @@
-import { useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, View, ScrollView, Alert } from 'react-native';
+import { useState, useCallback, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, View, ScrollView, Alert, Animated, Modal, ActivityIndicator, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { Audio } from 'expo-av';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { calculationService, nutritionService, mealPlanService, MealPlan } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
+import { VoiceLogResult } from '@/src/services/nutritionService';
 import { Swipeable } from 'react-native-gesture-handler';
 
 const MEAL_PLAN_KEY = 'mealPlanEnabled';
@@ -22,6 +26,13 @@ export default function CaloriesScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
   const [mealPlanEnabled, setMealPlanEnabled] = useState(false);
+
+  // Voice recording state
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceResult, setVoiceResult] = useState<VoiceLogResult | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -52,7 +63,54 @@ export default function CaloriesScreen() {
       setPlans(plansData);
     } catch (e) {
       console.error('Failed to fetch data:', e);
+    }
+  };
+
+  // ── Voice recording ─────────────────────────────────────────────────────────
+  const startRecording = async () => {
+    setVoiceError(null);
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        setVoiceError('Microphone permission is required for voice logging.');
+        return;
+      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(rec);
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      ).start();
+    } catch {
+      setVoiceError('Could not start recording. Please try again.');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+    pulseAnim.stopAnimation();
+    pulseAnim.setValue(1);
+    setVoiceLoading(true);
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = recording.getURI();
+      setRecording(null);
+      if (!uri) throw new Error('No audio recorded.');
+      const result = await nutritionService.voiceLog(uri);
+      setVoiceResult(result);
+      loadAll(); // refresh macros/meals
+    } catch (e: any) {
+      const msg = e?.response?.data?.detail || 'Voice logging failed. Please try again.';
+      setVoiceError(msg);
+      setRecording(null);
     } finally {
+      setVoiceLoading(false);
     }
   };
 
@@ -77,8 +135,8 @@ export default function CaloriesScreen() {
     try {
       await nutritionService.deleteMeal(mealId);
       loadAll();
-    } catch {
-      Alert.alert('Error', 'Failed to delete meal');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to delete meal. Please try again.'));
     }
   };
 
@@ -98,8 +156,8 @@ export default function CaloriesScreen() {
     try {
       await mealPlanService.deletePlan(planId);
       setPlans(prev => prev.filter(p => p.id !== planId));
-    } catch {
-      Alert.alert('Error', 'Failed to delete meal plan');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to delete meal plan. Please try again.'));
     }
   };
 
@@ -114,18 +172,18 @@ export default function CaloriesScreen() {
     const items = nutrition?.meals?.filter((m: any) => m.meal_type === type.toLowerCase()) || [];
     return {
       cal: Math.round(items.reduce((s: number, m: any) => s + m.calories, 0)),
-      p:   +(items.reduce((s: number, m: any) => s + m.protein_g, 0)).toFixed(1),
-      c:   +(items.reduce((s: number, m: any) => s + m.carbs_g, 0)).toFixed(1),
+      p: +(items.reduce((s: number, m: any) => s + m.protein_g, 0)).toFixed(1),
+      c: +(items.reduce((s: number, m: any) => s + m.carbs_g, 0)).toFixed(1),
     };
   };
 
   // ── Completed plan macro contribution ─────────────────────────────────────
   const completedPlanTotals = plans.filter(p => p.completed).reduce(
     (acc, p) => ({
-      calories:  acc.calories  + p.total_calories,
+      calories: acc.calories + p.total_calories,
       protein_g: acc.protein_g + p.total_protein_g,
-      carbs_g:   acc.carbs_g   + p.total_carbs_g,
-      fat_g:     acc.fat_g     + p.total_fat_g,
+      carbs_g: acc.carbs_g + p.total_carbs_g,
+      fat_g: acc.fat_g + p.total_fat_g,
     }),
     { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
   );
@@ -133,60 +191,66 @@ export default function CaloriesScreen() {
   // ── Shared top section ─────────────────────────────────────────────────────
   const TopSection = (
     <>
-      <View style={styles.dateContainer}>
-        <View style={styles.dateHeader}>
-          <TouchableOpacity onPress={() => {
-            const o = weekOffset - 1;
-            setWeekOffset(o);
-            const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
-            const last = new Date(s); last.setDate(s.getDate() + 6);
-            setSelectedDate(last);
-          }}>
-            <Ionicons name="chevron-back" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-          <ThemedText style={styles.dateText}>{fmt(selectedDate)}</ThemedText>
-          <TouchableOpacity onPress={() => {
-            const o = weekOffset + 1;
-            setWeekOffset(o);
-            const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
-            setSelectedDate(s);
-          }}>
-            <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.weekContainer}>
-          {getWeekDays().map((day, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[styles.dayCircle, isSelected(day) && styles.dayCircleSelected, isToday(day) && styles.dayCircleToday]}
-              onPress={() => setSelectedDate(day)}
-            >
-              <ThemedText style={[styles.dayText, isSelected(day) && styles.dayTextSelected]}>
-                {abbr(day)}
-              </ThemedText>
+      <View style={styles.dateContainerOuter}>
+        <BlurView intensity={85} tint="light" style={styles.dateContainer}>
+          <View style={styles.glassSheen} />
+          <View style={styles.dateHeader}>
+            <TouchableOpacity onPress={() => {
+              const o = weekOffset - 1;
+              setWeekOffset(o);
+              const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
+              const last = new Date(s); last.setDate(s.getDate() + 6);
+              setSelectedDate(last);
+            }}>
+              <Ionicons name="chevron-back" size={24} color={Colors.primary} />
             </TouchableOpacity>
-          ))}
-        </View>
+            <ThemedText style={styles.dateText}>{fmt(selectedDate)}</ThemedText>
+            <TouchableOpacity onPress={() => {
+              const o = weekOffset + 1;
+              setWeekOffset(o);
+              const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
+              setSelectedDate(s);
+            }}>
+              <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.weekContainer}>
+            {getWeekDays().map((day, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.dayCircle, isSelected(day) && styles.dayCircleSelected, isToday(day) && styles.dayCircleToday]}
+                onPress={() => setSelectedDate(day)}
+              >
+                <ThemedText style={[styles.dayText, isSelected(day) && styles.dayTextSelected]}>
+                  {abbr(day)}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </BlurView>
       </View>
 
       <View style={styles.macroGrid}>
         {[
-          { label: 'Calories', current: (nutrition?.totals?.calories || 0) + completedPlanTotals.calories,  target: targets?.target_calories  || 0, unit: 'kcal', color: Colors.iconCalories },
-          { label: 'Protein',  current: (nutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g, target: targets?.target_protein_g || 0, unit: 'g',    color: Colors.iconProtein },
-          { label: 'Carbs',    current: (nutrition?.totals?.carbs_g   || 0) + completedPlanTotals.carbs_g,   target: targets?.target_carbs_g   || 0, unit: 'g',    color: Colors.iconCarbs },
-          { label: 'Fats',     current: (nutrition?.totals?.fat_g     || 0) + completedPlanTotals.fat_g,     target: targets?.target_fat_g     || 0, unit: 'g',    color: Colors.iconFats },
+          { label: 'Calories', current: (nutrition?.totals?.calories || 0) + completedPlanTotals.calories, target: targets?.target_calories || 0, unit: 'kcal', color: Colors.iconCalories },
+          { label: 'Protein', current: (nutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g, target: targets?.target_protein_g || 0, unit: 'g', color: Colors.iconProtein },
+          { label: 'Carbs', current: (nutrition?.totals?.carbs_g || 0) + completedPlanTotals.carbs_g, target: targets?.target_carbs_g || 0, unit: 'g', color: Colors.iconCarbs },
+          { label: 'Fats', current: (nutrition?.totals?.fat_g || 0) + completedPlanTotals.fat_g, target: targets?.target_fat_g || 0, unit: 'g', color: Colors.iconFats },
         ].map(({ label, current, target, unit, color }) => {
           const pct = target > 0 ? Math.min(1, current / target) : 0;
           const isOver = target > 0 && current > target;
           const fillColor = isOver ? Colors.danger : color;
           return (
-            <View key={label} style={styles.macroBox}>
-              <View style={[styles.macroFill, { height: pct * 140, backgroundColor: fillColor + '30' }]} />
-              <View style={styles.macroContent}>
-                <ThemedText style={[styles.macroValue, { color: fillColor }]}>{current}</ThemedText>
-                <ThemedText style={styles.macroGoal}>/ {target} {unit}</ThemedText>
-                <ThemedText style={styles.macroLabel}>{label}</ThemedText>
-              </View>
+            <View key={label} style={styles.macroBoxOuter}>
+              <BlurView intensity={85} tint="light" style={styles.macroBox}>
+                <View style={styles.glassSheen} />
+                <View style={[styles.macroFill, { height: pct * 140, backgroundColor: fillColor + '30' }]} />
+                <View style={styles.macroContent}>
+                  <ThemedText style={[styles.macroValue, { color: fillColor }]}>{current}</ThemedText>
+                  <ThemedText style={styles.macroGoal}>/ {target} {unit}</ThemedText>
+                  <ThemedText style={styles.macroLabel}>{label}</ThemedText>
+                </View>
+              </BlurView>
             </View>
           );
         })}
@@ -194,20 +258,25 @@ export default function CaloriesScreen() {
     </>
   );
 
-  // ── Meal Plan mode ─────────────────────────────────────────────────────────
-  if (mealPlanEnabled) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
-          <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
-          </TouchableOpacity>
-        </View>
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}>
-          {TopSection}
+  return (
+    <ThemedView style={styles.container}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
+        <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
+        </TouchableOpacity>
+      </BlurView>
 
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}
+      >
+        {TopSection}
+
+        {mealPlanEnabled ? (
+          // ── Meal Plan mode ────────────────────────────────────────────────
           <View style={styles.planSection}>
             <View style={styles.planSectionHeader}>
               <ThemedText style={styles.sectionTitle}>My Meal Plans</ThemedText>
@@ -238,130 +307,207 @@ export default function CaloriesScreen() {
                     </TouchableOpacity>
                   )}
                 >
-                  <View style={[styles.planCard, plan.completed && styles.planCardDone]}>
-                    <View style={styles.planCardHeader}>
-                      <TouchableOpacity style={styles.checkBtn} onPress={() => togglePlanComplete(plan)}>
-                        <Ionicons
-                          name={plan.completed ? 'checkmark-circle' : 'ellipse-outline'}
-                          size={26}
-                          color={plan.completed ? Colors.primary : Colors.inactive}
-                        />
-                      </TouchableOpacity>
-                      <View style={styles.planCardTitle}>
-                        <ThemedText style={[styles.planName, plan.completed && styles.planNameDone]}>
-                          {plan.name}
-                        </ThemedText>
-                        <ThemedText style={styles.planTotals}>
-                          {Math.round(plan.total_calories)} kcal · {plan.total_protein_g}g P · {plan.total_carbs_g}g C
-                        </ThemedText>
+                  <View style={styles.planCardOuter}>
+                    <BlurView intensity={85} tint="light" style={[styles.planCard, plan.completed && styles.planCardDone]}>
+                      <View style={styles.glassSheen} />
+                      <View style={styles.planCardHeader}>
+                        <TouchableOpacity style={styles.checkBtn} onPress={() => togglePlanComplete(plan)}>
+                          <Ionicons
+                            name={plan.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={26}
+                            color={plan.completed ? Colors.primary : Colors.inactive}
+                          />
+                        </TouchableOpacity>
+                        <View style={styles.planCardTitle}>
+                          <ThemedText style={[styles.planName, plan.completed && styles.planNameDone]}>
+                            {plan.name}
+                          </ThemedText>
+                          <ThemedText style={styles.planTotals}>
+                            {Math.round(plan.total_calories)} kcal · {plan.total_protein_g}g P · {plan.total_carbs_g}g C
+                          </ThemedText>
+                        </View>
+                        <TouchableOpacity onPress={() => router.push({
+                          pathname: '/create-meal-plan' as any,
+                          params: { planId: plan.id, planName: plan.name },
+                        })}>
+                          <Ionicons name="pencil-outline" size={18} color={Colors.textMuted} />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity onPress={() => router.push({
-                        pathname: '/create-meal-plan' as any,
-                        params: { planId: plan.id, planName: plan.name },
-                      })}>
-                        <Ionicons name="pencil-outline" size={18} color={Colors.textMuted} />
-                      </TouchableOpacity>
-                    </View>
 
-                    {plan.foods.map(food => (
-                      <View key={food.id} style={styles.planFoodRow}>
-                        <ThemedText style={styles.planFoodName} numberOfLines={1}>{food.food_name}</ThemedText>
-                        <ThemedText style={styles.planFoodMeta}>
-                          {food.grams ? `${Math.round(food.grams)}g · ` : ''}{Math.round(food.calories)} kcal
-                        </ThemedText>
-                      </View>
-                    ))}
+                      {plan.foods.map(food => (
+                        <View key={food.id} style={styles.planFoodRow}>
+                          <ThemedText style={styles.planFoodName} numberOfLines={1}>{food.food_name}</ThemedText>
+                          <ThemedText style={styles.planFoodMeta}>
+                            {food.grams ? `${Math.round(food.grams)}g · ` : ''}{Math.round(food.calories)} kcal
+                          </ThemedText>
+                        </View>
+                      ))}
+                    </BlurView>
                   </View>
                 </Swipeable>
               ))
             )}
           </View>
-        </ScrollView>
-      </ThemedView>
-    );
-  }
-
-  // ── Normal mode ────────────────────────────────────────────────────────────
-  return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Calorie Tracker</ThemedText>
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}>
-        {TopSection}
-
-        <View style={styles.mealsSection}>
-          {MEAL_TYPES.map(mealType => {
-            const mealItems = nutrition?.meals?.filter((m: any) => m.meal_type === mealType.toLowerCase()) || [];
-            const totals = sectionTotals(mealType);
-            return (
-              <View key={mealType} style={styles.mealTypeSection}>
-                <View style={styles.mealTypeHeader}>
-                  <View style={styles.mealTypeLeft}>
-                    <ThemedText style={styles.mealTypeTitle}>{mealType}</ThemedText>
-                    {totals.cal > 0 && (
-                      <ThemedText style={styles.mealTypeTotals}>
-                        {totals.cal} kcal · {totals.p}g P · {totals.c}g C
-                      </ThemedText>
-                    )}
-                  </View>
-                  <TouchableOpacity
-                    style={styles.addMealButton}
-                    onPress={() => router.push(`/log-food?mealType=${mealType.toLowerCase()}`)}
-                  >
-                    <Ionicons name="add" size={20} color={Colors.primary} />
-                  </TouchableOpacity>
-                </View>
-
-                {mealItems.length > 0 ? (
-                  mealItems.map((meal: any) => (
-                    <Swipeable key={meal.id} renderRightActions={() => renderDeleteAction(meal.id)}>
-                      <View style={styles.mealItem}>
-                        <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
-                        <ThemedText style={styles.mealNutrients}>
-                          {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+        ) : (
+          // ── Normal mode ───────────────────────────────────────────────────
+          <View style={styles.mealsSection}>
+            {MEAL_TYPES.map(mealType => {
+              const mealItems = nutrition?.meals?.filter((m: any) => m.meal_type === mealType.toLowerCase()) || [];
+              const totals = sectionTotals(mealType);
+              return (
+                <View key={mealType} style={styles.mealTypeSection}>
+                  <View style={styles.mealTypeHeader}>
+                    <View style={styles.mealTypeLeft}>
+                      <ThemedText style={styles.mealTypeTitle}>{mealType}</ThemedText>
+                      {totals.cal > 0 && (
+                        <ThemedText style={styles.mealTypeTotals}>
+                          {totals.cal} kcal · {totals.p}g P · {totals.c}g C
                         </ThemedText>
-                      </View>
-                    </Swipeable>
-                  ))
-                ) : (
-                  <View style={styles.emptyMealState}>
-                    <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.addMealButton}
+                      onPress={() => router.push(`/log-food?mealType=${mealType.toLowerCase()}`)}
+                    >
+                      <Ionicons name="add" size={20} color={Colors.primary} />
+                    </TouchableOpacity>
                   </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
+
+                  {mealItems.length > 0 ? (
+                    mealItems.map((meal: any) => (
+                      <Swipeable key={meal.id} renderRightActions={() => renderDeleteAction(meal.id)}>
+                        <View style={styles.mealItemOuter}>
+                          <BlurView intensity={85} tint="light" style={styles.mealItem}>
+                            <View style={styles.glassSheen} />
+                            <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
+                            <ThemedText style={styles.mealNutrients}>
+                              {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+                            </ThemedText>
+                          </BlurView>
+                        </View>
+                      </Swipeable>
+                    ))
+                  ) : (
+                    <View style={styles.emptyMealStateOuter}>
+                      <BlurView intensity={85} tint="light" style={styles.emptyMealState}>
+                        <View style={styles.glassSheen} />
+                        <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                      </BlurView>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
+
+      {/* ── Mic FAB ─────────────────────────────────────────────────────── */}
+      <Animated.View style={[styles.micFab, recording && styles.micFabRecording, { transform: [{ scale: recording ? pulseAnim : 1 }] }]}>
+        <TouchableOpacity
+          style={styles.micFabInner}
+          onPress={recording ? stopRecording : startRecording}
+          disabled={voiceLoading}
+        >
+          {voiceLoading ? (
+            <ActivityIndicator size="small" color={Colors.white} />
+          ) : (
+            <Ionicons name={recording ? 'stop' : 'mic'} size={26} color={Colors.white} />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* ── Success Modal ────────────────────────────────────────────────── */}
+      <Modal visible={!!voiceResult} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCardOuter}>
+            <BlurView intensity={65} tint="extraLight" style={styles.modalCard}>
+              <View style={styles.glassSheen} />
+              <View style={styles.modalIconRow}>
+                <Ionicons name="checkmark-circle" size={40} color={Colors.primary} />
+              </View>
+              <ThemedText style={styles.modalTitle}>Logged via Voice!</ThemedText>
+              {voiceResult && (
+                <>
+                  <ThemedText style={styles.modalTranscript}>"{voiceResult.transcript}"</ThemedText>
+                  <ThemedText style={styles.modalFood}>{voiceResult.food_name}</ThemedText>
+                  <ThemedText style={styles.modalMacros}>
+                    {voiceResult.grams}g · {voiceResult.calories} kcal{'\n'}
+                    {voiceResult.protein_g}g P · {voiceResult.carbs_g}g C · {voiceResult.fat_g}g F
+                  </ThemedText>
+                  <View style={styles.modalMealBadge}>
+                    <ThemedText style={styles.modalMealBadgeText}>
+                      {voiceResult.meal_type.charAt(0).toUpperCase() + voiceResult.meal_type.slice(1)}
+                    </ThemedText>
+                  </View>
+                </>
+              )}
+              <TouchableOpacity style={styles.modalBtn} onPress={() => setVoiceResult(null)}>
+                <ThemedText style={styles.modalBtnText}>Done</ThemedText>
+              </TouchableOpacity>
+            </BlurView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Error Modal ──────────────────────────────────────────────────── */}
+      <Modal visible={!!voiceError} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCardOuter}>
+            <BlurView intensity={65} tint="extraLight" style={styles.modalCard}>
+              <View style={styles.glassSheen} />
+              <View style={styles.modalIconRow}>
+                <Ionicons name="alert-circle" size={40} color={Colors.danger} />
+              </View>
+              <ThemedText style={styles.modalTitle}>Voice Log Failed</ThemedText>
+              <ThemedText style={styles.modalErrorText}>{voiceError}</ThemedText>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnDanger]} onPress={() => setVoiceError(null)}>
+                <ThemedText style={styles.modalBtnText}>Close</ThemedText>
+              </TouchableOpacity>
+            </BlurView>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   scrollContainer: { flex: 1, paddingHorizontal: 20 },
   title: { fontSize: 32, fontWeight: 'bold', color: Colors.dark },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
+  // Shared glass sheen
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+
   // Calendar
+  dateContainerOuter: {
+    borderRadius: 16,
+    marginBottom: 20,
+  },
   dateContainer: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   dateText: { fontSize: 18, fontWeight: 'bold', color: Colors.dark, textAlign: 'center' },
@@ -379,10 +525,19 @@ const styles = StyleSheet.create({
 
   // Macro grid
   macroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' },
+  macroBoxOuter: {
+    width: '47%',
+    borderRadius: 16,
+    height: 140,
+  },
   macroBox: {
-    width: '47%', backgroundColor: Colors.white,
-    borderRadius: 16, height: 140, overflow: 'hidden',
-    justifyContent: 'center', alignItems: 'center',
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   macroFill: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   macroContent: { alignItems: 'center', zIndex: 1 },
@@ -403,10 +558,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: Colors.primary,
   },
-  mealItem: { backgroundColor: Colors.white, borderRadius: 12, padding: 16, marginBottom: 8 },
+  mealItemOuter: { borderRadius: 12, marginBottom: 8 },
+  mealItem: { borderRadius: 12, padding: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.70)' },
   mealName: { fontSize: 16, fontWeight: '600', color: Colors.dark, marginBottom: 4 },
   mealNutrients: { fontSize: 14, color: Colors.textMuted },
-  emptyMealState: { backgroundColor: Colors.white, borderRadius: 12, padding: 16, alignItems: 'center' },
+  emptyMealStateOuter: { borderRadius: 12 },
+  emptyMealState: { borderRadius: 12, padding: 16, overflow: 'hidden', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.70)' },
   emptyMealText: { fontSize: 14, color: Colors.textMuted, fontStyle: 'italic' },
   deleteAction: {
     backgroundColor: Colors.danger,
@@ -431,15 +588,15 @@ const styles = StyleSheet.create({
   emptyPlans: { alignItems: 'center', padding: 32, gap: 8 },
   emptyPlansText: { fontSize: 17, fontWeight: '600', color: Colors.dark },
   emptyPlansSub: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  planCardOuter: { borderRadius: 14, marginBottom: 14 },
   planCard: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 14,
-    marginBottom: 14,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
-  planCardDone: { borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '06' },
+  planCardDone: { borderColor: Colors.primary + '40' },
   planCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
   checkBtn: { padding: 2 },
   planCardTitle: { flex: 1 },
@@ -466,4 +623,80 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginBottom: 14,
   },
+
+  // Mic FAB
+  micFab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    elevation: 5,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  micFabRecording: { backgroundColor: Colors.danger },
+  micFabInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Modals
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  modalCardOuter: {
+    borderRadius: 20,
+    width: '100%',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  modalCard: {
+    borderRadius: 20,
+    padding: 28,
+    overflow: 'hidden',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  modalIconRow: { marginBottom: 4 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.dark, textAlign: 'center' },
+  modalTranscript: { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic', textAlign: 'center' },
+  modalFood: { fontSize: 17, fontWeight: '700', color: Colors.dark, textAlign: 'center' },
+  modalMacros: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  modalMealBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  modalMealBadgeText: { fontSize: 13, fontWeight: '700', color: Colors.white },
+  modalErrorText: { fontSize: 14, color: Colors.danger, textAlign: 'center', lineHeight: 20 },
+  modalBtn: {
+    marginTop: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalBtnDanger: { backgroundColor: Colors.danger },
+  modalBtnText: { fontSize: 15, fontWeight: '700', color: Colors.white },
 });

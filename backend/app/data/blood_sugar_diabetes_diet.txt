@@ -1,0 +1,110 @@
+Blood Sugar, Diabetes, and Dietary Management
+
+UNDERSTANDING BLOOD SUGAR
+Blood glucose (blood sugar) is the primary fuel for the brain and muscles. It comes from digested carbohydrates and is regulated by two hormones produced in the pancreas:
+- Insulin: released when blood glucose rises, signals cells to absorb glucose; also promotes fat storage
+- Glucagon: released when blood glucose falls, signals the liver to release stored glucose (glycogen)
+
+Normal blood glucose ranges:
+- Fasting (8+ hours without food): 70–99 mg/dL (3.9–5.5 mmol/L) — normal
+- Fasting 100–125 mg/dL: pre-diabetes
+- Fasting 126 mg/dL or above (on two separate tests): diabetes
+- 2 hours after eating: under 140 mg/dL — normal
+- HbA1c (3-month average): under 5.7% = normal; 5.7–6.4% = pre-diabetes; 6.5%+ = diabetes
+
+HYPOGLYCEMIA (Low Blood Sugar)
+Hypoglycemia is defined as blood glucose below 70 mg/dL. It is more common in people on insulin or certain diabetes medications but can affect anyone.
+
+Symptoms: shakiness, sweating, dizziness, confusion, rapid heartbeat, hunger, pale skin, difficulty concentrating, anxiety, irritability. Severe hypoglycemia can cause loss of consciousness.
+
+Causes: skipping meals, too much insulin or medication, intense exercise without adequate carbohydrate intake, excessive alcohol on an empty stomach.
+
+Immediate treatment (15-15 rule): consume 15 grams of fast-acting carbohydrates, wait 15 minutes, recheck blood sugar. If still low, repeat.
+15g fast-acting carb sources:
+- 4 glucose tablets
+- 150 ml of fruit juice or regular soda (not diet)
+- 1 tablespoon of sugar or honey
+- Small piece of fruit
+
+After recovery: eat a small balanced snack with complex carbs and protein to prevent recurrence.
+
+Preventing hypoglycemia:
+- Never skip meals, especially breakfast
+- Eat carbohydrates before prolonged exercise; keep a fast-acting carb on hand during exercise
+- Spread carbohydrate intake evenly across the day
+- Avoid excessive alcohol, especially without food
+
+Foods to eat for sustained blood sugar (preventing lows): oats, lentils, whole grain bread, sweet potato, Greek yogurt, nuts, eggs
+
+HYPERGLYCEMIA (High Blood Sugar)
+Hyperglycemia occurs when blood glucose is persistently elevated. In non-diabetics, the body compensates quickly. In diabetics or pre-diabetics, cells don't respond adequately to insulin.
+
+Symptoms of chronically high blood sugar: frequent urination, excessive thirst, fatigue, blurred vision, slow wound healing, recurring infections, tingling in hands/feet (neuropathy).
+
+GLYCEMIC INDEX AND GLYCEMIC LOAD
+Glycemic Index (GI): ranks carbohydrate foods on a 0–100 scale based on how quickly they raise blood glucose.
+- Low GI (55 or below): lentils, oats, most fruits, chickpeas, sweet potato, whole grain bread, Greek yogurt
+- Medium GI (56–69): whole wheat bread, basmati rice, honey, raisins, new potatoes
+- High GI (70 and above): white bread, white rice, cornflakes, watermelon, dates, sports drinks
+
+Glycemic Load (GL) = (GI × grams of carbs per serving) / 100. A more practical measure because it accounts for portion size. GL under 10 is low; 11–19 is medium; 20+ is high.
+
+Watermelon has a high GI but a low GL because a typical serving contains few actual carbs.
+
+TYPE 2 DIABETES: DIETARY MANAGEMENT
+Type 2 diabetes is characterized by insulin resistance — cells don't respond properly to insulin. Diet is the most powerful intervention.
+
+Core principles:
+1. Control total carbohydrate intake and choose low-GI sources
+2. Distribute carbohydrates evenly across meals (avoid large carb loads in one sitting)
+3. Increase fiber intake (25–40 g/day) — slows glucose absorption
+4. Increase protein intake — has minimal effect on blood glucose and improves satiety
+5. Reduce ultra-processed foods, added sugars, and refined carbs
+6. Limit alcohol — can cause both hyperglycemia and hypoglycemia; always consume with food
+7. Achieve and maintain a healthy body weight — even 5–10% weight loss significantly improves insulin sensitivity
+
+Recommended foods for Type 2 diabetes:
+- Non-starchy vegetables: spinach, broccoli, cucumber, zucchini, peppers, tomatoes
+- Legumes: lentils, chickpeas, black beans — high fiber, low GI
+- Whole grains: oats, barley, quinoa, whole wheat
+- Lean proteins: chicken, fish, eggs, Greek yogurt
+- Healthy fats: olive oil, avocado, nuts, fatty fish
+- Low-sugar fruits: berries, apples, pears, citrus (in controlled portions)
+
+Foods to limit or avoid with diabetes:
+- Sugar-sweetened beverages (soda, juice, energy drinks)
+- White bread, white rice, regular pasta
+- Pastries, cakes, cookies, sweets
+- Fried foods and fast food
+- High-GI foods in large portions. Note on fruit: whole dates, despite high sugar, have a low-to-medium glycemic load when consumed as whole fruit (fiber slows absorption) and are not equivalent to refined sugar — 2–3 whole dates is fine. Green (underripe) bananas have more resistant starch and a significantly lower GI (~42) than ripe bananas (~62); ripe bananas should be portioned carefully. Always choose whole fruit over juice.
+
+The diabetes plate method: Fill half the plate with non-starchy vegetables, one quarter with lean protein, one quarter with complex carbohydrates.
+
+TYPE 1 DIABETES
+Type 1 is an autoimmune condition where the pancreas produces little or no insulin. Dietary management focuses on carbohydrate counting to match insulin doses. People with Type 1 diabetes must work closely with endocrinologists and dietitians. Exercise dramatically affects insulin sensitivity and must be planned with carbohydrate and insulin adjustments.
+
+PRE-DIABETES
+Pre-diabetes is fully reversible with lifestyle intervention. Studies show that losing 5–7% of body weight and walking 150 minutes per week can reduce progression to Type 2 diabetes by 58%.
+
+RAMADAN FASTING AND BLOOD SUGAR
+Muslims with diabetes face unique challenges during Ramadan. Key guidance:
+- Work with a physician to adjust medication timing around Suhoor and Iftar
+- Break the fast with dates (2–3) and water — provides fast-acting glucose without overloading
+- Choose complex, slow-digesting carbs at Suhoor for sustained energy throughout the day
+- Monitor blood glucose more frequently
+- Stop fasting if blood glucose falls below 70 mg/dL or rises above 300 mg/dL
+
+---
+REFERENCES
+- American Diabetes Association. Standards of Medical Care in Diabetes — 2024. Diabetes Care (2024). https://diabetesjournals.org/care/issue/47/Supplement_1
+- CDC. About Diabetes. https://www.cdc.gov/diabetes/
+- World Health Organization. Diabetes Fact Sheet (2023). https://www.who.int/news-room/fact-sheets/detail/diabetes
+- Diabetes Prevention Program Research Group. Reduction in the Incidence of Type 2 Diabetes with Lifestyle Intervention. NEJM (2002, reaffirmed 2023). https://pubmed.ncbi.nlm.nih.gov/11832527/
+- International Hypoglycaemia Study Group. Glucose Concentrations of Less Than 3.0 mmol/l (54 mg/dl) Should Be Reported in Clinical Trials. Diabetes Care (2017). https://pubmed.ncbi.nlm.nih.gov/27913575/
+
+EXERCISE AND BLOOD SUGAR
+- Aerobic exercise (walking, cycling, swimming) lowers blood glucose by increasing glucose uptake in muscles
+- Resistance training improves long-term insulin sensitivity
+- Monitor blood glucose before, during, and after exercise if diabetic
+- Have fast-acting carbs available during exercise
+- High-intensity exercise can temporarily raise blood glucose (due to stress hormone release) before it falls

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, Pressable,
+  Modal, Pressable, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { Colors } from '@/constants/theme';
 import {
   communityService, CommunityFeed, Announcement, LeaderboardEntry, ReactionType, Reactor,
 } from '@/src/services/communityService';
+import { BlurView } from 'expo-blur';
 
 const REACTION_OPTIONS: { type: ReactionType; emoji: string }[] = [
   { type: 'celebrate', emoji: '🎉' },
@@ -96,12 +97,12 @@ const barStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: 16,
+    gap: 0,
     paddingVertical: 16,
   },
   barCol: {
     alignItems: 'center',
-    width: 80,
+    flex: 0,
   },
   pts: {
     fontSize: 13,
@@ -117,8 +118,8 @@ const barStyles = StyleSheet.create({
     textAlign: 'center',
   },
   bar: {
-    width: 56,
-    borderRadius: 8,
+    width: 75,
+    borderRadius: 0,
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingTop: 8,
@@ -332,61 +333,75 @@ function AnnouncementCard({
 
   return (
     <TouchableOpacity
-      style={[annStyles.card, pressing && { opacity: 0.45 }]}
+      style={[pressing && { opacity: 0.45 }]}
       onLongPress={() => { setPressing(true); setPickerVisible(true); }}
       delayLongPress={400}
       activeOpacity={0.4}
     >
-      <View style={[annStyles.iconWrap, { backgroundColor: (meta?.color ?? Colors.primary) + '18' }]}>
-        <Ionicons
-          name={(meta?.icon ?? 'star-outline') as any}
-          size={18}
-          color={meta?.color ?? Colors.primary}
-        />
+      <View style={annStyles.cardOuter}>
+        <BlurView intensity={85} tint="light" style={annStyles.card}>
+          <View style={annStyles.glassSheen} />
+          <View style={[annStyles.iconWrap, { backgroundColor: (meta?.color ?? Colors.primary) + '18' }]}>
+            <Ionicons
+              name={(meta?.icon ?? 'star-outline') as any}
+              size={18}
+              color={meta?.color ?? Colors.primary}
+            />
+          </View>
+          <View style={annStyles.body}>
+            <View style={annStyles.row}>
+              <ThemedText style={annStyles.username}>{item.username ?? 'Unknown'}</ThemedText>
+              <ThemedText style={annStyles.time}>{timeLabel}</ThemedText>
+            </View>
+            <ThemedText style={annStyles.text}>
+              {meta ? meta.label(item.content) : item.event_type}
+            </ThemedText>
+            {totalReactions > 0 && (
+              <TouchableOpacity style={annStyles.reactionRow} onPress={handleChipPress} activeOpacity={0.7}>
+                {REACTION_OPTIONS.filter((r) => (item.reactions[r.type] ?? 0) > 0).map((r) => (
+                  <View key={r.type} style={[annStyles.reactionChip, item.my_reaction === r.type && annStyles.reactionChipMine]}>
+                    <ThemedText style={annStyles.reactionEmoji}>{r.emoji}</ThemedText>
+                    <ThemedText style={annStyles.reactionCount}>{item.reactions[r.type]}</ThemedText>
+                  </View>
+                ))}
+              </TouchableOpacity>
+            )}
+          </View>
+          <ReactionModal
+            visible={pickerVisible}
+            current={item.my_reaction}
+            onPick={handlePick}
+            onClose={() => { setPickerVisible(false); setPressing(false); }}
+          />
+          <ReactorsModal
+            visible={reactorsVisible}
+            reactors={reactors}
+            onClose={() => setReactorsVisible(false)}
+          />
+        </BlurView>
       </View>
-      <View style={annStyles.body}>
-        <View style={annStyles.row}>
-          <ThemedText style={annStyles.username}>{item.username ?? 'Unknown'}</ThemedText>
-          <ThemedText style={annStyles.time}>{timeLabel}</ThemedText>
-        </View>
-        <ThemedText style={annStyles.text}>
-          {meta ? meta.label(item.content) : item.event_type}
-        </ThemedText>
-        {totalReactions > 0 && (
-          <TouchableOpacity style={annStyles.reactionRow} onPress={handleChipPress} activeOpacity={0.7}>
-            {REACTION_OPTIONS.filter((r) => (item.reactions[r.type] ?? 0) > 0).map((r) => (
-              <View key={r.type} style={[annStyles.reactionChip, item.my_reaction === r.type && annStyles.reactionChipMine]}>
-                <ThemedText style={annStyles.reactionEmoji}>{r.emoji}</ThemedText>
-                <ThemedText style={annStyles.reactionCount}>{item.reactions[r.type]}</ThemedText>
-              </View>
-            ))}
-          </TouchableOpacity>
-        )}
-      </View>
-      <ReactionModal
-        visible={pickerVisible}
-        current={item.my_reaction}
-        onPick={handlePick}
-        onClose={() => { setPickerVisible(false); setPressing(false); }}
-      />
-      <ReactorsModal
-        visible={reactorsVisible}
-        reactors={reactors}
-        onClose={() => setReactorsVisible(false)}
-      />
     </TouchableOpacity>
   );
 }
 
 const annStyles = StyleSheet.create({
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  cardOuter: {
+    borderRadius: 14,
+    marginBottom: 10,
+  },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   iconWrap: {
     width: 36,
@@ -495,7 +510,8 @@ export default function CommunityDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
@@ -503,26 +519,29 @@ export default function CommunityDetailScreen() {
         <TouchableOpacity onPress={() => router.push({ pathname: '/community-info/[id]', params: { id: communityId } })}>
           <Ionicons name="information-circle-outline" size={24} color={Colors.dark} />
         </TouchableOpacity>
-      </View>
+      </BlurView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Leaderboard */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Leaderboard</ThemedText>
-          <View style={styles.sectionCard}>
-            <TopThreeBar leaderboard={feed.leaderboard} />
-            {feed.leaderboard.slice(3).map((entry, i) => (
-              <View key={entry.user_id} style={styles.rankRow}>
-                <ThemedText style={styles.rankNum}>{i + 4}</ThemedText>
-                <ThemedText style={styles.rankName}>{entry.username}</ThemedText>
-                <ThemedText style={[styles.rankPts, entry.points < 0 && styles.negPts]}>
-                  {entry.points >= 0 ? '+' : ''}{entry.points} pts
-                </ThemedText>
-              </View>
-            ))}
-            {feed.leaderboard.length === 0 && (
-              <ThemedText style={styles.emptyNote}>No members yet.</ThemedText>
-            )}
+          <View style={styles.sectionCardOuter}>
+            <BlurView intensity={85} tint="light" style={styles.sectionCard}>
+              <View style={styles.glassSheen} />
+              <TopThreeBar leaderboard={feed.leaderboard} />
+              {feed.leaderboard.slice(3).map((entry, i) => (
+                <View key={entry.user_id} style={styles.rankRow}>
+                  <ThemedText style={styles.rankNum}>{i + 4}</ThemedText>
+                  <ThemedText style={styles.rankName}>{entry.username}</ThemedText>
+                  <ThemedText style={[styles.rankPts, entry.points < 0 && styles.negPts]}>
+                    {entry.points >= 0 ? '+' : ''}{entry.points} pts
+                  </ThemedText>
+                </View>
+              ))}
+              {feed.leaderboard.length === 0 && (
+                <ThemedText style={styles.emptyNote}>No members yet.</ThemedText>
+              )}
+            </BlurView>
           </View>
         </View>
 
@@ -552,15 +571,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -588,10 +610,19 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 12,
   },
+  sectionCardOuter: {
+    borderRadius: 16,
+  },
   sectionCard: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   rankRow: {
     flexDirection: 'row',

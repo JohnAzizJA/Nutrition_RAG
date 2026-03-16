@@ -20,6 +20,7 @@ export const ENDPOINTS = {
   NUTRITION: {
     SEARCH_FOODS: '/api/search-foods',
     LOG_FOOD: '/api/log-food',
+    VOICE_LOG: '/api/voice-log',
     DAILY_NUTRITION: '/api/daily-nutrition',
     DELETE_MEAL: (id: number) => `/api/meals/${id}`,
   },
@@ -49,6 +50,7 @@ export const ENDPOINTS = {
     UPDATE: (id: number) => `/api/workouts/${id}`,
     DELETE: (id: number) => `/api/workouts/${id}`,
     ADD_EXERCISE: (routineId: number) => `/api/workouts/${routineId}/exercises`,
+    UPDATE_EXERCISE: (routineId: number, exerciseId: number) => `/api/workouts/${routineId}/exercises/${exerciseId}`,
     DELETE_EXERCISE: (routineId: number, exerciseId: number) => `/api/workouts/${routineId}/exercises/${exerciseId}`,
   },
   
@@ -61,6 +63,8 @@ export const ENDPOINTS = {
     END: (id: number) => `/api/workout-sessions/${id}/end`,
     VOLUME_HISTORY: '/api/workout-sessions/volume-history',
     DELETE: (id: number) => `/api/workout-sessions/${id}`,
+    DELETE_SET: (sessionId: number, setId: number) => `/api/workout-sessions/${sessionId}/sets/${setId}`,
+    UPDATE_SET: (sessionId: number, setId: number) => `/api/workout-sessions/${sessionId}/sets/${setId}`,
   },
 
   // Calculations

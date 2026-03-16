@@ -1,0 +1,139 @@
+Dietary Management of Common Health Conditions
+
+CARDIOVASCULAR DISEASE AND HIGH CHOLESTEROL
+
+Understanding cholesterol:
+- LDL (low-density lipoprotein): "bad" cholesterol; carries cholesterol to arteries; elevated levels increase cardiovascular risk
+- HDL (high-density lipoprotein): "good" cholesterol; transports cholesterol away from arteries back to the liver for disposal; higher is better
+- Triglycerides: a type of blood fat; elevated levels associated with cardiovascular disease; primarily driven by excess sugar, refined carbs, and alcohol
+
+Target levels (adults):
+- Total cholesterol: below 200 mg/dL
+- LDL: below 100 mg/dL (below 70 for high-risk individuals)
+- HDL: above 60 mg/dL
+- Triglycerides: below 150 mg/dL
+
+Dietary strategies to improve cholesterol:
+1. Reduce saturated fat: limit red meat, butter, ghee, palm oil, full-fat dairy. Replace with olive oil, avocado, nuts.
+2. Eliminate trans fats: avoid commercial fried foods, margarine, packaged pastries.
+3. Increase soluble fiber: 5–10 g/day of soluble fiber lowers LDL by 5–11 points. Sources: oats, barley, apples, beans, lentils.
+4. Increase omega-3 fatty acids: 2–3 servings of fatty fish per week (salmon, mackerel, sardines) raises HDL and reduces triglycerides.
+5. Increase plant sterols: naturally occurring in nuts, seeds, whole grains. Block cholesterol absorption. 2 g/day reduces LDL by 8–10%.
+6. Limit dietary cholesterol: eggs contain cholesterol but dietary cholesterol has less impact on blood cholesterol than previously thought for most people. Up to 7 eggs/week is fine for healthy individuals.
+7. Reduce added sugar and refined carbs: major drivers of elevated triglycerides.
+8. Increase exercise: aerobic exercise raises HDL and lowers triglycerides.
+
+HYPERTENSION (HIGH BLOOD PRESSURE)
+Normal blood pressure: below 120/80 mmHg
+Elevated: 120–129 systolic
+Stage 1 hypertension: 130–139 systolic or 80–89 diastolic
+Stage 2 hypertension: 140+ systolic or 90+ diastolic
+Hypertensive crisis: 180/120+ — seek immediate medical attention
+
+The DASH Diet (Dietary Approaches to Stop Hypertension) is the gold standard dietary approach for managing blood pressure. It has been shown to reduce systolic blood pressure by 8–14 mmHg.
+
+DASH diet principles:
+- High in fruits and vegetables (8–10 servings per day)
+- Whole grains instead of refined
+- Low-fat dairy (2–3 servings per day)
+- Lean proteins: fish, poultry, legumes
+- Nuts and seeds: 4–5 servings per week
+- Limit sodium to under 2,300 mg/day. Combining DASH with further sodium reduction to 1,500 mg/day achieves systolic BP reductions of 16–20 mmHg — greater than diet alone (Sacks et al. 2023 meta-analysis)
+- Limit red meat, sweets, and sugary beverages
+
+Sodium reduction strategies: cook with herbs and spices instead of salt, avoid processed and canned foods, taste food before adding salt, choose low-sodium products.
+
+Potassium for blood pressure: potassium counteracts the effect of sodium on blood pressure. Target 3,500–4,700 mg/day. Sources: bananas, sweet potato, spinach, tomatoes, beans, avocado.
+
+Magnesium: associated with lower blood pressure. Sources: dark leafy greens, nuts, seeds, whole grains, legumes.
+
+Additional lifestyle factors: losing 5–10% body weight if overweight can lower systolic BP by 5–20 mmHg; aerobic exercise 30 min/day reduces BP by 4–9 mmHg; limiting alcohol; quitting smoking.
+
+IRON DEFICIENCY ANEMIA
+Anemia occurs when hemoglobin (iron-containing protein in red blood cells) is too low to carry adequate oxygen to tissues.
+
+Symptoms: fatigue, pallor, shortness of breath, dizziness, cold hands and feet, brittle nails, cravings for non-food items (pica).
+
+Iron requirements:
+- Men: 8 mg/day
+- Premenopausal women: 18 mg/day
+- Pregnant women: 27 mg/day
+
+Types of dietary iron:
+- Heme iron (animal sources): absorbed at 15–35%. Found in red meat, liver, chicken, fish. Liver (kibda) is the richest source of iron at approximately 6–20 mg per 100g.
+- Non-heme iron (plant sources): absorbed at 2–20%. Found in lentils, beans, spinach, fortified cereals, tofu.
+
+Enhancing iron absorption:
+- Eat vitamin C-rich foods with iron-rich meals (lemon juice on lentils, tomato with meat). Vitamin C converts ferric iron to ferrous form, which is better absorbed.
+- Cook in cast iron pans — small amounts of iron leach into food.
+- Avoid drinking tea or coffee with meals: tannins in tea reduce iron absorption by 60–70%. Wait 1 hour before/after iron-rich meals.
+- Calcium (from dairy) and phytates (in whole grains and legumes) also inhibit iron absorption — spacing these from iron sources helps.
+
+High-iron Egyptian foods: kibda (liver), basterma, kofta, molokhia, ful medames, shorbet ads.
+
+THYROID CONDITIONS AND NUTRITION
+Hypothyroidism (underactive thyroid): thyroid produces insufficient hormones. Causes fatigue, weight gain, cold intolerance, constipation, dry skin.
+
+Dietary notes:
+- Iodine is essential for thyroid hormone synthesis. Sources: iodized salt, seafood, eggs, dairy.
+- Selenium supports thyroid function. Sources: Brazil nuts (1–2/day provides the full daily need), tuna, sardines.
+- Zinc supports thyroid hormone production. Sources: red meat, shellfish, legumes, seeds.
+- Goitrogenic foods (broccoli, cabbage, kale, soy): in theory interfere with thyroid function in very large raw quantities. Cooking neutralizes most goitrogens. Moderate consumption is safe.
+- Do not take thyroid medication with calcium, iron supplements, or large amounts of fiber — impairs drug absorption.
+
+Hyperthyroidism (overactive thyroid): thyroid produces excess hormones. Causes weight loss, rapid heartbeat, heat intolerance, tremor, increased appetite.
+
+POLYCYSTIC OVARY SYNDROME (PCOS)
+PCOS is a hormonal condition affecting 8–13% of women of reproductive age, often associated with insulin resistance.
+
+Dietary strategies for PCOS:
+1. Reduce refined carbohydrates and added sugars (primary driver of insulin resistance)
+2. Increase fiber intake (targets 25+ g/day)
+3. Prioritize low-GI carbohydrates
+4. Maintain adequate protein to support satiety and blood sugar stability
+5. Include anti-inflammatory foods: fatty fish, olive oil, colorful vegetables, berries
+6. Weight loss of 5–10% (in overweight women) significantly improves hormonal balance, ovulation regularity, and fertility
+7. Inositol (found in whole grains, citrus fruits, nuts): now considered established evidence (multiple RCTs, endorsed by ASRM 2023). Myo-inositol at 2–4 g/day is evidence-based first-line therapy for improving insulin sensitivity, ovulatory function, and hormonal balance in PCOS
+
+IRRITABLE BOWEL SYNDROME (IBS)
+IBS affects bowel habits without structural disease. Common triggers vary between individuals.
+
+Low-FODMAP diet: eliminates fermentable carbohydrates that cause gas, bloating, and altered bowel habits. Common high-FODMAP foods: onion, garlic, beans, wheat, dairy with lactose, certain fruits (apples, mango, watermelon). After symptom improvement, foods are reintroduced one at a time to identify personal triggers.
+
+General IBS dietary principles:
+- Eat regular meals; don't skip
+- Limit caffeine, alcohol, and fatty foods
+- Increase soluble fiber (oats, psyllium) for constipation-dominant IBS; reduce insoluble fiber for diarrhea-dominant
+- Stay well hydrated
+- Manage stress (strong gut-brain axis connection with IBS)
+
+KIDNEY DISEASE
+Dietary restrictions in kidney disease depend on disease stage (GFR). In advanced stages:
+- Limit potassium: avoid bananas, oranges, potatoes, tomatoes, dairy
+- Limit phosphorus: avoid processed foods, dark sodas, dairy, nuts
+- Limit protein: contrary to general fitness advice, excessive protein strains failing kidneys
+- Restrict sodium to under 2,000 mg/day
+- Monitor fluid intake — kidneys cannot excrete excess fluid efficiently
+
+Anyone with kidney disease must work with a nephrologist and registered renal dietitian for personalized guidance.
+
+---
+REFERENCES
+- Appel LJ, et al. A Clinical Trial of the Effects of Dietary Patterns on Blood Pressure (DASH). NEJM (1997, reaffirmed 2023). https://pubmed.ncbi.nlm.nih.gov/9099655/
+- American Heart Association. Dietary Guidance for Cardiovascular Health. https://www.heart.org/en/healthy-living/healthy-eating
+- American Diabetes Association. Standards of Medical Care in Diabetes — 2024. https://diabetesjournals.org/care/issue/47/Supplement_1
+- World Health Organization. Noncommunicable Diseases: Risk Factors. https://www.who.int/data/gho/data/themes/topics/topic-details/GHO/ncd-risk-factors
+- Unfer V, et al. Myo-inositol effects in women with PCOS: a meta-analysis of randomized controlled trials. Endocrine Connections (2017, updated guidelines 2023). https://pubmed.ncbi.nlm.nih.gov/28246082/
+
+OSTEOPOROSIS AND BONE HEALTH
+Osteoporosis is characterized by low bone density and fragility fractures. Nutrition plays a key preventive and therapeutic role.
+
+Key nutrients:
+- Calcium: 1,000 mg/day (adults under 50); 1,200 mg/day (women over 50, men over 70). Sources: dairy, fortified plant milk, sardines (with bones), leafy greens, white beans.
+- Vitamin D: essential for calcium absorption. 600–800 IU/day (supplementation often needed in areas with low sunlight). Deficiency is extremely common in Egypt despite sun exposure (sunscreen and limited skin exposure).
+- Vitamin K2: directs calcium into bones rather than arteries. Sources: fermented foods, cheese, animal products.
+- Magnesium: necessary for calcium metabolism. Sources: nuts, seeds, whole grains, leafy greens.
+- Protein: adequate protein intake supports bone matrix. Low protein diets are associated with lower bone density.
+
+Bone-damaging habits: excessive alcohol, smoking, very low calcium intake, prolonged inactivity.
+Weight-bearing exercise (resistance training, walking, running) directly stimulates bone density maintenance and growth.

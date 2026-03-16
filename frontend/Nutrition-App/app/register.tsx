@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Colors } from '@/constants/theme';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -110,7 +111,7 @@ export default function RegisterScreen() {
       });
       router.replace('/(tabs)');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -489,9 +490,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
@@ -540,9 +541,9 @@ const styles = StyleSheet.create({
   },
   pickerButton: {
     flex: 1,
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -557,9 +558,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -601,12 +602,17 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   nextButtonText: {
     color: Colors.white,

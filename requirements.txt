@@ -1,11 +1,12 @@
 fastapi
+slowapi
 uvicorn
 langchain
 langchain-community
 langchain-text-splitters
 langgraph
 langgraph-checkpoint-postgres
-chromadb
+pgvector
 sentence-transformers
 python-dotenv
 pydantic

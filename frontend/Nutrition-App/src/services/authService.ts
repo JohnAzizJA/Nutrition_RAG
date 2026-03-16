@@ -32,6 +32,7 @@ export interface UserResponse {
   goal: string;
   goal_weight_kg: number;
   weight_loss_per_week: number;
+  week_start_day: number;
 }
 
 export interface AuthResponse {
@@ -56,6 +57,11 @@ export const authService = {
     const response = await axios.post(ENDPOINTS.AUTH.REFRESH, {
       refresh_token: refreshToken,
     });
+    return response.data;
+  },
+
+  async getProfile(): Promise<UserResponse> {
+    const response = await axios.get(ENDPOINTS.AUTH.PROFILE);
     return response.data;
   },
 

@@ -8,7 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { BlurView } from 'expo-blur';
 import { communityService } from '@/src/services/communityService';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 export default function CreateCommunityScreen() {
   const router = useRouter();
@@ -29,8 +31,8 @@ export default function CreateCommunityScreen() {
         description: description.trim() || undefined,
       });
       router.replace({ pathname: '/community/[id]', params: { id: community.id } });
-    } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.detail ?? 'Failed to create community.');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to create community. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -38,13 +40,14 @@ export default function CreateCommunityScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>New Community</ThemedText>
         <View style={{ width: 24 }} />
-      </View>
+      </BlurView>
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -53,30 +56,40 @@ export default function CreateCommunityScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.field}>
             <ThemedText style={styles.label}>Community Name *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Morning Warriors"
-              placeholderTextColor={Colors.placeholder}
-              maxLength={100}
-              autoFocus
-            />
+            <View style={styles.inputOuter}>
+              <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                <View style={styles.inputSheen} />
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. Morning Warriors"
+                  placeholderTextColor={Colors.placeholder}
+                  maxLength={100}
+                  autoFocus
+                />
+              </BlurView>
+            </View>
           </View>
 
           <View style={styles.field}>
             <ThemedText style={styles.label}>Description (optional)</ThemedText>
-            <TextInput
-              style={[styles.input, styles.textarea]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="What's this community about?"
-              placeholderTextColor={Colors.placeholder}
-              maxLength={500}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+            <View style={styles.inputOuter}>
+              <BlurView intensity={95} tint="light" style={styles.inputGlass}>
+                <View style={styles.inputSheen} />
+                <TextInput
+                  style={[styles.input, styles.textarea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="What's this community about?"
+                  placeholderTextColor={Colors.placeholder}
+                  maxLength={500}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </BlurView>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -102,15 +115,18 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -130,11 +146,25 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: Colors.white,
+  inputOuter: {
     borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  input: {
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,

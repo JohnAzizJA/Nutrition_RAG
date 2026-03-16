@@ -84,4 +84,13 @@ export const workoutSessionService = {
   async deleteSession(sessionId: number): Promise<void> {
     await axios.delete(ENDPOINTS.WORKOUT_SESSIONS.DELETE(sessionId));
   },
+
+  async deleteSet(sessionId: number, setId: number): Promise<void> {
+    await axios.delete(ENDPOINTS.WORKOUT_SESSIONS.DELETE_SET(sessionId, setId));
+  },
+
+  async updateSet(sessionId: number, setId: number, data: { reps?: number; weight_kg?: number; duration_seconds?: number }): Promise<WorkoutSessionSet> {
+    const response = await axios.patch(ENDPOINTS.WORKOUT_SESSIONS.UPDATE_SET(sessionId, setId), data);
+    return response.data;
+  },
 };

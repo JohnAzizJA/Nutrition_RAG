@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { authStorage } from '@/src/utils/authStorage';
 
-// Replace with your computer's IP address (find with ipconfig on Windows)
-const API_BASE_URL = 'http://192.168.100.79:8000'; // Change this to your IP
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+if (!API_BASE_URL) throw new Error('EXPO_PUBLIC_API_URL is not set');
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -35,7 +36,7 @@ axiosInstance.interceptors.response.use(
       try {
         const refreshToken = await authStorage.getRefreshToken();
         if (refreshToken) {
-          const { data } = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+          const { data } = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/refresh`, {
             refresh_token: refreshToken,
           });
 

@@ -8,3 +8,4 @@ export * from './calculationService';
 export * from './mealPlanService';
 export * from './workoutSessionService';
 export * from './communityService';
+export * from './spotifyService';

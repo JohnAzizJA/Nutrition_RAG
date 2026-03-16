@@ -1,18 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet, View, TouchableOpacity, Alert, ScrollView,
-  TextInput, Modal, AppState, KeyboardAvoidingView, Platform,
+  TextInput, Modal, AppState, KeyboardAvoidingView, Platform, BackHandler,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
+import { SpotifyMiniPlayer } from '@/src/components/SpotifyMiniPlayer';
 import { Colors } from '@/constants/theme';
+import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { workoutService, workoutSessionService, Exercise, WorkoutRoutine } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
+import { BlurView } from 'expo-blur';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface LoggedSet {
+  serverSetId?: number;
   exerciseId: number;
   exerciseName: string;
   setNumber: number;
@@ -20,8 +26,6 @@ interface LoggedSet {
   weightKg?: number;
   durationSeconds?: number;
 }
-
-type WeightUnit = 'kg' | 'lbs';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,15 +37,26 @@ const formatTime = (seconds: number) => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-const kgToLbs = (kg: number) => Math.round(kg * 2.205 * 10) / 10;
-const lbsToKg = (lbs: number) => Math.round((lbs / 2.205) * 100) / 100;
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { routineId, routineName } = useLocalSearchParams<{ routineId: string; routineName: string }>();
-
+  const {
+    isConnected: spotifyConnected,
+    playerState: spotifyPlayerState,
+    isSeeking: spotifyIsSeeking,
+    togglePlayPause: spotifyTogglePlayPause,
+    skipToNext: spotifySkipNext,
+    skipToPrevious: spotifySkipPrevious,
+    onSeekStart: spotifySeekStart,
+    onSeekEnd: spotifySeekEnd,
+    toggleShuffle: spotifyToggleShuffle,
+    cycleRepeatMode: spotifyCycleRepeat,
+    disconnect: spotifyDisconnect,
+  } = useSpotify();
+  const playerVisible = spotifyConnected && spotifyPlayerState !== null;
   // Session state
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [routine, setRoutine] = useState<WorkoutRoutine | null>(null);
@@ -57,14 +72,15 @@ export default function ActiveWorkoutScreen() {
 
   // Exercise timer (timed exercises)
   const [exerciseTimerActive, setExerciseTimerActive] = useState(false);
+  const [exerciseTimerPaused, setExerciseTimerPaused] = useState(false);
   const [exerciseTimerRemaining, setExerciseTimerRemaining] = useState(0);
   const [timedExerciseId, setTimedExerciseId] = useState<number | null>(null);
+  const [timedExerciseDuration, setTimedExerciseDuration] = useState(0);
+  // Ref mirrors pause state — avoids stale closure in setInterval callback
+  const exerciseTimerPausedRef = useRef(false);
 
   // Logged sets
   const [loggedSets, setLoggedSets] = useState<LoggedSet[]>([]);
-
-  // Weight unit
-  const [unit, setUnit] = useState<WeightUnit>('kg');
 
   // Log set modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -72,7 +88,35 @@ export default function ActiveWorkoutScreen() {
   const [inputReps, setInputReps] = useState('');
   const [inputWeight, setInputWeight] = useState('');
 
+  // Edit set modal
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingSet, setEditingSet] = useState<LoggedSet | null>(null);
+  const [editReps, setEditReps] = useState('');
+  const [editWeight, setEditWeight] = useState('');
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ─── Cancel alert ─────────────────────────────────────────────────────────────
+
+  const showCancelAlert = () => {
+    Alert.alert(
+      'Cancel Workout',
+      'Are you sure? Your progress will not be saved.',
+      [
+        { text: 'Keep Going', style: 'cancel' },
+        { text: 'Cancel Workout', style: 'destructive', onPress: () => router.back() },
+      ]
+    );
+  };
+
+  // Android hardware back — show alert, never navigate directly
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      showCancelAlert();
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
 
   // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -94,8 +138,8 @@ export default function ActiveWorkoutScreen() {
       ]);
       setRoutine(routineData);
       setSessionId(session.id);
-    } catch {
-      Alert.alert('Error', 'Failed to start workout session', [
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to start workout session.'), [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } finally {
@@ -118,20 +162,62 @@ export default function ActiveWorkoutScreen() {
         return prev - 1;
       });
 
-      setExerciseTimerRemaining(prev => {
-        if (prev <= 1) {
-          setExerciseTimerActive(false);
-          setTimedExerciseId(null);
-          return 0;
-        }
-        return prev - 1;
-      });
+      // Skip decrement if exercise timer is paused
+      if (!exerciseTimerPausedRef.current) {
+        setExerciseTimerRemaining(prev => {
+          if (prev <= 1) {
+            setExerciseTimerActive(false);
+            setTimedExerciseId(null);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
     }, 1000);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  // ─── Exercise timer pause helper ─────────────────────────────────────────────
+
+  const pauseExerciseTimer = () => {
+    exerciseTimerPausedRef.current = true;
+    setExerciseTimerPaused(true);
+  };
+
+  const resumeExerciseTimer = () => {
+    exerciseTimerPausedRef.current = false;
+    setExerciseTimerPaused(false);
+  };
+
+  const stopExerciseTimer = async () => {
+    // Calculate how long the user actually held (original - remaining)
+    const actualDuration = Math.max(1, timedExerciseDuration - exerciseTimerRemaining);
+
+    // Find the last logged set for this timed exercise and patch its duration
+    const lastSet = [...loggedSets].reverse().find(s => s.exerciseId === timedExerciseId);
+    if (lastSet && sessionId && lastSet.serverSetId && actualDuration !== timedExerciseDuration) {
+      try {
+        await workoutSessionService.updateSet(sessionId, lastSet.serverSetId, {
+          duration_seconds: actualDuration,
+        });
+      } catch {
+        // Best-effort — update locally regardless
+      }
+      setLoggedSets(prev => prev.map(s =>
+        s === lastSet ? { ...s, durationSeconds: actualDuration } : s
+      ));
+    }
+
+    exerciseTimerPausedRef.current = false;
+    setExerciseTimerPaused(false);
+    setExerciseTimerActive(false);
+    setExerciseTimerRemaining(0);
+    setTimedExerciseId(null);
+    setTimedExerciseDuration(0);
+  };
 
   // ─── Set logging ─────────────────────────────────────────────────────────────
 
@@ -154,7 +240,7 @@ export default function ActiveWorkoutScreen() {
     let weightKg: number | undefined;
     if (!isTimed && inputWeight) {
       const w = parseFloat(inputWeight);
-      weightKg = unit === 'lbs' ? lbsToKg(w) : w;
+      weightKg = w;
     }
     const reps = isTimed ? undefined : (parseInt(inputReps) || undefined);
     const durationSeconds = isTimed ? activeExercise.duration_seconds : undefined;
@@ -165,7 +251,7 @@ export default function ActiveWorkoutScreen() {
     }
 
     try {
-      await workoutSessionService.logSet(sessionId, {
+      const savedSet = await workoutSessionService.logSet(sessionId, {
         exercise_id: activeExercise.id,
         exercise_name: activeExercise.name,
         set_number: setNumber,
@@ -175,6 +261,7 @@ export default function ActiveWorkoutScreen() {
       });
 
       setLoggedSets(prev => [...prev, {
+        serverSetId: savedSet.id,
         exerciseId: activeExercise.id,
         exerciseName: activeExercise.name,
         setNumber,
@@ -193,12 +280,82 @@ export default function ActiveWorkoutScreen() {
 
       // Start exercise countdown for timed exercises
       if (isTimed && activeExercise.duration_seconds) {
+        setTimedExerciseDuration(activeExercise.duration_seconds);
         setExerciseTimerRemaining(activeExercise.duration_seconds);
         setExerciseTimerActive(true);
+        exerciseTimerPausedRef.current = false;
+        setExerciseTimerPaused(false);
         setTimedExerciseId(activeExercise.id);
       }
-    } catch {
-      Alert.alert('Error', 'Failed to log set');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to log set. Please try again.'));
+    }
+  };
+
+  // ─── Delete set ───────────────────────────────────────────────────────────────
+
+  const handleDeleteSet = (set: LoggedSet) => {
+    Alert.alert(
+      'Delete Set',
+      `Remove Set ${set.setNumber} of ${set.exerciseName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (!sessionId || !set.serverSetId) {
+              // No server record yet — just remove from local state
+              setLoggedSets(prev => prev.filter(s => !(s.exerciseId === set.exerciseId && s.setNumber === set.setNumber)));
+              return;
+            }
+            try {
+              await workoutSessionService.deleteSet(sessionId, set.serverSetId);
+              setLoggedSets(prev => prev.filter(s => !(s.exerciseId === set.exerciseId && s.setNumber === set.setNumber)));
+            } catch (err) {
+              Alert.alert('Error', getErrorMessage(err, 'Failed to delete set.'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // ─── Edit set ─────────────────────────────────────────────────────────────────
+
+  const openEditModal = (set: LoggedSet) => {
+    setEditingSet(set);
+    setEditReps(set.reps?.toString() ?? '');
+    setEditWeight(set.weightKg != null ? set.weightKg.toString() : '');
+    setEditModalVisible(true);
+  };
+
+  const handleUpdateSet = async () => {
+    if (!editingSet || !sessionId) return;
+
+    const newReps = editReps ? parseInt(editReps) : undefined;
+    const newWeightKg = editWeight ? parseFloat(editWeight) : undefined;
+
+    if (!newReps) {
+      Alert.alert('Error', 'Please enter reps');
+      return;
+    }
+
+    try {
+      if (editingSet.serverSetId) {
+        await workoutSessionService.updateSet(sessionId, editingSet.serverSetId, {
+          reps: newReps,
+          weight_kg: newWeightKg,
+        });
+      }
+      setLoggedSets(prev => prev.map(s =>
+        (s.exerciseId === editingSet.exerciseId && s.setNumber === editingSet.setNumber)
+          ? { ...s, reps: newReps, weightKg: newWeightKg }
+          : s
+      ));
+      setEditModalVisible(false);
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to update set.'));
     }
   };
 
@@ -232,8 +389,8 @@ export default function ActiveWorkoutScreen() {
     try {
       await workoutSessionService.endSession(sessionId, elapsed);
       router.back();
-    } catch {
-      Alert.alert('Error', 'Failed to save session');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to save session. Please try again.'));
       setFinishing(false);
     }
   };
@@ -247,77 +404,107 @@ export default function ActiveWorkoutScreen() {
     const isTimerRunning = exerciseTimerActive && timedExerciseId === exercise.id;
 
     return (
-      <View key={exercise.id} style={styles.exerciseCard}>
-        <View style={styles.exerciseCardHeader}>
-          <View style={styles.exerciseTitleRow}>
-            <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
-            {isTimed && (
-              <View style={styles.timedBadge}>
-                <Ionicons name="timer-outline" size={11} color={Colors.primary} />
-                <ThemedText style={styles.timedBadgeText}>Timed</ThemedText>
-              </View>
+      <View key={exercise.id} style={styles.exerciseCardOuter}>
+        <BlurView intensity={85} tint="light" style={styles.exerciseCard}>
+          <View style={styles.glassSheen} />
+          <View style={styles.exerciseCardHeader}>
+            <View style={styles.exerciseTitleRow}>
+              <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
+              {isTimed && (
+                <View style={styles.timedBadge}>
+                  <Ionicons name="timer-outline" size={11} color={Colors.primary} />
+                  <ThemedText style={styles.timedBadgeText}>Timed</ThemedText>
+                </View>
+              )}
+            </View>
+            <ThemedText style={styles.setsProgress}>
+              {setsLogged}/{targetSets} sets
+            </ThemedText>
+          </View>
+
+          {/* Exercise meta */}
+          <View style={styles.exerciseMeta}>
+            {isTimed ? (
+              <ThemedText style={styles.metaText}>
+                {formatTime(exercise.duration_seconds!)} hold
+              </ThemedText>
+            ) : (
+              <>
+                <ThemedText style={styles.metaText}>{exercise.sets} sets × {exercise.reps} reps</ThemedText>
+                {exercise.weight_kg ? (
+                  <ThemedText style={styles.metaText}>
+                    {exercise.weight_kg} kg target
+                  </ThemedText>
+                ) : null}
+              </>
             )}
           </View>
-          <ThemedText style={styles.setsProgress}>
-            {setsLogged}/{targetSets} sets
-          </ThemedText>
-        </View>
 
-        {/* Exercise meta */}
-        <View style={styles.exerciseMeta}>
-          {isTimed ? (
-            <ThemedText style={styles.metaText}>
-              {formatTime(exercise.duration_seconds!)} hold
-            </ThemedText>
-          ) : (
-            <>
-              <ThemedText style={styles.metaText}>{exercise.sets} sets × {exercise.reps} reps</ThemedText>
-              {exercise.weight_kg ? (
-                <ThemedText style={styles.metaText}>
-                  {unit === 'lbs' ? `${kgToLbs(exercise.weight_kg)} lbs` : `${exercise.weight_kg} kg`} target
-                </ThemedText>
-              ) : null}
-            </>
+          {/* Exercise countdown with pause/stop */}
+          {isTimerRunning && (
+            <View style={styles.exerciseCountdown}>
+              <Ionicons name="timer" size={16} color={Colors.primary} />
+              <ThemedText style={styles.exerciseCountdownText}>
+                {formatTime(exerciseTimerRemaining)} remaining
+                {exerciseTimerPaused ? '  (paused)' : ''}
+              </ThemedText>
+              <View style={styles.timerControls}>
+                <TouchableOpacity style={styles.timerControlBtn} onPress={exerciseTimerPaused ? resumeExerciseTimer : pauseExerciseTimer}>
+                  <Ionicons name={exerciseTimerPaused ? 'play' : 'pause'} size={14} color={Colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.timerControlBtn} onPress={stopExerciseTimer}>
+                  <Ionicons name="stop" size={14} color={Colors.danger} />
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
-        </View>
 
-        {/* Exercise countdown */}
-        {isTimerRunning && (
-          <View style={styles.exerciseCountdown}>
-            <Ionicons name="timer" size={16} color={Colors.primary} />
-            <ThemedText style={styles.exerciseCountdownText}>{formatTime(exerciseTimerRemaining)} remaining</ThemedText>
-          </View>
-        )}
+          {/* Logged sets */}
+          {setsLogged > 0 && (
+            <View style={styles.loggedSets}>
+              {loggedSets
+                .filter(s => s.exerciseId === exercise.id)
+                .map(s => (
+                  <View key={s.setNumber} style={styles.loggedSetRow}>
+                    <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
+                    <ThemedText style={styles.loggedSetText}>
+                      Set {s.setNumber}
+                      {s.durationSeconds ? ` · ${formatTime(s.durationSeconds)}` : ''}
+                      {s.reps ? ` · ${s.reps} reps` : ''}
+                      {s.weightKg ? ` · ${s.weightKg} kg` : ''}
+                    </ThemedText>
+                    {/* Edit/delete only for non-timed sets */}
+                    {!s.durationSeconds && (
+                      <View style={styles.setActions}>
+                        <TouchableOpacity style={styles.setActionBtn} onPress={() => openEditModal(s)}>
+                          <Ionicons name="pencil" size={13} color={Colors.textMuted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.setActionBtn} onPress={() => handleDeleteSet(s)}>
+                          <Ionicons name="trash-outline" size={13} color={Colors.danger} />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {s.durationSeconds && (
+                      <TouchableOpacity style={styles.setActionBtn} onPress={() => handleDeleteSet(s)}>
+                        <Ionicons name="trash-outline" size={13} color={Colors.danger} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+            </View>
+          )}
 
-        {/* Logged sets */}
-        {setsLogged > 0 && (
-          <View style={styles.loggedSets}>
-            {loggedSets
-              .filter(s => s.exerciseId === exercise.id)
-              .map(s => (
-                <View key={s.setNumber} style={styles.loggedSetRow}>
-                  <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                  <ThemedText style={styles.loggedSetText}>
-                    Set {s.setNumber}
-                    {s.durationSeconds ? ` · ${formatTime(s.durationSeconds)}` : ''}
-                    {s.reps ? ` · ${s.reps} reps` : ''}
-                    {s.weightKg ? ` · ${unit === 'lbs' ? `${kgToLbs(s.weightKg)} lbs` : `${s.weightKg} kg`}` : ''}
-                  </ThemedText>
-                </View>
-              ))}
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={[styles.logSetButton, isTimerRunning && styles.logSetButtonDisabled]}
-          onPress={() => openLogModal(exercise)}
-          disabled={isTimerRunning}
-        >
-          <Ionicons name="add" size={16} color={Colors.white} />
-          <ThemedText style={styles.logSetButtonText}>
-            {isTimed ? 'Log Hold' : 'Log Set'}
-          </ThemedText>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.logSetButton, isTimerRunning && styles.logSetButtonDisabled]}
+            onPress={() => openLogModal(exercise)}
+            disabled={isTimerRunning}
+          >
+            <Ionicons name="add" size={16} color={Colors.white} />
+            <ThemedText style={styles.logSetButtonText}>
+              {isTimed ? 'Log Hold' : 'Log Set'}
+            </ThemedText>
+          </TouchableOpacity>
+        </BlurView>
       </View>
     );
   };
@@ -326,63 +513,48 @@ export default function ActiveWorkoutScreen() {
 
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.header}>
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="close" size={24} color={Colors.dark} />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>Starting...</ThemedText>
           <View style={{ width: 24 }} />
         </View>
-      </ThemedView>
+      </View>
     );
   }
 
   // ─── Main render ──────────────────────────────────────────────────────────────
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
+      {/* Disable iOS swipe-back — only the X button and Finish can exit */}
+      <Stack.Screen options={{ gestureEnabled: false }} />
+
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => {
-          Alert.alert('Cancel Workout', 'Are you sure? Your progress will not be saved.', [
-            { text: 'Keep Going', style: 'cancel' },
-            { text: 'Cancel Workout', style: 'destructive', onPress: () => router.back() },
-          ]);
-        }}>
-          <Ionicons name="close" size={24} color={Colors.dark} />
-        </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>{routine?.name ?? 'Workout'}</ThemedText>
-        <TouchableOpacity
-          style={[styles.finishButton, finishing && styles.finishButtonDisabled]}
-          onPress={handleFinish}
-          disabled={finishing}
-        >
-          <ThemedText style={styles.finishButtonText}>{finishing ? 'Saving...' : 'Finish'}</ThemedText>
-        </TouchableOpacity>
-      </View>
+      <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerSheen} />
+        <View style={styles.headerSide}>
+          <TouchableOpacity onPress={showCancelAlert}>
+            <Ionicons name="close" size={24} color={Colors.dark} />
+          </TouchableOpacity>
+        </View>
+        <ThemedText style={styles.headerTitle} numberOfLines={1}>{routine?.name ?? 'Workout'}</ThemedText>
+        <View style={styles.headerSide}>
+          <TouchableOpacity
+            style={[styles.finishButton, finishing && styles.finishButtonDisabled]}
+            onPress={handleFinish}
+            disabled={finishing}
+          >
+            <ThemedText style={styles.finishButtonText}>{finishing ? 'Saving...' : 'Finish'}</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </BlurView>
 
-      {/* Stopwatch + controls bar */}
+      {/* Stopwatch bar */}
       <View style={styles.statusBar}>
-        <View style={styles.stopwatchBlock}>
-          <Ionicons name="time-outline" size={16} color={Colors.textMuted} />
-          <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>
-        </View>
-
-        <View style={styles.unitToggle}>
-          <TouchableOpacity
-            style={[styles.unitBtn, unit === 'kg' && styles.unitBtnActive]}
-            onPress={() => setUnit('kg')}
-          >
-            <ThemedText style={[styles.unitBtnText, unit === 'kg' && styles.unitBtnTextActive]}>kg</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.unitBtn, unit === 'lbs' && styles.unitBtnActive]}
-            onPress={() => setUnit('lbs')}
-          >
-            <ThemedText style={[styles.unitBtnText, unit === 'lbs' && styles.unitBtnTextActive]}>lbs</ThemedText>
-          </TouchableOpacity>
-        </View>
+        <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>
       </View>
 
       {/* Rest timer banner */}
@@ -397,10 +569,32 @@ export default function ActiveWorkoutScreen() {
       )}
 
       {/* Exercise list */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.contentContainer, playerVisible && { paddingBottom: 160 }]}
+      >
         {routine?.exercises?.map(renderExerciseCard)}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Spotify mini-player */}
+      {playerVisible && (
+        <View style={styles.playerContainer}>
+          <SpotifyMiniPlayer
+            playerState={spotifyPlayerState!}
+            isSeeking={spotifyIsSeeking}
+            onTogglePlayPause={spotifyTogglePlayPause}
+            onSkipNext={spotifySkipNext}
+            onSkipPrevious={spotifySkipPrevious}
+            onSeekStart={spotifySeekStart}
+            onSeekEnd={spotifySeekEnd}
+            onToggleShuffle={spotifyToggleShuffle}
+            onCycleRepeat={spotifyCycleRepeat}
+            onDisconnect={spotifyDisconnect}
+          />
+        </View>
+      )}
 
       {/* Log Set Modal */}
       <Modal
@@ -413,70 +607,120 @@ export default function ActiveWorkoutScreen() {
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <ThemedText style={styles.modalTitle}>{activeExercise?.name}</ThemedText>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color={Colors.dark} />
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <ThemedText style={styles.modalTitle}>{activeExercise?.name}</ThemedText>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={22} color={Colors.dark} />
+                </TouchableOpacity>
+              </View>
+
+              {activeExercise?.duration_seconds ? (
+                <View style={styles.timedInfo}>
+                  <Ionicons name="timer-outline" size={20} color={Colors.primary} />
+                  <ThemedText style={styles.timedInfoText}>
+                    Hold for {formatTime(activeExercise.duration_seconds)}. A countdown timer will start automatically.
+                  </ThemedText>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.modalField}>
+                    <ThemedText style={styles.modalLabel}>
+                      Set {(activeExercise ? getSetCount(activeExercise.id) : 0) + 1} — Reps
+                    </ThemedText>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={inputReps}
+                      onChangeText={setInputReps}
+                      placeholder={activeExercise?.reps?.toString() ?? '10'}
+                      placeholderTextColor={Colors.placeholder}
+                      keyboardType="numeric"
+                      maxLength={4}
+                      autoFocus
+                    />
+                  </View>
+                  <View style={styles.modalField}>
+                    <ThemedText style={styles.modalLabel}>Weight (kg)</ThemedText>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={inputWeight}
+                      onChangeText={setInputWeight}
+                      placeholder={activeExercise?.weight_kg?.toString() ?? '0'}
+                      placeholderTextColor={Colors.placeholder}
+                      keyboardType="decimal-pad"
+                      maxLength={6}
+                    />
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity style={styles.logConfirmButton} onPress={handleLogSet}>
+                <ThemedText style={styles.logConfirmText}>
+                  {activeExercise?.duration_seconds ? 'Start Timer & Log' : 'Log Set'}
+                </ThemedText>
               </TouchableOpacity>
             </View>
-
-            {activeExercise?.duration_seconds ? (
-              <View style={styles.timedInfo}>
-                <Ionicons name="timer-outline" size={20} color={Colors.primary} />
-                <ThemedText style={styles.timedInfoText}>
-                  Hold for {formatTime(activeExercise.duration_seconds)}. A countdown timer will start automatically.
-                </ThemedText>
-              </View>
-            ) : (
-              <>
-                <View style={styles.modalField}>
-                  <ThemedText style={styles.modalLabel}>
-                    Set {(activeExercise ? getSetCount(activeExercise.id) : 0) + 1} — Reps
-                  </ThemedText>
-                  <TextInput
-                    style={styles.modalInput}
-                    value={inputReps}
-                    onChangeText={setInputReps}
-                    placeholder={activeExercise?.reps?.toString() ?? '10'}
-                    placeholderTextColor={Colors.placeholder}
-                    keyboardType="numeric"
-                    maxLength={4}
-                    autoFocus
-                  />
-                </View>
-                <View style={styles.modalField}>
-                  <ThemedText style={styles.modalLabel}>Weight ({unit})</ThemedText>
-                  <TextInput
-                    style={styles.modalInput}
-                    value={inputWeight}
-                    onChangeText={setInputWeight}
-                    placeholder={
-                      activeExercise?.weight_kg
-                        ? (unit === 'lbs'
-                          ? kgToLbs(activeExercise.weight_kg).toString()
-                          : activeExercise.weight_kg.toString())
-                        : '0'
-                    }
-                    placeholderTextColor={Colors.placeholder}
-                    keyboardType="decimal-pad"
-                    maxLength={6}
-                  />
-                </View>
-              </>
-            )}
-
-            <TouchableOpacity style={styles.logConfirmButton} onPress={handleLogSet}>
-              <ThemedText style={styles.logConfirmText}>
-                {activeExercise?.duration_seconds ? 'Start Timer & Log' : 'Log Set'}
-              </ThemedText>
-            </TouchableOpacity>
           </View>
-        </View>
         </KeyboardAvoidingView>
       </Modal>
-    </ThemedView>
+
+      {/* Edit Set Modal */}
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <ThemedText style={styles.modalTitle}>
+                  Edit Set {editingSet?.setNumber} — {editingSet?.exerciseName}
+                </ThemedText>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Ionicons name="close" size={22} color={Colors.dark} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalField}>
+                <ThemedText style={styles.modalLabel}>Reps</ThemedText>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editReps}
+                  onChangeText={setEditReps}
+                  placeholder="Reps"
+                  placeholderTextColor={Colors.placeholder}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  autoFocus
+                />
+              </View>
+              <View style={styles.modalField}>
+                <ThemedText style={styles.modalLabel}>Weight (kg)</ThemedText>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editWeight}
+                  onChangeText={setEditWeight}
+                  placeholder="0"
+                  placeholderTextColor={Colors.placeholder}
+                  keyboardType="decimal-pad"
+                  maxLength={6}
+                />
+              </View>
+
+              <TouchableOpacity style={styles.logConfirmButton} onPress={handleUpdateSet}>
+                <ThemedText style={styles.logConfirmText}>Update Set</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
   );
 }
 
@@ -487,23 +731,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  playerContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 60,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
+  },
+  headerSide: {
+    width: 70,
+    alignItems: 'flex-start',
   },
   headerTitle: {
+    flex: 1,
     fontSize: 17,
     fontWeight: '600',
     color: Colors.dark,
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 8,
   },
   finishButton: {
     backgroundColor: Colors.primary,
@@ -522,45 +779,20 @@ const styles = StyleSheet.create({
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'transparent',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  stopwatchBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   stopwatchText: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '700',
-    color: Colors.dark,
+    color: Colors.primary,
     fontVariant: ['tabular-nums'],
-  },
-  unitToggle: {
-    flexDirection: 'row',
-    backgroundColor: Colors.border,
-    borderRadius: 8,
-    padding: 2,
-  },
-  unitBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  unitBtnActive: {
-    backgroundColor: Colors.white,
-  },
-  unitBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textMuted,
-  },
-  unitBtnTextActive: {
-    color: Colors.dark,
+    paddingTop: 5,
   },
   restBanner: {
     flexDirection: 'row',
@@ -588,10 +820,19 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  exerciseCardOuter: {
+    borderRadius: 14,
+  },
   exerciseCard: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   exerciseCardHeader: {
     flexDirection: 'row',
@@ -644,6 +885,19 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '600',
     fontSize: 14,
+    flex: 1,
+  },
+  timerControls: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  timerControlBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loggedSets: {
     marginBottom: 10,
@@ -657,6 +911,18 @@ const styles = StyleSheet.create({
   loggedSetText: {
     fontSize: 13,
     color: Colors.textMuted,
+    flex: 1,
+  },
+  setActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  setActionBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logSetButton: {
     flexDirection: 'row',
@@ -712,6 +978,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: Colors.dark,
+    flex: 1,
+    marginRight: 8,
   },
   modalField: {
     marginBottom: 16,
@@ -723,14 +991,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalInput: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 10,
     padding: 14,
     fontSize: 22,
     fontWeight: '700',
     color: Colors.dark,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     textAlign: 'center',
   },
   timedInfo: {

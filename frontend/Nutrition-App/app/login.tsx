@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -29,7 +31,7 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace('/(tabs)');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password');
+      setError(getErrorMessage(err, 'Invalid email or password.'));
     } finally {
       setLoading(false);
     }
@@ -51,6 +53,9 @@ export default function LoginScreen() {
         <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
         <ThemedText style={styles.subtitle}>Sign in to continue</ThemedText>
 
+        <View style={styles.formOuter}>
+          <BlurView intensity={85} tint="light" style={styles.formGlass}>
+            <View style={styles.glassSheen} />
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>Email</ThemedText>
@@ -113,6 +118,8 @@ export default function LoginScreen() {
             </ThemedText>
           </TouchableOpacity>
         </View>
+          </BlurView>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -145,6 +152,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
   },
+  formOuter: {
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  formGlass: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+    padding: 24,
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
   form: {
     gap: 16,
   },
@@ -157,9 +183,9 @@ const styles = StyleSheet.create({
     color: Colors.dark,
   },
   input: {
-    backgroundColor: Colors.card,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
@@ -200,10 +226,15 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
     marginTop: 4,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginButtonText: {
     color: Colors.white,

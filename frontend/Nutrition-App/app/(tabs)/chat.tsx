@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator, Alert, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,8 +8,22 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { chatService, ConversationSummary } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Swipeable } from 'react-native-gesture-handler';
+
+const relativeTime = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -48,7 +63,7 @@ export default function ChatScreen() {
       await chatService.deleteConversation(threadId);
       loadConversations();
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete conversation');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to delete conversation. Please try again.'));
     }
   };
 
@@ -71,12 +86,13 @@ export default function ChatScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <ThemedText type="title" style={styles.title}>Chats</ThemedText>
         <TouchableOpacity onPress={() => router.push('/profile')}>
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
-      </View>
+      </BlurView>
 
       {conversations.length === 0 ? (
         <View style={styles.emptyState}>
@@ -91,23 +107,34 @@ export default function ChatScreen() {
           <FlatList
             data={conversations}
             keyExtractor={(item) => item.thread_id}
+            contentContainerStyle={{ paddingTop: 16 }}
             renderItem={({ item }) => (
               <Swipeable
                 renderRightActions={() => renderDeleteAction(item.thread_id)}
               >
-                <TouchableOpacity
-                  style={styles.conversationItem}
-                  onPress={() => handleOpenChat(item.thread_id)}
-                >
-                  <View style={styles.conversationContent}>
-                    <ThemedText style={styles.conversationPreview} numberOfLines={2}>
-                      {item.last_message}
-                    </ThemedText>
-                    <ThemedText style={styles.conversationTime}>
-                      {new Date(item.last_message_time).toLocaleDateString()}
-                    </ThemedText>
+                <TouchableOpacity onPress={() => handleOpenChat(item.thread_id)}>
+                  <View style={styles.conversationItemOuter}>
+                    <BlurView intensity={85} tint="light" style={styles.conversationItem}>
+                      <View style={styles.glassSheen} />
+                      <View style={styles.conversationIcon}>
+                        <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
+                      </View>
+                      <View style={styles.conversationContent}>
+                        <View style={styles.conversationTopRow}>
+                          <ThemedText style={styles.conversationPreview} numberOfLines={1}>
+                            {item.last_message}
+                          </ThemedText>
+                          <ThemedText style={styles.conversationTime}>
+                            {relativeTime(item.last_message_time)}
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={styles.conversationCount}>
+                          {item.message_count} {item.message_count === 1 ? 'message' : 'messages'}
+                        </ThemedText>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.inactive} />
+                    </BlurView>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.dark} />
                 </TouchableOpacity>
               </Swipeable>
             )}
@@ -130,12 +157,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   title: {
     fontSize: 32,
@@ -165,25 +198,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  conversationItemOuter: {
+    marginHorizontal: 20,
+    marginBottom: 8,
+    borderRadius: 14,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   conversationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 8,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    gap: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  conversationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '18',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   conversationContent: {
     flex: 1,
-    marginRight: 12,
+  },
+  conversationTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
   },
   conversationPreview: {
     fontSize: 14,
+    fontWeight: '600',
     color: Colors.dark,
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 8,
   },
   conversationTime: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    flexShrink: 0,
+  },
+  conversationCount: {
     fontSize: 12,
     color: Colors.textMuted,
   },

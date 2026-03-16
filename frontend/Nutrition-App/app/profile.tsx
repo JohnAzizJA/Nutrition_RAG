@@ -1,20 +1,30 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, Switch } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { calculationService, userService } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
+import { BlurView } from 'expo-blur';
+
+// Spotify brand green — Spotify Brand Guidelines
+const SPOTIFY_GREEN = '#1DB954';
 
 const MEAL_PLAN_KEY = 'mealPlanEnabled';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, logout, updateUser } = useAuth();
+  const { isConnected: spotifyConnected, connect: spotifyConnect, disconnect: spotifyDisconnect } = useSpotify();
+  const [spotifyLoading, setSpotifyLoading] = useState(false);
   const [targets, setTargets] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState<{visible: boolean, field: string, value: any}>({visible: false, field: '', value: ''});
@@ -29,6 +39,41 @@ export default function ProfileScreen() {
   const toggleMealPlan = async (value: boolean) => {
     setMealPlanEnabled(value);
     await SecureStore.setItemAsync(MEAL_PLAN_KEY, value ? 'true' : 'false');
+  };
+
+  const handleSpotifyToggle = async () => {
+    setSpotifyLoading(true);
+    try {
+      if (spotifyConnected) {
+        await spotifyDisconnect();
+      } else {
+        await spotifyConnect();
+      }
+    } catch {
+      Alert.alert('Spotify', 'Something went wrong. Please try again.');
+    } finally {
+      setSpotifyLoading(false);
+    }
+  };
+
+  const handleWeekStartChange = async (day: number) => {
+    if ((user?.week_start_day ?? 0) === day) return;
+    try {
+      const updatedUser = await userService.updateProfile({
+        age: user?.age!,
+        gender: user?.gender! as 'male' | 'female',
+        weight_kg: user?.weight_kg!,
+        height_cm: user?.height_cm!,
+        activity_level: user?.activity_level! as any,
+        goal: user?.goal! as any,
+        goal_weight_kg: user?.goal_weight_kg!,
+        weight_loss_per_week: user?.weight_loss_per_week!,
+        week_start_day: day,
+      });
+      await updateUser(updatedUser);
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to update week start day.'));
+    }
   };
 
   const handleEdit = (field: string, currentValue: any) => {
@@ -70,6 +115,7 @@ export default function ProfileScreen() {
         goal: user?.goal! as any,
         goal_weight_kg: user?.goal_weight_kg!,
         weight_loss_per_week: user?.weight_loss_per_week!,
+        week_start_day: user?.week_start_day ?? 0,
         [editModal.field]: editModal.field === 'activity_level' ? getActivityLevel(editModal.value) : editModal.value
       };
       
@@ -78,7 +124,7 @@ export default function ProfileScreen() {
       setEditModal({visible: false, field: '', value: ''});
       fetchTargets();
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to update profile. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -119,11 +165,10 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await userService.deleteAccount();
-              Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
               await logout();
               router.replace('/welcome');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
+              Alert.alert('Error', getErrorMessage(error, 'Failed to delete account. Please try again.'));
             }
           }
         }
@@ -134,19 +179,22 @@ export default function ProfileScreen() {
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>Profile</ThemedText>
         <View style={{ width: 24 }} />
-      </View>
+      </BlurView>
 
       <ScrollView style={styles.content}>
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color={Colors.white} />
+            <ThemedText style={styles.avatarInitials}>
+              {(user?.name ?? 'U').split(/[\s._]+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('')}
+            </ThemedText>
           </View>
           <ThemedText style={styles.name}>{user?.name || 'User'}</ThemedText>
           <ThemedText style={styles.email}>{user?.email || ''}</ThemedText>
@@ -158,7 +206,9 @@ export default function ProfileScreen() {
           {loading ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <View style={styles.cardsContainer}>
+            <View style={styles.cardsContainerOuter}>
+              <BlurView intensity={85} tint="light" style={styles.cardsContainer}>
+                <View style={styles.glassSheen} />
               {[
                 { label: 'Goal', value: user?.goal?.replace(/_/g, ' ') || 'N/A', icon: 'flag-outline', color: Colors.primary, field: 'goal', editable: true },
                 ...(user?.goal === 'lose_weight' ? [{ label: 'Amount to lose per week', value: `${user?.weight_loss_per_week || 0.5} kg/week`, icon: 'trending-down-outline', color: Colors.iconWeightLoss, field: 'weight_loss_per_week', editable: true }] : []),
@@ -180,6 +230,7 @@ export default function ProfileScreen() {
                   {goal.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
+              </BlurView>
             </View>
           )}
         </View>
@@ -190,7 +241,9 @@ export default function ProfileScreen() {
           {loading ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <View style={styles.cardsContainer}>
+            <View style={styles.cardsContainerOuter}>
+              <BlurView intensity={85} tint="light" style={styles.cardsContainer}>
+                <View style={styles.glassSheen} />
               {[
                 { label: 'Age', value: `${user?.age || 0} years`, icon: 'calendar-outline', field: 'age', editable: true },
                 { label: 'Gender', value: user?.gender || 'N/A', icon: 'person-outline', field: 'gender', editable: true },
@@ -214,6 +267,7 @@ export default function ProfileScreen() {
                   {metric.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
+              </BlurView>
             </View>
           )}
         </View>
@@ -221,22 +275,78 @@ export default function ProfileScreen() {
         {/* App Settings */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>App Settings</ThemedText>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
-                <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+          <View style={styles.cardsContainerOuter}>
+            <BlurView intensity={85} tint="light" style={styles.cardsContainer}>
+              <View style={styles.glassSheen} />
+            <View style={styles.card}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
+                  <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.cardLabel}>Daily Meal Plan</ThemedText>
+                  <ThemedText style={styles.cardSubValue}>Plan your meals ahead of time</ThemedText>
+                </View>
               </View>
-              <View>
-                <ThemedText style={styles.settingLabel}>Daily Meal Plan</ThemedText>
-                <ThemedText style={styles.settingSubLabel}>Plan your meals ahead of time</ThemedText>
+              <Switch
+                value={mealPlanEnabled}
+                onValueChange={toggleMealPlan}
+                trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
+                thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
+              />
+            </View>
+
+            <View style={styles.card}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.secondary + '20' }]}>
+                  <Ionicons name="today-outline" size={20} color={Colors.secondary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.cardLabel}>Week Starts On</ThemedText>
+                  <ThemedText style={styles.cardSubValue}>Affects weekly stats & charts</ThemedText>
+                </View>
+              </View>
+              <View style={styles.weekToggle}>
+                {(['Sun', 'Mon'] as const).map((label, idx) => (
+                  <TouchableOpacity
+                    key={label}
+                    style={[styles.weekChip, (user?.week_start_day ?? 0) === idx && styles.weekChipActive]}
+                    onPress={() => handleWeekStartChange(idx)}
+                  >
+                    <ThemedText style={(user?.week_start_day ?? 0) === idx ? styles.weekChipTextActive : styles.weekChipText}>
+                      {label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
-            <Switch
-              value={mealPlanEnabled}
-              onValueChange={toggleMealPlan}
-              trackColor={{ false: Colors.border, true: Colors.primary + '60' }}
-              thumbColor={mealPlanEnabled ? Colors.primary : Colors.inactive}
-            />
+
+            <View style={styles.card}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: SPOTIFY_GREEN + '20' }]}>
+                  <Ionicons name="musical-notes" size={20} color={SPOTIFY_GREEN} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.cardLabel}>Spotify</ThemedText>
+                  <ThemedText style={styles.cardSubValue}>
+                    {spotifyConnected ? 'Connected — controls workout music' : 'Connect to control music during workouts'}
+                  </ThemedText>
+                </View>
+              </View>
+              {spotifyLoading ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <TouchableOpacity
+                  style={[styles.spotifyBtn, { backgroundColor: spotifyConnected ? Colors.background : SPOTIFY_GREEN }]}
+                  onPress={handleSpotifyToggle}
+                >
+                  <ThemedText style={[styles.spotifyBtnText, { color: spotifyConnected ? Colors.textMuted : Colors.white }]}>
+                    {spotifyConnected ? 'Disconnect' : 'Connect'}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+            </BlurView>
           </View>
         </View>
 
@@ -256,7 +366,9 @@ export default function ProfileScreen() {
       {/* Edit Modal */}
       <Modal visible={editModal.visible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalContentOuter}>
+          <BlurView intensity={65} tint="extraLight" style={styles.modalContent}>
+            <View style={styles.glassSheen} />
             <ThemedText style={styles.modalTitle}>Edit {editModal.field?.replace(/_/g, ' ')}</ThemedText>
             
             {editModal.field === 'gender' ? (
@@ -348,7 +460,8 @@ export default function ProfileScreen() {
                 <ThemedText style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</ThemedText>
               </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
+        </View>
         </View>
       </Modal>
     </ThemedView>
@@ -360,15 +473,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 60,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: {
     fontSize: 18,
@@ -392,6 +508,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  avatarInitials: {
+    fontSize: 36,
+    lineHeight: 44,
+    fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: 1,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   name: {
     fontSize: 24,
@@ -413,8 +543,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 20,
   },
+  cardsContainerOuter: {
+    borderRadius: 14,
+    marginHorizontal: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   cardsContainer: {
-    backgroundColor: Colors.white,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   card: {
     flexDirection: 'row',
@@ -448,18 +594,33 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     textTransform: 'capitalize',
   },
+  cardSubValue: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: Colors.white,
+  modalContentOuter: {
     borderRadius: 16,
-    padding: 24,
     width: '80%',
     maxWidth: 400,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   modalTitle: {
     fontSize: 18,
@@ -470,12 +631,14 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   input: {
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
+    color: Colors.dark,
   },
   optionsContainer: {
     marginBottom: 16,
@@ -550,29 +713,11 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: '600',
   },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 14,
-  },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     flex: 1,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.dark,
-  },
-  settingSubLabel: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
@@ -607,5 +752,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.danger,
+  },
+  weekToggle: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  weekChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  weekChipActive: {
+    backgroundColor: Colors.secondary,
+    borderColor: Colors.secondary,
+  },
+  weekChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  weekChipTextActive: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  spotifyBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  spotifyBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { nutritionService, FoodItem } from '@/src/services';
+import { BlurView } from 'expo-blur';
 
 type Unit = 'g' | 'ml' | 'oz' | 'serving';
 
@@ -32,8 +33,8 @@ export default function LogFoodScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [amounts, setAmounts] = useState<{ [key: number]: string }>({});
-  const [units, setUnits] = useState<{ [key: number]: Unit }>({});
+  const [amounts, setAmounts] = useState<{ [key: string]: string }>({});
+  const [units, setUnits] = useState<{ [key: string]: Unit }>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function LogFoodScreen() {
     }
   };
 
-  const getUnit = (fdcId: number): Unit => units[fdcId] ?? 'g';
+  const getUnit = (fdcId: string | number): Unit => units[String(fdcId)] ?? 'g';
 
   const calculateNutrients = (food: FoodItem, grams: number) => {
     const n = food.foodNutrients;
@@ -75,12 +76,13 @@ export default function LogFoodScreen() {
 
   const addFood = async (food: FoodItem) => {
     setError(null);
-    const raw = parseFloat(amounts[food.fdcId] || '0');
+    const key = String(food.fdcId);
+    const raw = parseFloat(amounts[key] || '0');
     if (!(raw > 0)) {
       setError('Enter a valid amount first.');
       return;
     }
-    const grams = toGrams(raw, getUnit(food.fdcId));
+    const grams = toGrams(raw, getUnit(key));
     const nutrients = calculateNutrients(food, grams);
 
     try {
@@ -113,25 +115,36 @@ export default function LogFoodScreen() {
   };
 
   const renderFoodItem = ({ item }: { item: FoodItem }) => {
-    const raw   = parseFloat(amounts[item.fdcId] || '0');
-    const unit  = getUnit(item.fdcId);
+    const key   = String(item.fdcId);
+    const raw   = parseFloat(amounts[key] || '0');
+    const unit  = getUnit(key);
     const grams = raw > 0 ? toGrams(raw, unit) : 0;
     const nutrients = grams > 0 ? calculateNutrients(item, grams) : null;
     const showConversion = unit !== 'g' && raw > 0;
+    const isEgyptian = item.source === 'egyptian';
 
     return (
-      <View style={styles.foodItem}>
+      <View style={styles.foodItemOuter}>
+        <BlurView intensity={85} tint="light" style={styles.foodItem}>
+          <View style={styles.glassSheen} />
         <View style={styles.foodInfo}>
-          <ThemedText style={styles.foodName} numberOfLines={2}>
-            {item.description}
-          </ThemedText>
+          <View style={styles.nameRow}>
+            <ThemedText style={styles.foodName} numberOfLines={2}>
+              {item.description}
+            </ThemedText>
+            {isEgyptian && (
+              <View style={styles.egyptianBadge}>
+                <ThemedText style={styles.egyptianBadgeText}>🇪🇬</ThemedText>
+              </View>
+            )}
+          </View>
 
           <View style={styles.inputRow}>
             <TextInput
               style={styles.amountInput}
               placeholder="Amount"
-              value={amounts[item.fdcId] || ''}
-              onChangeText={text => setAmounts(prev => ({ ...prev, [item.fdcId]: text }))}
+              value={amounts[key] || ''}
+              onChangeText={text => setAmounts(prev => ({ ...prev, [key]: text }))}
               keyboardType="numeric"
               placeholderTextColor={Colors.placeholder}
             />
@@ -140,7 +153,7 @@ export default function LogFoodScreen() {
                 <TouchableOpacity
                   key={u.key}
                   style={[styles.unitPill, unit === u.key && styles.unitPillActive]}
-                  onPress={() => setUnits(prev => ({ ...prev, [item.fdcId]: u.key }))}
+                  onPress={() => setUnits(prev => ({ ...prev, [key]: u.key }))}
                 >
                   <ThemedText style={[styles.unitLabel, unit === u.key && styles.unitLabelActive]}>
                     {u.label}
@@ -164,6 +177,7 @@ export default function LogFoodScreen() {
         <TouchableOpacity style={styles.addButton} onPress={() => addFood(item)}>
           <Ionicons name="add" size={20} color={Colors.white} />
         </TouchableOpacity>
+        </BlurView>
       </View>
     );
   };
@@ -175,21 +189,27 @@ export default function LogFoodScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
+      <BlurView intensity={80} tint="light" style={styles.header}>
+        <View style={styles.headerSheen} />
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <ThemedText style={styles.headerTitle}>{title}</ThemedText>
         <View style={{ width: 24 }} />
-      </View>
+      </BlurView>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search for food..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholderTextColor={Colors.placeholder}
-      />
+      <View style={styles.searchInputOuter}>
+        <BlurView intensity={95} tint="light" style={styles.searchInputGlass}>
+          <View style={styles.glassSheen} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for food..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={Colors.placeholder}
+          />
+        </BlurView>
+      </View>
 
       {error && (
         <View style={styles.errorBanner}>
@@ -206,7 +226,7 @@ export default function LogFoodScreen() {
 
       <FlatList
         data={foods}
-        keyExtractor={item => item.fdcId.toString()}
+        keyExtractor={item => String(item.fdcId)}
         renderItem={renderFoodItem}
         style={styles.list}
         showsVerticalScrollIndicator={false}
@@ -218,26 +238,39 @@ export default function LogFoodScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  headerSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.08)',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
     paddingTop: 60,
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: Colors.dark },
-  searchInput: {
-    backgroundColor: Colors.white,
+  searchInputOuter: {
     margin: 16,
+    borderRadius: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  searchInputGlass: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  searchInput: {
     padding: 12,
-    borderRadius: 8,
     fontSize: 16,
     color: Colors.dark,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -252,19 +285,36 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, color: Colors.danger, flex: 1 },
   loadingContainer: { padding: 20, alignItems: 'center' },
   list: { flex: 1, paddingHorizontal: 16 },
+  foodItemOuter: {
+    borderRadius: 12,
+    marginBottom: 12,
+  },
   foodItem: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   foodInfo: { flex: 1, marginRight: 12, gap: 6 },
-  foodName: { fontSize: 15, fontWeight: '600', color: Colors.dark },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  foodName: { fontSize: 15, fontWeight: '600', color: Colors.dark, flex: 1 },
+  egyptianBadge: {
+    backgroundColor: Colors.secondary + '18',
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  egyptianBadgeText: { fontSize: 13 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   amountInput: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 6,
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -273,7 +323,7 @@ const styles = StyleSheet.create({
     width: 72,
     textAlign: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   unitRow: { flexDirection: 'row', gap: 4 },
   unitPill: {

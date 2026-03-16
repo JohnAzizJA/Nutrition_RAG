@@ -1,0 +1,121 @@
+Meal Planning Strategies: Building a Sustainable Nutrition System
+
+WHY MEAL PLANNING MATTERS
+People who plan their meals consume fewer calories, eat more nutritious food, have greater diet variety, and are more likely to achieve their health goals. Planning eliminates decision fatigue — the tendency to make poor food choices when tired or hungry.
+
+BUILDING A MEAL PLAN FROM SCRATCH
+
+Step 1: Determine your calorie target
+Calculate your TDEE (Total Daily Energy Expenditure) and adjust based on goal:
+- Weight loss: TDEE minus 300–500 kcal
+- Muscle gain: TDEE plus 200–300 kcal
+- Maintenance: eat at TDEE
+
+Step 2: Set macronutrient targets
+- Protein: 1.6–2.5 g per kg of body weight per day (higher end during a deficit)
+- Fat: 25–35% of total calories
+- Carbohydrates: fill remaining calories
+
+Step 3: Build meals around protein
+For each meal, start with the protein source, then add carbs and vegetables. This ensures protein targets are met first. Distribute protein evenly across 3–5 meals (25–40 g per meal).
+
+Step 4: Plan 3–5 days of meals
+Variety within a week; consistency across weeks. Rotate 2–3 breakfast options, 3–4 lunch/dinner options. Repeat meals you enjoy.
+
+Step 5: Prepare in advance (meal prep)
+Cook proteins and grains in bulk once or twice per week. Pre-cut vegetables. Portion snacks in advance.
+
+EGYPTIAN-FOCUSED MEAL PLAN TEMPLATE
+
+Fat Loss Day (~1600–1800 kcal):
+Breakfast: Ful medames (150g) with 1 aysh baladi + cucumber and tomato salad | ~400 kcal
+Snack: 2 boiled eggs + a small apple | ~200 kcal
+Lunch: Grilled farouj (200g) with roz masri (150g) and salata baladi | ~550 kcal
+Snack: Low-fat yogurt (200g) | ~120 kcal
+Dinner: Shorbet ads (300ml) + 1 aysh baladi | ~200 kcal
+
+Muscle Gain Day (~2600–2800 kcal):
+Breakfast: 3 eggs scrambled + 2 aysh baladi + ful medames (200g) + milk (250ml) | ~700 kcal
+Snack: Greek yogurt (200g) + banana + handful of nuts | ~350 kcal
+Lunch: Kofta (200g) + Egyptian rice (200g) + salata baladi | ~700 kcal
+Snack: Whey protein shake in milk + a date | ~350 kcal
+Dinner: Macarona bechamel (300g) or molokhia with chicken + rice | ~600 kcal
+
+MEAL TIMING
+Meal timing matters less than total daily intake, but some strategies are worth applying:
+- Breakfast: eating breakfast improves cognitive function and reduces overeating later for most people. High-protein breakfasts reduce appetite throughout the day.
+- Largest meals around training: eat more carbohydrates and protein on training days, especially around workouts.
+- Avoid large meals close to sleep: eating very close to bedtime doesn't inherently cause fat gain, but can impair sleep quality. Light protein (Greek yogurt, cottage cheese) before bed is fine and can support muscle recovery.
+
+INTERMITTENT FASTING (IF)
+IF is a meal timing strategy, not a specific diet. It restricts eating to a defined window. Popular protocols:
+
+16:8 method: fast for 16 hours (including sleep), eat within an 8-hour window (e.g., 12pm–8pm). Most popular; sustainable long-term for many people.
+
+5:2 method: eat normally 5 days per week; restrict to 500 kcal on 2 non-consecutive days.
+
+One Meal a Day (OMAD): eat all daily calories in one sitting. Very aggressive; difficult to get adequate protein; not recommended for active people or those building muscle.
+
+Benefits of IF (when total calories and protein are controlled):
+- Simplifies calorie control for many people — fewer eating occasions can mean fewer opportunities to overeat, aiding adherence
+- Reduces decision fatigue around eating
+- Some find it easier to maintain a calorie deficit within a compressed window
+- IMPORTANT: Current research (2023 meta-analysis, Cell Metabolism) shows IF provides no metabolic advantage over regular meal timing when total calories and protein are equal. The benefits are primarily about adherence, not physiology. IF is a tool for calorie control, not a metabolic protocol.
+
+Drawbacks:
+- Can impair muscle protein synthesis if protein is compressed into fewer meals (though total daily protein remains the primary driver)
+- May cause irritability or reduced focus in the fasting window initially
+- Not suitable for people with a history of disordered eating, pregnant/nursing women, or insulin-dependent diabetics without medical supervision
+- Athletes training in the morning may perform poorly if training fasted; consume BCAAs or a small protein source before early training sessions
+
+CALORIE CYCLING
+Alternate between higher-calorie days (on training days) and lower-calorie days (on rest days), while the weekly average aligns with your goal.
+
+Example for 75 kg person targeting maintenance (TDEE 2400 kcal):
+- Training days (4/week): 2700 kcal
+- Rest days (3/week): 2000 kcal
+- Weekly average: (4×2700 + 3×2000) / 7 ≈ 2400 kcal
+
+Benefits: fuels workouts better, creates a modest deficit on rest days, more food variety, feels less restrictive.
+
+MEAL PREP STRATEGIES
+1. Batch cooking proteins: grill or bake 1–2 kg of chicken, cook ground beef, or boil eggs for the week
+2. Cook grains in bulk: rice, lentils, quinoa keep well refrigerated for 5 days
+3. Pre-wash and cut vegetables: store in containers for quick access
+4. Prepare portable snacks: portion nuts, Greek yogurt, boiled eggs, fruit
+5. Use a slow cooker or pressure cooker for hands-off cooking of stews, soups, legumes
+
+EATING OUT AND SOCIAL SITUATIONS
+- Estimate calories rather than abandon tracking entirely
+- Choose grilled over fried proteins
+- Request sauces on the side
+- Fill half the plate with vegetables and salad first
+- Share desserts rather than skipping them entirely
+- One meal does not derail progress — what matters is the overall weekly pattern
+
+TRACKING FOOD INTAKE
+- Use a food diary app to track for at least 2–4 weeks to build calorie awareness
+- Weigh food raw with a kitchen scale for accuracy; restaurant guesses are fine
+- Track consistently even on "bad" days — awareness is the goal
+- After building intuition, many people can maintain goals without constant tracking
+
+PRACTICAL HABITS FOR DIET ADHERENCE
+- Keep high-protein, low-calorie foods readily accessible (eggs, canned tuna, yogurt, cottage cheese)
+- Remove highly palatable, easy-to-overeat foods from the home; don't rely on willpower
+- Eat slowly — it takes 20 minutes for fullness signals to reach the brain; eating slowly allows them to register before overeating
+- Drink a large glass of water before meals to reduce caloric intake
+- Sleep 7–9 hours — sleep deprivation increases caloric intake by 300–400 kcal per day on average
+- Manage stress — cortisol drives cravings for high-fat, high-sugar foods
+
+---
+REFERENCES
+- U.S. Department of Agriculture. Dietary Guidelines for Americans 2020–2025. https://www.dietaryguidelines.gov
+- Harris L, et al. Intermittent fasting interventions for treatment of overweight and obesity in adults. JBI Database of Systematic Reviews (2018). https://pubmed.ncbi.nlm.nih.gov/29419624/
+- Lowe DA, et al. Effects of Time-Restricted Eating on Weight Loss and Other Metabolic Parameters in Women and Men With Overweight and Obesity. JAMA Internal Medicine (2020). https://pubmed.ncbi.nlm.nih.gov/32777631/
+- Academy of Nutrition and Dietetics. Position of the Academy: Total Diet Approach to Healthy Eating. https://www.eatright.org
+
+SUSTAINABLE DIETING PRINCIPLES
+- Flexible dieting (IIFYM — If It Fits Your Macros): allows any food as long as macro and calorie targets are met. More sustainable than rigid food rules. Supported by research.
+- 80/20 rule: 80% of calories from whole, nutritious foods; 20% from preferred "fun" foods. Prevents the all-or-nothing mindset that leads to abandoning diets.
+- No food is inherently "bad." Context (frequency, quantity) determines impact.
+- Diet breaks (1–2 weeks at maintenance calories) after 8–12 weeks of dieting restore hormones (leptin, thyroid), improve adherence, and do not reverse progress.

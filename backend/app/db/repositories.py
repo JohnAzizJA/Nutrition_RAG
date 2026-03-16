@@ -2,6 +2,7 @@ from db.database import get_db
 from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet, Community, CommunityMember, UserPoints, CommunityAnnouncement, AnnouncementReaction, UserPRLog, UserWeightGoalAward, UserStreakState, UserWeeklyCheck, UserCalorieCheck
 from typing import Optional, List
 from datetime import datetime, date, timedelta, timezone
+from sqlalchemy import func, desc
 
 class UserRepository:
     """Repository for User database operations"""
@@ -21,8 +22,9 @@ class UserRepository:
         with get_db() as db:
             return db.query(User).filter(User.name.ilike(name)).first()
     
-    def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float, 
-               height_cm: float, activity_level: str, goal: str, goal_weight_kg: float, weight_loss_per_week: float = None) -> User:
+    def create(self, email: str, password: str, name: str, age: int, gender: str, weight_kg: float,
+               height_cm: float, activity_level: str, goal: str, goal_weight_kg: float,
+               weight_loss_per_week: float = None, week_start_day: int = 0) -> User:
         """Create new user"""
         with get_db() as db:
             user = User(
@@ -36,7 +38,8 @@ class UserRepository:
                 activity_level=activity_level,
                 goal=goal,
                 goal_weight_kg=goal_weight_kg,
-                weight_loss_per_week=weight_loss_per_week
+                weight_loss_per_week=weight_loss_per_week,
+                week_start_day=week_start_day,
             )
             db.add(user)
             db.commit()
@@ -78,19 +81,96 @@ class UserRepository:
     
     def delete(self, user_id: int) -> bool:
         """Delete user and all associated data"""
+        from db.models import (
+            Conversation, WeightLog, MealLog, WorkoutRoutine, Follow,
+            WorkoutSession, WorkoutSessionSet, Exercise, MealPlan, MealPlanFood,
+            MealPlanCompletion, UserPRLog, UserWeightGoalAward, UserStreakState,
+            UserWeeklyCheck, UserCalorieCheck, CommunityMember, UserPoints,
+            CommunityAnnouncement, AnnouncementReaction, Community,
+        )
         with get_db() as db:
             try:
-                # Delete related data first
-                from db.models import Conversation, WeightLog, MealLog, WorkoutRoutine, Follow
-                
+                # Scoring / gamification tables
+                db.query(UserCalorieCheck).filter(UserCalorieCheck.user_id == user_id).delete()
+                db.query(UserWeeklyCheck).filter(UserWeeklyCheck.user_id == user_id).delete()
+                db.query(UserStreakState).filter(UserStreakState.user_id == user_id).delete()
+                db.query(UserWeightGoalAward).filter(UserWeightGoalAward.user_id == user_id).delete()
+                db.query(UserPRLog).filter(UserPRLog.user_id == user_id).delete()
+
+                # Community reactions / announcements / memberships this user has in any community
+                db.query(AnnouncementReaction).filter(AnnouncementReaction.user_id == user_id).delete()
+                db.query(CommunityAnnouncement).filter(CommunityAnnouncement.user_id == user_id).delete()
+                db.query(UserPoints).filter(UserPoints.user_id == user_id).delete()
+                db.query(CommunityMember).filter(CommunityMember.user_id == user_id).delete()
+
+                # Communities this user created — delete all children first, then the community
+                community_ids = [
+                    r[0] for r in db.query(Community.id).filter(Community.creator_id == user_id).all()
+                ]
+                if community_ids:
+                    ann_ids = [
+                        r[0] for r in db.query(CommunityAnnouncement.id)
+                        .filter(CommunityAnnouncement.community_id.in_(community_ids)).all()
+                    ]
+                    if ann_ids:
+                        db.query(AnnouncementReaction).filter(
+                            AnnouncementReaction.announcement_id.in_(ann_ids)
+                        ).delete(synchronize_session=False)
+                    db.query(CommunityAnnouncement).filter(
+                        CommunityAnnouncement.community_id.in_(community_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(UserPoints).filter(
+                        UserPoints.community_id.in_(community_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(CommunityMember).filter(
+                        CommunityMember.community_id.in_(community_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(Community).filter(Community.id.in_(community_ids)).delete(synchronize_session=False)
+
+                # Workout sessions and their sets
+                session_ids = [
+                    r[0] for r in db.query(WorkoutSession.id).filter(WorkoutSession.user_id == user_id).all()
+                ]
+                if session_ids:
+                    db.query(WorkoutSessionSet).filter(
+                        WorkoutSessionSet.session_id.in_(session_ids)
+                    ).delete(synchronize_session=False)
+                db.query(WorkoutSession).filter(WorkoutSession.user_id == user_id).delete()
+
+                # Workout routines and their exercises
+                routine_ids = [
+                    r[0] for r in db.query(WorkoutRoutine.id).filter(WorkoutRoutine.user_id == user_id).all()
+                ]
+                if routine_ids:
+                    db.query(Exercise).filter(
+                        Exercise.routine_id.in_(routine_ids)
+                    ).delete(synchronize_session=False)
+                db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
+
+                # Meal plans and their foods / completions
+                plan_ids = [
+                    r[0] for r in db.query(MealPlan.id).filter(MealPlan.user_id == user_id).all()
+                ]
+                if plan_ids:
+                    db.query(MealPlanFood).filter(
+                        MealPlanFood.plan_id.in_(plan_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(MealPlanCompletion).filter(
+                        MealPlanCompletion.plan_id.in_(plan_ids)
+                    ).delete(synchronize_session=False)
+                db.query(MealPlanCompletion).filter(MealPlanCompletion.user_id == user_id).delete()
+                db.query(MealPlan).filter(MealPlan.user_id == user_id).delete()
+
+                # Simple per-user tables
                 db.query(Conversation).filter(Conversation.user_id == user_id).delete()
                 db.query(WeightLog).filter(WeightLog.user_id == user_id).delete()
                 db.query(MealLog).filter(MealLog.user_id == user_id).delete()
                 db.query(WaterLog).filter(WaterLog.user_id == user_id).delete()
-                db.query(WorkoutRoutine).filter(WorkoutRoutine.user_id == user_id).delete()
-                db.query(Follow).filter((Follow.follower_id == user_id) | (Follow.following_id == user_id)).delete()
-                
-                # Delete user
+                db.query(Follow).filter(
+                    (Follow.follower_id == user_id) | (Follow.following_id == user_id)
+                ).delete()
+
+                # Finally delete the user
                 user = db.query(User).filter(User.id == user_id).first()
                 if user:
                     db.delete(user)
@@ -132,6 +212,47 @@ class ConversationRepository:
                 Conversation.user_id == user_id
             ).distinct().all()
             return [t[0] for t in threads]
+
+    def get_conversations_summary(self, user_id: int) -> List[dict]:
+        """Get conversation summaries in a single query (no N+1)."""
+        with get_db() as db:
+            # Subquery: last message time + count per thread
+            sub = (
+                db.query(
+                    Conversation.thread_id,
+                    func.max(Conversation.created_at).label("last_time"),
+                    func.count(Conversation.id).label("msg_count"),
+                )
+                .filter(Conversation.user_id == user_id)
+                .group_by(Conversation.thread_id)
+                .subquery()
+            )
+            # Join back to get the content of the last message
+            rows = (
+                db.query(
+                    Conversation.thread_id,
+                    Conversation.content,
+                    sub.c.last_time,
+                    sub.c.msg_count,
+                )
+                .join(
+                    sub,
+                    (Conversation.thread_id == sub.c.thread_id)
+                    & (Conversation.created_at == sub.c.last_time)
+                    & (Conversation.user_id == user_id),
+                )
+                .order_by(desc(sub.c.last_time))
+                .all()
+            )
+            return [
+                {
+                    "thread_id": r.thread_id,
+                    "last_message": r.content[:100],
+                    "last_message_time": r.last_time,
+                    "message_count": r.msg_count,
+                }
+                for r in rows
+            ]
     
     def delete_thread(self, thread_id: str, user_id: int) -> bool:
         """Delete all messages in a thread for specific user"""
@@ -165,6 +286,26 @@ class WeightLogRepository:
             return db.query(WeightLog).filter(
                 WeightLog.user_id == user_id
             ).order_by(WeightLog.logged_at.desc()).limit(limit).all()
+
+    def get_weekly_weights(self, user_id: int, week_starts: List[date]) -> List[dict]:
+        """For each week_start date, return the most recent weight log in that week or None."""
+        with get_db() as db:
+            all_logs = db.query(WeightLog).filter(
+                WeightLog.user_id == user_id
+            ).order_by(WeightLog.logged_at.desc()).all()
+
+        result = []
+        for ws in week_starts:
+            week_end = ws + timedelta(days=7)
+            log = next(
+                (l for l in all_logs if ws <= l.logged_at.date() < week_end),
+                None,
+            )
+            result.append({
+                "week_start": str(ws),
+                "weight_kg": log.weight_kg if log else None,
+            })
+        return result
 
 class MealLogRepository:
     """Repository for MealLog database operations"""
@@ -298,6 +439,33 @@ class WorkoutRepository:
                 return True
             return False
     
+    def update_exercise(self, exercise_id: int, routine_id: int, user_id: int,
+                        sets: int, reps: int,
+                        weight_kg: Optional[float] = None,
+                        rest_time_seconds: Optional[int] = None,
+                        duration_seconds: Optional[int] = None) -> Optional[Exercise]:
+        """Update exercise fields"""
+        with get_db() as db:
+            routine = db.query(WorkoutRoutine).filter(
+                WorkoutRoutine.id == routine_id,
+                WorkoutRoutine.user_id == user_id
+            ).first()
+            if not routine:
+                return None
+            exercise = db.query(Exercise).filter(
+                Exercise.id == exercise_id,
+                Exercise.routine_id == routine_id
+            ).first()
+            if exercise:
+                exercise.sets = sets
+                exercise.reps = reps
+                exercise.weight_kg = weight_kg
+                exercise.rest_time_seconds = rest_time_seconds
+                exercise.duration_seconds = duration_seconds
+                db.commit()
+                db.refresh(exercise)
+            return exercise
+
     def delete_exercise(self, exercise_id: int, routine_id: int, user_id: int) -> bool:
         """Delete exercise from routine"""
         with get_db() as db:
@@ -619,6 +787,40 @@ class WorkoutSessionRepository:
             db.refresh(s)
             return s
 
+    def delete_set(self, session_id: int, set_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            ws = db.query(WorkoutSessionSet).join(WorkoutSession).filter(
+                WorkoutSessionSet.id == set_id,
+                WorkoutSessionSet.session_id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not ws:
+                return False
+            db.delete(ws)
+            db.commit()
+            return True
+
+    def update_set(self, session_id: int, set_id: int, user_id: int,
+                   reps: Optional[int] = None, weight_kg: Optional[float] = None,
+                   duration_seconds: Optional[int] = None) -> Optional[WorkoutSessionSet]:
+        with get_db() as db:
+            ws = db.query(WorkoutSessionSet).join(WorkoutSession).filter(
+                WorkoutSessionSet.id == set_id,
+                WorkoutSessionSet.session_id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not ws:
+                return None
+            if reps is not None:
+                ws.reps = reps
+            if weight_kg is not None:
+                ws.weight_kg = weight_kg
+            if duration_seconds is not None:
+                ws.duration_seconds = duration_seconds
+            db.commit()
+            db.refresh(ws)
+            return ws
+
     def end_session(self, session_id: int, user_id: int, duration_seconds: int) -> Optional[WorkoutSession]:
         with get_db() as db:
             session = db.query(WorkoutSession).filter(
@@ -645,12 +847,18 @@ class WorkoutSessionRepository:
                 .all()
             )
 
-    def get_sessions_this_week(self, user_id: int) -> int:
-        """Count completed workout sessions in the current calendar week (Mon–Sun)."""
+    def get_sessions_this_week(self, user_id: int, week_start_day: int = 0) -> int:
+        """Count completed workout sessions in the current calendar week.
+        week_start_day: 0=Sunday, 1=Monday
+        """
         from datetime import datetime
         today = datetime.now()
-        week_start = today - timedelta(days=today.weekday())
-        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Python weekday(): Mon=0 ... Sun=6
+        if week_start_day == 0:  # Sunday start
+            days_back = (today.weekday() + 1) % 7  # Sun->0, Mon->1, ..., Sat->6
+        else:  # Monday start
+            days_back = today.weekday()  # Mon->0, ..., Sun->6
+        week_start = (today - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
         with get_db() as db:
             return db.query(WorkoutSession).filter(
                 WorkoutSession.user_id == user_id,
@@ -658,33 +866,43 @@ class WorkoutSessionRepository:
                 WorkoutSession.ended_at >= week_start,
             ).count()
 
-    def get_weekly_volume(self, user_id: int, weeks: int = 8) -> List[dict]:
-        """Return total volume (weight_kg × reps) grouped by ISO week for last N weeks."""
-        from datetime import datetime
-        from sqlalchemy import func
-        cutoff = datetime.now() - timedelta(weeks=weeks)
+    def get_weekly_volume(self, user_id: int, week_starts: List[date], week_start_day: int = 0) -> List[dict]:
+        """Return total volume (weight_kg × reps) for each given week. Returns 0 for weeks with no data.
+        week_start_day: 0=Sunday, 1=Monday
+        """
+        from datetime import datetime as dt, time as dt_time
+        from sqlalchemy import func, text
+        if not week_starts:
+            return []
+        min_dt = dt.combine(min(week_starts), dt_time.min)
+        max_dt = dt.combine(max(week_starts) + timedelta(days=7), dt_time.min)
         with get_db() as db:
+            if week_start_day == 0:  # Sunday start
+                week_expr = func.date_trunc('week', WorkoutSession.started_at + text("interval '1 day'")) - text("interval '1 day'")
+            else:  # Monday start (PostgreSQL default)
+                week_expr = func.date_trunc('week', WorkoutSession.started_at)
             results = (
                 db.query(
-                    func.date_trunc('week', WorkoutSession.started_at).label('week'),
+                    week_expr.label('week'),
                     func.sum(WorkoutSessionSet.weight_kg * WorkoutSessionSet.reps).label('volume'),
                 )
                 .join(WorkoutSessionSet, WorkoutSessionSet.session_id == WorkoutSession.id)
                 .filter(
                     WorkoutSession.user_id == user_id,
-                    WorkoutSession.started_at >= cutoff,
+                    WorkoutSession.started_at >= min_dt,
+                    WorkoutSession.started_at < max_dt,
                     WorkoutSession.ended_at.isnot(None),
                     WorkoutSessionSet.weight_kg.isnot(None),
                     WorkoutSessionSet.reps.isnot(None),
                 )
-                .group_by(func.date_trunc('week', WorkoutSession.started_at))
-                .order_by(func.date_trunc('week', WorkoutSession.started_at))
+                .group_by(week_expr)
                 .all()
             )
-            return [
-                {"week_start": str(r.week.date()), "volume_kg": round(float(r.volume or 0), 1)}
-                for r in results
-            ]
+        volume_map = {r.week.date(): round(float(r.volume or 0), 1) for r in results}
+        return [
+            {"week_start": str(ws), "volume_kg": volume_map.get(ws, 0.0)}
+            for ws in week_starts
+        ]
 
     def delete_session(self, session_id: int, user_id: int) -> bool:
         with get_db() as db:

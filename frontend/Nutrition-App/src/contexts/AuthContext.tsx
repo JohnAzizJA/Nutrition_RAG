@@ -27,14 +27,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await authStorage.getToken();
       if (token) {
-        // Decode token to get user info (basic implementation)
-        // In production, you'd fetch user profile from API
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ id: payload.sub } as UserResponse);
+        const user = await authService.getProfile();
+        setUser(user);
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      await authStorage.clearAll();
+    } catch (error: any) {
+      // Only log out on auth errors (invalid/expired token), not network errors
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        await authStorage.clearAll();
+      }
     } finally {
       setIsLoading(false);
     }
