@@ -51,7 +51,7 @@
 
 ## Phase 6: Advanced AI Integrations & Localization
 * [x] **Contextual AI:** Update LangGraph flow to fetch the user profile (stats, goals) from the database *before* generating responses for highly personalized advice.
-* [x] **RAG Enhancement (Action Tools):** Give the AI tools to take actions in the app, such as logging a meal or fetching today's macros.
+* [x] **RAG Enhancement (Action Tools):** Give the AI tools to get info from the app, such as meal logs, workout logs, or fetching today's macros.
 * [x] **RAG Enhancement (Intent Routing):** Build a fast routing node at the graph start to categorize questions, bypassing the 70b model for simple queries.
 * [x] **RAG Enhancement (Error Handling):** Add fallback conditional edges so the LLM can self-correct when tools fail.
 * [x] **Egyptian Nutrition DB:** Supplement the existing food database with nutritional info specifically for Egyptian local foods (Koshary, Molokheya, Hamam, etc.). Local JSON database with 40+ foods; `search_food` tool checks it first before USDA fallback. 10 comprehensive RAG knowledge documents added (macros, weight management, diabetes, fitness, workout programs, sports nutrition, meal planning, health conditions, micronutrients, Egyptian cuisine, supplements, gut health).

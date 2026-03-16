@@ -126,10 +126,17 @@ export default function WorkoutsScreen() {
 
   const renderSession = (item: WorkoutSession) => (
     <Swipeable renderRightActions={() => renderDeleteAction(() => deleteSession(item.id))}>
-      <View style={styles.sessionCard}>
+      <TouchableOpacity
+        style={styles.sessionCard}
+        onPress={() => router.push(`/session-detail?id=${item.id}`)}
+        activeOpacity={0.8}
+      >
         <View style={styles.sessionHeader}>
           <ThemedText style={styles.sessionName}>{item.routine_name}</ThemedText>
-          <ThemedText style={styles.sessionDate}>{formatDate(item.started_at)}</ThemedText>
+          <View style={styles.sessionDateRow}>
+            <ThemedText style={styles.sessionDate}>{formatDate(item.started_at)}</ThemedText>
+            <Ionicons name="chevron-forward" size={14} color={Colors.inactive} style={{ marginLeft: 2 }} />
+          </View>
         </View>
 
         <View style={styles.sessionStats}>
@@ -164,7 +171,7 @@ export default function WorkoutsScreen() {
             ))}
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     </Swipeable>
   );
 
@@ -466,6 +473,10 @@ const styles = StyleSheet.create({
   sessionDate: {
     fontSize: 12,
     color: Colors.textMuted,
+  },
+  sessionDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: 8,
   },
   sessionStats: {
