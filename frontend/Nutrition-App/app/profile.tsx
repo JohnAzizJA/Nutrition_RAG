@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, Switch } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, Switch, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -12,6 +12,7 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { calculationService, userService } from '@/src/services';
 import { getErrorMessage } from '@/src/utils/errorUtils';
+import { BlurView } from 'expo-blur';
 
 // Spotify brand green — Spotify Brand Guidelines
 const SPOTIFY_GREEN = '#1DB954';
@@ -204,7 +205,9 @@ export default function ProfileScreen() {
           {loading ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <View style={styles.cardsContainer}>
+            <View style={styles.cardsContainerOuter}>
+              <BlurView intensity={85} tint="light" style={styles.cardsContainer}>
+                <View style={styles.glassSheen} />
               {[
                 { label: 'Goal', value: user?.goal?.replace(/_/g, ' ') || 'N/A', icon: 'flag-outline', color: Colors.primary, field: 'goal', editable: true },
                 ...(user?.goal === 'lose_weight' ? [{ label: 'Amount to lose per week', value: `${user?.weight_loss_per_week || 0.5} kg/week`, icon: 'trending-down-outline', color: Colors.iconWeightLoss, field: 'weight_loss_per_week', editable: true }] : []),
@@ -226,6 +229,7 @@ export default function ProfileScreen() {
                   {goal.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
+              </BlurView>
             </View>
           )}
         </View>
@@ -236,7 +240,9 @@ export default function ProfileScreen() {
           {loading ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <View style={styles.cardsContainer}>
+            <View style={styles.cardsContainerOuter}>
+              <BlurView intensity={85} tint="light" style={styles.cardsContainer}>
+                <View style={styles.glassSheen} />
               {[
                 { label: 'Age', value: `${user?.age || 0} years`, icon: 'calendar-outline', field: 'age', editable: true },
                 { label: 'Gender', value: user?.gender || 'N/A', icon: 'person-outline', field: 'gender', editable: true },
@@ -260,6 +266,7 @@ export default function ProfileScreen() {
                   {metric.editable && <Ionicons name="pencil" size={16} color={Colors.textMuted} />}
                 </TouchableOpacity>
               ))}
+              </BlurView>
             </View>
           )}
         </View>
@@ -267,7 +274,9 @@ export default function ProfileScreen() {
         {/* App Settings */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>App Settings</ThemedText>
-          <View style={styles.cardsContainer}>
+          <View style={styles.cardsContainerOuter}>
+            <BlurView intensity={85} tint="light" style={styles.cardsContainer}>
+              <View style={styles.glassSheen} />
             <View style={styles.card}>
               <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: Colors.primary + '20' }]}>
@@ -336,6 +345,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               )}
             </View>
+            </BlurView>
           </View>
         </View>
 
@@ -526,15 +536,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 20,
   },
-  cardsContainer: {
-    backgroundColor: Colors.white,
+  cardsContainerOuter: {
     borderRadius: 14,
+    marginHorizontal: 20,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    marginHorizontal: 20,
+  },
+  cardsContainer: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   card: {
     flexDirection: 'row',

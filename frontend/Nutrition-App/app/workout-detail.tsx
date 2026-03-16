@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, TouchableOpacity, Alert, ScrollView, FlatList, TextInput } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Alert, ScrollView, FlatList, TextInput, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
@@ -8,6 +8,7 @@ import { Colors } from '@/constants/theme';
 import { workoutService, WorkoutRoutine, Exercise } from '@/src/services';
 import { getErrorMessage } from '@/src/utils/errorUtils';
 import { Swipeable } from 'react-native-gesture-handler';
+import { BlurView } from 'expo-blur';
 
 type EditField = {
   sets: string;
@@ -128,7 +129,9 @@ export default function WorkoutDetailScreen() {
       };
       const isTimed = item.duration_seconds != null;
       return (
-        <View style={styles.exerciseCard}>
+        <View style={styles.exerciseCardOuter}>
+          <BlurView intensity={85} tint="light" style={styles.exerciseCard}>
+            <View style={styles.glassSheen} />
           <View style={styles.exerciseHeader}>
             <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
             {isTimed ? (
@@ -199,13 +202,16 @@ export default function WorkoutDetailScreen() {
               </>
             )}
           </View>
+          </BlurView>
         </View>
       );
     }
 
     return (
       <Swipeable renderRightActions={() => renderExerciseDeleteAction(item.id)}>
-        <View style={styles.exerciseCard}>
+        <View style={styles.exerciseCardOuter}>
+          <BlurView intensity={85} tint="light" style={styles.exerciseCard}>
+            <View style={styles.glassSheen} />
           <View style={styles.exerciseHeader}>
             <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
             {item.duration_seconds ? (
@@ -254,6 +260,7 @@ export default function WorkoutDetailScreen() {
               </>
             )}
           </View>
+          </BlurView>
         </View>
       </Swipeable>
     );
@@ -309,7 +316,9 @@ export default function WorkoutDetailScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.routineInfo}>
+        <View style={styles.routineInfoOuter}>
+          <BlurView intensity={85} tint="light" style={styles.routineInfo}>
+            <View style={styles.glassSheen} />
           <ThemedText style={styles.routineName}>{routine.name}</ThemedText>
           {routine.description && (
             <ThemedText style={styles.routineDescription}>{routine.description}</ThemedText>
@@ -317,6 +326,7 @@ export default function WorkoutDetailScreen() {
           <ThemedText style={styles.exerciseCount}>
             {routine.exercises?.length ?? 0} exercise{(routine.exercises?.length ?? 0) !== 1 ? 's' : ''}
           </ThemedText>
+          </BlurView>
         </View>
 
         {!isEditing && (
@@ -398,11 +408,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  routineInfoOuter: {
+    borderRadius: 16,
+    marginBottom: 20,
+  },
   routineInfo: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   routineName: {
     fontSize: 24,
@@ -470,11 +489,16 @@ const styles = StyleSheet.create({
   exercisesList: {
     paddingBottom: 20,
   },
+  exerciseCardOuter: {
+    borderRadius: 12,
+    marginBottom: 12,
+  },
   exerciseCard: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   exerciseHeader: {
     flexDirection: 'row',

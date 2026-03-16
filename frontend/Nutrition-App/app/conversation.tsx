@@ -197,23 +197,26 @@ export default function ConversationScreen() {
         )}
 
         {/* Input */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Ask about nutrition..."
-            placeholderTextColor={Colors.placeholder}
-            multiline
-            maxLength={500}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, (!inputText.trim() || sending) && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={!inputText.trim() || sending}
-          >
-            <Ionicons name="send" size={18} color={Colors.white} />
-          </TouchableOpacity>
+        <View style={styles.inputWrapper}>
+          <BlurView intensity={95} tint="light" style={styles.inputContainer}>
+            <View style={styles.inputSheen} />
+            <TextInput
+              style={styles.input}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask about nutrition..."
+              placeholderTextColor={Colors.placeholder}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, (!inputText.trim() || sending) && styles.sendButtonDisabled]}
+              onPress={handleSend}
+              disabled={!inputText.trim() || sending}
+            >
+              <Ionicons name="send" size={18} color={Colors.white} />
+            </TouchableOpacity>
+          </BlurView>
         </View>
       </ThemedView>
     </KeyboardAvoidingView>
@@ -305,7 +308,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     padding: 16,
-    paddingBottom: 8,
+    paddingBottom: 16,
   },
   userRow: {
     flexDirection: 'row',
@@ -384,21 +387,36 @@ const styles = StyleSheet.create({
     borderRadius: 3.5,
     backgroundColor: Colors.textMuted,
   },
+  inputWrapper: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 28,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 10,
+  },
   inputContainer: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    alignItems: 'flex-end',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 28,
+    overflow: 'hidden',
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+    alignItems: 'center',
+  },
+  inputSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.background,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
     maxHeight: 100,
     fontSize: 15,
     color: Colors.dark,

@@ -42,7 +42,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.wrapper, { bottom: insets.bottom + 16 }]}>
+    <View style={[styles.wrapper, { bottom: insets.bottom }]}>
       <BlurView intensity={95} tint="light" style={styles.blur}>
         <View style={styles.sheen} />
         <View style={styles.row}>

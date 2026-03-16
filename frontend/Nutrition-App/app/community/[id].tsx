@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator,
-  Modal, Pressable,
+  Modal, Pressable, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { Colors } from '@/constants/theme';
 import {
   communityService, CommunityFeed, Announcement, LeaderboardEntry, ReactionType, Reactor,
 } from '@/src/services/communityService';
+import { BlurView } from 'expo-blur';
 
 const REACTION_OPTIONS: { type: ReactionType; emoji: string }[] = [
   { type: 'celebrate', emoji: '🎉' },
@@ -332,11 +333,14 @@ function AnnouncementCard({
 
   return (
     <TouchableOpacity
-      style={[annStyles.card, pressing && { opacity: 0.45 }]}
+      style={[pressing && { opacity: 0.45 }]}
       onLongPress={() => { setPressing(true); setPickerVisible(true); }}
       delayLongPress={400}
       activeOpacity={0.4}
     >
+      <View style={annStyles.cardOuter}>
+        <BlurView intensity={85} tint="light" style={annStyles.card}>
+          <View style={annStyles.glassSheen} />
       <View style={[annStyles.iconWrap, { backgroundColor: (meta?.color ?? Colors.primary) + '18' }]}>
         <Ionicons
           name={(meta?.icon ?? 'star-outline') as any}
@@ -374,19 +378,30 @@ function AnnouncementCard({
         reactors={reactors}
         onClose={() => setReactorsVisible(false)}
       />
+        </BlurView>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const annStyles = StyleSheet.create({
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  cardOuter: {
+    borderRadius: 14,
+    marginBottom: 10,
+  },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   iconWrap: {
     width: 36,
@@ -509,7 +524,9 @@ export default function CommunityDetailScreen() {
         {/* Leaderboard */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Leaderboard</ThemedText>
-          <View style={styles.sectionCard}>
+          <View style={styles.sectionCardOuter}>
+            <BlurView intensity={85} tint="light" style={styles.sectionCard}>
+              <View style={styles.glassSheen} />
             <TopThreeBar leaderboard={feed.leaderboard} />
             {feed.leaderboard.slice(3).map((entry, i) => (
               <View key={entry.user_id} style={styles.rankRow}>
@@ -523,6 +540,7 @@ export default function CommunityDetailScreen() {
             {feed.leaderboard.length === 0 && (
               <ThemedText style={styles.emptyNote}>No members yet.</ThemedText>
             )}
+            </BlurView>
           </View>
         </View>
 
@@ -588,10 +606,19 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 12,
   },
+  sectionCardOuter: {
+    borderRadius: 16,
+  },
   sectionCard: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   rankRow: {
     flexDirection: 'row',

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutSessionService, WorkoutSession, WorkoutSessionSet } from '@/src/services';
+import { BlurView } from 'expo-blur';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -98,7 +99,9 @@ export default function SessionDetailScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Meta card */}
-          <View style={styles.metaCard}>
+          <View style={styles.metaCardOuter}>
+            <BlurView intensity={85} tint="light" style={styles.metaCard}>
+              <View style={styles.glassSheen} />
             <ThemedText style={styles.metaDate}>{formatDate(session.started_at)}</ThemedText>
             <View style={styles.metaRow}>
               <View style={styles.metaStat}>
@@ -127,6 +130,7 @@ export default function SessionDetailScreen() {
                 </>
               )}
             </View>
+            </BlurView>
           </View>
 
           {/* Exercise groups */}
@@ -136,7 +140,9 @@ export default function SessionDetailScreen() {
             </View>
           ) : (
             exerciseGroups.map((group) => (
-              <View key={group.name} style={styles.exerciseCard}>
+              <View key={group.name} style={styles.exerciseCardOuter}>
+                <BlurView intensity={85} tint="light" style={styles.exerciseCard}>
+                  <View style={styles.glassSheen} />
                 <View style={styles.exerciseHeader}>
                   <View style={styles.exerciseIconWrap}>
                     <Ionicons name="fitness-outline" size={18} color={Colors.primary} />
@@ -182,6 +188,7 @@ export default function SessionDetailScreen() {
                     </>
                   );
                 })()}
+                </BlurView>
               </View>
             ))
           )}
@@ -239,11 +246,20 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   // ─── Meta card ───
+  metaCardOuter: {
+    borderRadius: 14,
+    marginBottom: 16,
+  },
   metaCard: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 16,
-    marginBottom: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   metaDate: {
     fontSize: 13,
@@ -275,11 +291,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border,
   },
   // ─── Exercise card ───
-  exerciseCard: {
-    backgroundColor: Colors.white,
+  exerciseCardOuter: {
     borderRadius: 14,
     marginBottom: 12,
+  },
+  exerciseCard: {
+    borderRadius: 14,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   exerciseHeader: {
     flexDirection: 'row',

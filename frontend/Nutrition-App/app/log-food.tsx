@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { nutritionService, FoodItem } from '@/src/services';
+import { BlurView } from 'expo-blur';
 
 type Unit = 'g' | 'ml' | 'oz' | 'serving';
 
@@ -123,7 +124,9 @@ export default function LogFoodScreen() {
     const isEgyptian = item.source === 'egyptian';
 
     return (
-      <View style={styles.foodItem}>
+      <View style={styles.foodItemOuter}>
+        <BlurView intensity={85} tint="light" style={styles.foodItem}>
+          <View style={styles.glassSheen} />
         <View style={styles.foodInfo}>
           <View style={styles.nameRow}>
             <ThemedText style={styles.foodName} numberOfLines={2}>
@@ -174,6 +177,7 @@ export default function LogFoodScreen() {
         <TouchableOpacity style={styles.addButton} onPress={() => addFood(item)}>
           <Ionicons name="add" size={20} color={Colors.white} />
         </TouchableOpacity>
+        </BlurView>
       </View>
     );
   };
@@ -262,13 +266,22 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, color: Colors.danger, flex: 1 },
   loadingContainer: { padding: 20, alignItems: 'center' },
   list: { flex: 1, paddingHorizontal: 16 },
+  foodItemOuter: {
+    borderRadius: 12,
+    marginBottom: 12,
+  },
   foodItem: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   foodInfo: { flex: 1, marginRight: 12, gap: 6 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },

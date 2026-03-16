@@ -13,6 +13,7 @@ import { Colors } from '@/constants/theme';
 import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { workoutService, workoutSessionService, Exercise, WorkoutRoutine } from '@/src/services';
 import { getErrorMessage } from '@/src/utils/errorUtils';
+import { BlurView } from 'expo-blur';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -403,7 +404,9 @@ export default function ActiveWorkoutScreen() {
     const isTimerRunning = exerciseTimerActive && timedExerciseId === exercise.id;
 
     return (
-      <View key={exercise.id} style={styles.exerciseCard}>
+      <View key={exercise.id} style={styles.exerciseCardOuter}>
+        <BlurView intensity={85} tint="light" style={styles.exerciseCard}>
+          <View style={styles.glassSheen} />
         <View style={styles.exerciseCardHeader}>
           <View style={styles.exerciseTitleRow}>
             <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
@@ -501,6 +504,7 @@ export default function ActiveWorkoutScreen() {
             {isTimed ? 'Log Hold' : 'Log Set'}
           </ThemedText>
         </TouchableOpacity>
+        </BlurView>
       </View>
     );
   };
@@ -815,10 +819,19 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  exerciseCardOuter: {
+    borderRadius: 14,
+  },
   exerciseCard: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
   },
   exerciseCardHeader: {
     flexDirection: 'row',
