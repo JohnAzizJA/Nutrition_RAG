@@ -175,11 +175,6 @@ export default function HomeScreen() {
   const waterGlasses = dashboardData?.water_intake || 0;
   const waterPct = Math.min(1, waterGlasses / WATER_GOAL);
 
-  const protein = (todayNutrition?.totals?.protein_g || 0) + completedPlanTotals.protein_g;
-  const carbs = (todayNutrition?.totals?.carbs_g || 0) + completedPlanTotals.carbs_g;
-  const fat = (todayNutrition?.totals?.fat_g || 0) + completedPlanTotals.fat_g;
-  const macroTotal = protein + carbs + fat || 1;
-
   const workoutsThisWeek: number = dashboardData?.workouts_this_week || 0;
   const workoutsGoal: number = dashboardData?.workouts_goal || 3;
   const workoutPct = Math.min(1, workoutsThisWeek / workoutsGoal);
@@ -281,25 +276,12 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Macros */}
+            {/* Sleep */}
             <View style={styles.todayCard}>
               <View style={styles.cardInner}>
-                <Ionicons name="nutrition" size={22} color={Colors.iconNutrition} />
-                <View style={styles.macroBreakdown}>
-                  {[
-                    { label: 'Protein', value: +protein.toFixed(1), color: Colors.iconProtein },
-                    { label: 'Carbs', value: +carbs.toFixed(1), color: Colors.iconCarbs },
-                    { label: 'Fats', value: +fat.toFixed(1), color: Colors.iconFats },
-                  ].map(({ label, value, color }) => (
-                    <View key={label} style={styles.macroRow}>
-                      <View style={[styles.macroDot, { backgroundColor: color }]} />
-                      <ThemedText style={[styles.macroLabel, { color }]}>{value}g</ThemedText>
-                      <View style={styles.macroBarTrack}>
-                        <View style={[styles.macroBarFill, { width: `${(value / macroTotal) * 100}%` as any, backgroundColor: color }]} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
+                <Ionicons name="moon" size={22} color={Colors.secondary} />
+                <ThemedText style={styles.cardValue}>0</ThemedText>
+                <ThemedText style={styles.cardLabel}>hrs sleep</ThemedText>
               </View>
             </View>
 
@@ -474,36 +456,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.primary,
-  },
-  macroBreakdown: {
-    width: '100%',
-    marginTop: 8,
-    gap: 6,
-  },
-  macroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  macroDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  macroLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    width: 32,
-  },
-  macroBarTrack: {
-    flex: 1,
-    height: 4,
-    backgroundColor: Colors.background,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  macroBarFill: {
-    height: '100%',
-    borderRadius: 2,
   },
 });
