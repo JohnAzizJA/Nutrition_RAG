@@ -602,12 +602,17 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   nextButtonText: {
     color: Colors.white,

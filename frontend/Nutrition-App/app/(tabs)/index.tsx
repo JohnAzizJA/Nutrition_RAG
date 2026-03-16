@@ -7,22 +7,66 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { dashboardService, nutritionService, mealPlanService } from '@/src/services';
+import { dashboardService, nutritionService, calculationService } from '@/src/services';
+import { DailyNutritionResponse } from '@/src/services/nutritionService';
 
 const SCREEN_W = Dimensions.get('window').width;
-// 20px scrollView padding × 2 + 16px card padding × 2
-// 20px scrollView padding × 2 + 16px card padding × 2
 const WEIGHT_CHART_W = SCREEN_W - 72;
 
 const formatWeekLabel = (dateStr: string) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-// ─── Custom weight chart ───────────────────────────────────────────────────────
+// ─── Greeting ─────────────────────────────────────────────────────────────────
 
-const PAD_L = 38; // y-axis label space
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
+// ─── Calorie Ring ─────────────────────────────────────────────────────────────
+
+const RING_R = 58;
+const RING_W = 10;
+const RING_SIZE = (RING_R + RING_W) * 2;
+const CIRCUMFERENCE = 2 * Math.PI * RING_R;
+
+function CalorieRing({ consumed, target }: { consumed: number; target: number }) {
+  const pct = target > 0 ? Math.min(1, consumed / target) : 0;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  const cx = RING_SIZE / 2;
+  const cy = RING_SIZE / 2;
+  const ringColor = pct >= 1 ? Colors.iconStreak : Colors.primary;
+
+  return (
+    <View style={styles.ringWrap}>
+      <Svg width={RING_SIZE} height={RING_SIZE}>
+        <Circle cx={cx} cy={cy} r={RING_R} fill="none"
+          stroke={Colors.background} strokeWidth={RING_W} />
+        <Circle cx={cx} cy={cy} r={RING_R} fill="none"
+          stroke={ringColor as string} strokeWidth={RING_W}
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${cx},${cy}`}
+        />
+      </Svg>
+      <View style={styles.ringCenter}>
+        <ThemedText style={styles.ringCalories}>{consumed}</ThemedText>
+        <ThemedText style={styles.ringLabel}>/ {target} kcal</ThemedText>
+      </View>
+    </View>
+  );
+}
+
+// ─── Weight Chart ─────────────────────────────────────────────────────────────
+
+const PAD_L = 38;
 const PAD_R = 8;
 const PAD_T = 8;
-const PAD_B = 20; // x-axis labels
+const PAD_B = 20;
 
 function WeightProgressChart({
   data,
@@ -46,7 +90,6 @@ function WeightProgressChart({
   const toX = (i: number) => PAD_L + slotW * i + slotW / 2;
   const toY = (w: number) => PAD_T + plotH * (1 - (w - minW) / (maxW - minW));
 
-  // Line segments only between adjacent weeks where BOTH have data
   const segments: { x1: number; y1: number; x2: number; y2: number }[] = [];
   for (let i = 0; i < N - 1; i++) {
     if (data[i].weight_kg !== null && data[i + 1].weight_kg !== null) {
@@ -61,7 +104,6 @@ function WeightProgressChart({
 
   return (
     <Svg width={width} height={HEIGHT}>
-      {/* Horizontal grid rules + y-axis labels */}
       {yTicks.map((val, i) => {
         const y = toY(val);
         return [
@@ -74,11 +116,9 @@ function WeightProgressChart({
         ];
       })}
 
-      {/* X-axis line */}
       <Line x1={PAD_L} y1={PAD_T + plotH} x2={width - PAD_R} y2={PAD_T + plotH}
         stroke={Colors.border as string} strokeWidth={1} />
 
-      {/* X-axis labels */}
       {data.map((p, i) => (
         <SvgText key={`xlbl-${i}`} x={toX(i)} y={HEIGHT - 4} fontSize={8}
           fill={Colors.textMuted as string} textAnchor="middle">
@@ -86,13 +126,11 @@ function WeightProgressChart({
         </SvgText>
       ))}
 
-      {/* Line segments */}
       {segments.map((seg, i) => (
         <Line key={`seg-${i}`} x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
           stroke={Colors.primary as string} strokeWidth={2} strokeLinecap="round" />
       ))}
 
-      {/* Dots at weeks with data */}
       {data.map((p, i) => p.weight_kg !== null ? (
         <Circle key={`dot-${i}`} cx={toX(i)} cy={toY(p.weight_kg)} r={4}
           fill={Colors.primary as string} />
@@ -102,7 +140,6 @@ function WeightProgressChart({
 }
 
 const WATER_GOAL = 8;
-const CARD_HEIGHT = 140;
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -111,8 +148,8 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [todayNutrition, setTodayNutrition] = useState<any>(null);
-  const [completedPlanTotals, setCompletedPlanTotals] = useState({ calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 });
+  const [todayNutrition, setTodayNutrition] = useState<DailyNutritionResponse | null>(null);
+  const [targetCalories, setTargetCalories] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -123,23 +160,22 @@ export default function HomeScreen() {
   const fetchDashboardData = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const [dash, nutrition, plans] = await Promise.all([
+      const [dash, nutrition, targets] = await Promise.all([
         dashboardService.getDashboard(),
         nutritionService.getDailyNutrition(today),
-        mealPlanService.getPlans(today),
+        calculationService.calculateTargets({
+          weight_kg: user?.weight_kg!,
+          height_cm: user?.height_cm!,
+          age: user?.age!,
+          gender: user?.gender!,
+          activity_level: user?.activity_level!,
+          goal: user?.goal!,
+          weight_loss_per_week: user?.weight_loss_per_week || 0.5,
+        }),
       ]);
       setDashboardData(dash);
       setTodayNutrition(nutrition);
-      const totals = plans.filter(p => p.completed).reduce(
-        (acc, p) => ({
-          calories: acc.calories + p.total_calories,
-          protein_g: acc.protein_g + p.total_protein_g,
-          carbs_g: acc.carbs_g + p.total_carbs_g,
-          fat_g: acc.fat_g + p.total_fat_g,
-        }),
-        { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
-      );
-      setCompletedPlanTotals(totals);
+      setTargetCalories(targets.target_calories ?? 0);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -179,15 +215,19 @@ export default function HomeScreen() {
   const workoutsGoal: number = dashboardData?.workouts_goal || 3;
   const workoutPct = Math.min(1, workoutsThisWeek / workoutsGoal);
 
-  // weight_history is always 5 entries (2 before, current, 2 after) from the backend
   const rawWeightHistory: { week_start: string; weight_kg: number | null }[] =
     dashboardData?.weight_history ?? [];
   const hasAnyWeight = rawWeightHistory.some(p => p.weight_kg !== null);
 
+  const consumedCalories = Math.round(todayNutrition?.totals?.calories ?? 0);
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Hello, {user?.name}</ThemedText>
+        <View>
+          <ThemedText style={styles.greeting}>{getGreeting()},</ThemedText>
+          <ThemedText type="title" style={styles.title}>{user?.name}</ThemedText>
+        </View>
         <TouchableOpacity onPress={() => router.push('/profile')}>
           <Ionicons name="person-circle-outline" size={32} color={Colors.dark} />
         </TouchableOpacity>
@@ -196,12 +236,38 @@ export default function HomeScreen() {
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         {/* Overview */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Overview</ThemedText>
+
+          {/* Calorie ring card */}
+          <View style={styles.calorieCard}>
+            <View style={styles.calorieLeft}>
+              <CalorieRing consumed={consumedCalories} target={targetCalories} />
+            </View>
+            <View style={styles.calorieRight}>
+              <ThemedText style={styles.calorieCardTitle}>Calories Today</ThemedText>
+              <View style={styles.calorieStatRow}>
+                <ThemedText style={styles.calorieStatValue}>{consumedCalories}</ThemedText>
+                <ThemedText style={styles.calorieStatLabel}> consumed</ThemedText>
+              </View>
+              <View style={styles.calorieStatRow}>
+                <ThemedText style={[styles.calorieStatValue, { color: Colors.textMuted, fontSize: 16 }]}>
+                  {Math.max(0, targetCalories - consumedCalories)}
+                </ThemedText>
+                <ThemedText style={styles.calorieStatLabel}> remaining</ThemedText>
+              </View>
+              <TouchableOpacity
+                style={styles.logMealBtn}
+                onPress={() => router.push('/(tabs)/calories')}
+              >
+                <Ionicons name="add" size={14} color={Colors.white} />
+                <ThemedText style={styles.logMealBtnText}>Log Meal</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Weight Progress Graph */}
           <View style={styles.weightCard}>
@@ -250,57 +316,44 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Today</ThemedText>
 
-          <View style={styles.todayGrid}>
-            {/* Water */}
-            <View style={styles.todayCard}>
-              <View style={[styles.liquidFill, { height: waterPct * CARD_HEIGHT, backgroundColor: Colors.iconWater + '30' }]} />
-              <View style={styles.cardInner}>
-                <Ionicons name="water" size={22} color={Colors.iconWater} />
-                <ThemedText style={[styles.cardValue, { color: Colors.iconWater }]}>{waterGlasses}</ThemedText>
-                <ThemedText style={styles.cardLabel}>/ {WATER_GOAL} glasses</ThemedText>
-                <View style={styles.waterControls}>
-                  <TouchableOpacity
-                    style={styles.waterButton}
-                    onPress={() => updateWater(-1)}
-                    disabled={!waterGlasses}
-                  >
-                    <Ionicons name="remove" size={14} color={waterGlasses ? Colors.primary : Colors.inactive} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.waterButton}
-                    onPress={() => updateWater(1)}
-                  >
-                    <Ionicons name="add" size={14} color={Colors.primary} />
-                  </TouchableOpacity>
+          {/* Water — full width */}
+          <View style={styles.waterCard}>
+            <View style={[styles.liquidFill, { height: waterPct * 120, backgroundColor: Colors.iconWater + '25' }]} />
+            <View style={styles.waterInner}>
+              <View style={styles.waterLeft}>
+                <Ionicons name="water" size={26} color={Colors.iconWater} />
+                <View style={styles.waterTextGroup}>
+                  <ThemedText style={[styles.cardValue, { color: Colors.iconWater }]}>
+                    {waterGlasses}
+                    <ThemedText style={styles.cardLabel}> / {WATER_GOAL}</ThemedText>
+                  </ThemedText>
+                  <ThemedText style={styles.cardLabel}>glasses of water</ThemedText>
                 </View>
               </View>
-            </View>
-
-            {/* Sleep */}
-            <View style={styles.todayCard}>
-              <View style={styles.cardInner}>
-                <Ionicons name="moon" size={22} color={Colors.secondary} />
-                <ThemedText style={styles.cardValue}>0</ThemedText>
-                <ThemedText style={styles.cardLabel}>hrs sleep</ThemedText>
+              <View style={styles.waterControls}>
+                <TouchableOpacity
+                  style={styles.waterButton}
+                  onPress={() => updateWater(-1)}
+                  disabled={!waterGlasses}
+                >
+                  <Ionicons name="remove" size={16} color={waterGlasses ? Colors.primary : Colors.inactive} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.waterButton} onPress={() => updateWater(1)}>
+                  <Ionicons name="add" size={16} color={Colors.primary} />
+                </TouchableOpacity>
               </View>
             </View>
+          </View>
 
-            {/* Steps */}
-            <View style={styles.todayCard}>
-              <View style={styles.cardInner}>
-                <Ionicons name="footsteps" size={22} color={Colors.iconSteps} />
-                <ThemedText style={styles.cardValue}>0</ThemedText>
-                <ThemedText style={styles.cardLabel}>Steps</ThemedText>
-              </View>
+          {/* Apple Health coming soon */}
+          <View style={styles.comingSoonCard}>
+            <Ionicons name="heart-circle-outline" size={22} color={Colors.danger} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <ThemedText style={styles.comingSoonTitle}>Apple Health Sync</ThemedText>
+              <ThemedText style={styles.comingSoonSub}>Steps, sleep & calories burned — coming soon</ThemedText>
             </View>
-
-            {/* Calories Burned */}
-            <View style={styles.todayCard}>
-              <View style={styles.cardInner}>
-                <Ionicons name="flame" size={22} color={Colors.iconCalories} />
-                <ThemedText style={styles.cardValue}>0</ThemedText>
-                <ThemedText style={styles.cardLabel}>Burned</ThemedText>
-              </View>
+            <View style={styles.comingSoonBadge}>
+              <ThemedText style={styles.comingSoonBadgeText}>Soon</ThemedText>
             </View>
           </View>
         </View>
@@ -318,18 +371,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
     paddingTop: 60,
+    paddingBottom: 12,
     backgroundColor: Colors.background,
+  },
+  greeting: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.dark,
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.dark,
   },
   loadingContainer: {
     flex: 1,
@@ -340,17 +399,98 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.dark,
-    marginBottom: 16,
+    marginBottom: 14,
   },
+  // ─── Calorie ring card ───
+  calorieCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  calorieLeft: {
+    marginRight: 20,
+  },
+  ringWrap: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ringCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  ringCalories: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.dark,
+  },
+  ringLabel: {
+    fontSize: 10,
+    color: Colors.textMuted,
+  },
+  calorieRight: {
+    flex: 1,
+  },
+  calorieCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    marginBottom: 8,
+  },
+  calorieStatRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
+  calorieStatValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.dark,
+  },
+  calorieStatLabel: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  logMealBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  logMealBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  // ─── Weight chart ───
   weightCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 14,
     overflow: 'hidden',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   chartEmpty: {
     height: 80,
@@ -378,6 +518,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '600',
   },
+  // ─── Streak / workouts row ───
   overviewRow: {
     flexDirection: 'row',
     gap: 12,
@@ -388,6 +529,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardValue: {
     fontSize: 24,
@@ -416,19 +562,19 @@ const styles = StyleSheet.create({
   workoutBarComplete: {
     backgroundColor: Colors.iconStreak,
   },
-  todayGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  todayCard: {
-    width: '47%',
-    height: CARD_HEIGHT,
+  // ─── Water card (full width) ───
+  waterCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,
+    height: 120,
     overflow: 'hidden',
+    marginBottom: 12,
     justifyContent: 'center',
-    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   liquidFill: {
     position: 'absolute',
@@ -436,25 +582,67 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  cardInner: {
+  waterInner: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
     zIndex: 1,
-    width: '100%',
-    paddingHorizontal: 12,
+  },
+  waterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  waterTextGroup: {
+    gap: 2,
   },
   waterControls: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 8,
   },
   waterButton: {
     backgroundColor: Colors.background,
     borderRadius: 10,
-    width: 26,
-    height: 26,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.primary,
+  },
+  // ─── Coming soon banner ───
+  comingSoonCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 14,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  comingSoonTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.dark,
+    marginBottom: 2,
+  },
+  comingSoonSub: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  comingSoonBadge: {
+    backgroundColor: Colors.secondary + '18',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  comingSoonBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.secondary,
   },
 });

@@ -63,6 +63,8 @@ export const ENDPOINTS = {
     END: (id: number) => `/api/workout-sessions/${id}/end`,
     VOLUME_HISTORY: '/api/workout-sessions/volume-history',
     DELETE: (id: number) => `/api/workout-sessions/${id}`,
+    DELETE_SET: (sessionId: number, setId: number) => `/api/workout-sessions/${sessionId}/sets/${setId}`,
+    UPDATE_SET: (sessionId: number, setId: number) => `/api/workout-sessions/${sessionId}/sets/${setId}`,
   },
 
   // Calculations

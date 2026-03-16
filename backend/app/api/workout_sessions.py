@@ -36,6 +36,12 @@ class EndSessionRequest(BaseModel):
     duration_seconds: int = Field(..., ge=0)
 
 
+class UpdateSetRequest(BaseModel):
+    reps: Optional[int] = Field(None, ge=1, le=1000)
+    weight_kg: Optional[float] = Field(None, ge=0, le=1000)
+    duration_seconds: Optional[int] = Field(None, ge=1, le=7200)
+
+
 @router.post("/workout-sessions")
 async def start_session(
     request: StartSessionRequest,
@@ -143,6 +149,59 @@ async def delete_session(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete session: {str(e)}")
+
+
+@router.delete("/workout-sessions/{session_id}/sets/{set_id}")
+async def delete_set(
+    session_id: int,
+    set_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a specific set from a workout session"""
+    try:
+        success = session_repo.delete_set(session_id, set_id, current_user.id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Set not found")
+        return {"message": "Set deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete set: {str(e)}")
+
+
+@router.patch("/workout-sessions/{session_id}/sets/{set_id}")
+async def update_set(
+    session_id: int,
+    set_id: int,
+    request: UpdateSetRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update reps or weight for a specific set"""
+    try:
+        workout_set = session_repo.update_set(
+            session_id=session_id,
+            set_id=set_id,
+            user_id=current_user.id,
+            reps=request.reps,
+            weight_kg=request.weight_kg,
+            duration_seconds=request.duration_seconds,
+        )
+        if not workout_set:
+            raise HTTPException(status_code=404, detail="Set not found")
+        return {
+            "id": workout_set.id,
+            "session_id": workout_set.session_id,
+            "exercise_name": workout_set.exercise_name,
+            "set_number": workout_set.set_number,
+            "reps": workout_set.reps,
+            "weight_kg": workout_set.weight_kg,
+            "duration_seconds": workout_set.duration_seconds,
+            "completed_at": workout_set.completed_at,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update set: {str(e)}")
 
 
 @router.get("/workout-sessions/volume-history")

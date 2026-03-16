@@ -374,9 +374,14 @@ const styles = StyleSheet.create({
   },
   routineCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   routineHeader: {
     flexDirection: 'row',
@@ -454,9 +459,14 @@ const styles = StyleSheet.create({
   },
   sessionCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 10,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sessionHeader: {
     flexDirection: 'row',

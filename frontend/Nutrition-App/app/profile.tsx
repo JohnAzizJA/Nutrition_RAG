@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
@@ -19,6 +20,7 @@ const MEAL_PLAN_KEY = 'mealPlanEnabled';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, logout, updateUser } = useAuth();
   const { isConnected: spotifyConnected, connect: spotifyConnect, disconnect: spotifyDisconnect } = useSpotify();
   const [spotifyLoading, setSpotifyLoading] = useState(false);
@@ -177,7 +179,7 @@ export default function ProfileScreen() {
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.dark} />
         </TouchableOpacity>
@@ -189,7 +191,9 @@ export default function ProfileScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color={Colors.white} />
+            <ThemedText style={styles.avatarInitials}>
+              {(user?.name ?? 'U').split(/[\s._]+/).map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('')}
+            </ThemedText>
           </View>
           <ThemedText style={styles.name}>{user?.name || 'User'}</ThemedText>
           <ThemedText style={styles.email}>{user?.email || ''}</ThemedText>
@@ -458,8 +462,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -486,6 +490,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  avatarInitials: {
+    fontSize: 36,
+    lineHeight: 44,
+    fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: 1,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   name: {
     fontSize: 24,
@@ -509,6 +527,13 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     backgroundColor: Colors.white,
+    borderRadius: 14,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    marginHorizontal: 20,
   },
   card: {
     flexDirection: 'row',

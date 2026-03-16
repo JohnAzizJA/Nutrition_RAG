@@ -351,14 +351,14 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 6,
-    backgroundColor: Colors.secondary + '18',
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   setBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.secondary,
+    color: Colors.white,
   },
   emptyExercises: {
     alignItems: 'center',

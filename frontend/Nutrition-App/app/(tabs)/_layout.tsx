@@ -35,10 +35,10 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="workouts"
+        name="index"
         options={{
-          title: 'Workouts',
-          tabBarIcon: ({ color }) => <Ionicons name="barbell" size={22} color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <Ionicons name="home" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -49,10 +49,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="workouts"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <Ionicons name="home" size={22} color={color} />,
+          title: 'Workouts',
+          tabBarIcon: ({ color }) => <Ionicons name="barbell" size={22} color={color} />,
         }}
       />
       <Tabs.Screen

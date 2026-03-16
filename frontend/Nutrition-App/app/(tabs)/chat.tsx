@@ -11,6 +11,19 @@ import { getErrorMessage } from '@/src/utils/errorUtils';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Swipeable } from 'react-native-gesture-handler';
 
+const relativeTime = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
 export default function ChatScreen() {
   const router = useRouter();
   const { isLoading: authLoading, logout } = useAuth();
@@ -100,15 +113,23 @@ export default function ChatScreen() {
                   style={styles.conversationItem}
                   onPress={() => handleOpenChat(item.thread_id)}
                 >
+                  <View style={styles.conversationIcon}>
+                    <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
+                  </View>
                   <View style={styles.conversationContent}>
-                    <ThemedText style={styles.conversationPreview} numberOfLines={2}>
-                      {item.last_message}
-                    </ThemedText>
-                    <ThemedText style={styles.conversationTime}>
-                      {new Date(item.last_message_time).toLocaleDateString()}
+                    <View style={styles.conversationTopRow}>
+                      <ThemedText style={styles.conversationPreview} numberOfLines={1}>
+                        {item.last_message}
+                      </ThemedText>
+                      <ThemedText style={styles.conversationTime}>
+                        {relativeTime(item.last_message_time)}
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={styles.conversationCount}>
+                      {item.message_count} {item.message_count === 1 ? 'message' : 'messages'}
                     </ThemedText>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.dark} />
+                  <Ionicons name="chevron-forward" size={16} color={Colors.inactive} />
                 </TouchableOpacity>
               </Swipeable>
             )}
@@ -169,22 +190,49 @@ const styles = StyleSheet.create({
   conversationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     marginHorizontal: 20,
     marginBottom: 8,
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 14,
+    gap: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  conversationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '18',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   conversationContent: {
     flex: 1,
-    marginRight: 12,
+  },
+  conversationTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
   },
   conversationPreview: {
     fontSize: 14,
+    fontWeight: '600',
     color: Colors.dark,
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 8,
   },
   conversationTime: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    flexShrink: 0,
+  },
+  conversationCount: {
     fontSize: 12,
     color: Colors.textMuted,
   },

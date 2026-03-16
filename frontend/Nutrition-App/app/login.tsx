@@ -201,10 +201,15 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
     marginTop: 4,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginButtonText: {
     color: Colors.white,

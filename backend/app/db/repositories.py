@@ -787,6 +787,40 @@ class WorkoutSessionRepository:
             db.refresh(s)
             return s
 
+    def delete_set(self, session_id: int, set_id: int, user_id: int) -> bool:
+        with get_db() as db:
+            ws = db.query(WorkoutSessionSet).join(WorkoutSession).filter(
+                WorkoutSessionSet.id == set_id,
+                WorkoutSessionSet.session_id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not ws:
+                return False
+            db.delete(ws)
+            db.commit()
+            return True
+
+    def update_set(self, session_id: int, set_id: int, user_id: int,
+                   reps: Optional[int] = None, weight_kg: Optional[float] = None,
+                   duration_seconds: Optional[int] = None) -> Optional[WorkoutSessionSet]:
+        with get_db() as db:
+            ws = db.query(WorkoutSessionSet).join(WorkoutSession).filter(
+                WorkoutSessionSet.id == set_id,
+                WorkoutSessionSet.session_id == session_id,
+                WorkoutSession.user_id == user_id,
+            ).first()
+            if not ws:
+                return None
+            if reps is not None:
+                ws.reps = reps
+            if weight_kg is not None:
+                ws.weight_kg = weight_kg
+            if duration_seconds is not None:
+                ws.duration_seconds = duration_seconds
+            db.commit()
+            db.refresh(ws)
+            return ws
+
     def end_session(self, session_id: int, user_id: int, duration_seconds: int) -> Optional[WorkoutSession]:
         with get_db() as db:
             session = db.query(WorkoutSession).filter(
