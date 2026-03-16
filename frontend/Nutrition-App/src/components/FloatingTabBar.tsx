@@ -8,9 +8,9 @@ import { ThemedText } from './themed-text';
 import { Colors } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const H_INSET = 24;
+const H_INSET = 25;
 const BAR_WIDTH = SCREEN_WIDTH - H_INSET * 2;
-const BAR_HEIGHT = 64;
+const BAR_HEIGHT = 65;
 
 const TAB_ICONS: Record<string, { active: string; inactive: string }> = {
   index: { active: 'home', inactive: 'home-outline' },
@@ -118,10 +118,10 @@ const styles = StyleSheet.create({
   },
   activeCircle: {
     position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    width: 65,
+    height: 65,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.60)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.75)',
   },
