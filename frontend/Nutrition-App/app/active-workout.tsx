@@ -407,103 +407,103 @@ export default function ActiveWorkoutScreen() {
       <View key={exercise.id} style={styles.exerciseCardOuter}>
         <BlurView intensity={85} tint="light" style={styles.exerciseCard}>
           <View style={styles.glassSheen} />
-        <View style={styles.exerciseCardHeader}>
-          <View style={styles.exerciseTitleRow}>
-            <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
-            {isTimed && (
-              <View style={styles.timedBadge}>
-                <Ionicons name="timer-outline" size={11} color={Colors.primary} />
-                <ThemedText style={styles.timedBadgeText}>Timed</ThemedText>
-              </View>
+          <View style={styles.exerciseCardHeader}>
+            <View style={styles.exerciseTitleRow}>
+              <ThemedText style={styles.exerciseName}>{exercise.name}</ThemedText>
+              {isTimed && (
+                <View style={styles.timedBadge}>
+                  <Ionicons name="timer-outline" size={11} color={Colors.primary} />
+                  <ThemedText style={styles.timedBadgeText}>Timed</ThemedText>
+                </View>
+              )}
+            </View>
+            <ThemedText style={styles.setsProgress}>
+              {setsLogged}/{targetSets} sets
+            </ThemedText>
+          </View>
+
+          {/* Exercise meta */}
+          <View style={styles.exerciseMeta}>
+            {isTimed ? (
+              <ThemedText style={styles.metaText}>
+                {formatTime(exercise.duration_seconds!)} hold
+              </ThemedText>
+            ) : (
+              <>
+                <ThemedText style={styles.metaText}>{exercise.sets} sets × {exercise.reps} reps</ThemedText>
+                {exercise.weight_kg ? (
+                  <ThemedText style={styles.metaText}>
+                    {exercise.weight_kg} kg target
+                  </ThemedText>
+                ) : null}
+              </>
             )}
           </View>
-          <ThemedText style={styles.setsProgress}>
-            {setsLogged}/{targetSets} sets
-          </ThemedText>
-        </View>
 
-        {/* Exercise meta */}
-        <View style={styles.exerciseMeta}>
-          {isTimed ? (
-            <ThemedText style={styles.metaText}>
-              {formatTime(exercise.duration_seconds!)} hold
-            </ThemedText>
-          ) : (
-            <>
-              <ThemedText style={styles.metaText}>{exercise.sets} sets × {exercise.reps} reps</ThemedText>
-              {exercise.weight_kg ? (
-                <ThemedText style={styles.metaText}>
-                  {exercise.weight_kg} kg target
-                </ThemedText>
-              ) : null}
-            </>
-          )}
-        </View>
-
-        {/* Exercise countdown with pause/stop */}
-        {isTimerRunning && (
-          <View style={styles.exerciseCountdown}>
-            <Ionicons name="timer" size={16} color={Colors.primary} />
-            <ThemedText style={styles.exerciseCountdownText}>
-              {formatTime(exerciseTimerRemaining)} remaining
-              {exerciseTimerPaused ? '  (paused)' : ''}
-            </ThemedText>
-            <View style={styles.timerControls}>
-              <TouchableOpacity style={styles.timerControlBtn} onPress={exerciseTimerPaused ? resumeExerciseTimer : pauseExerciseTimer}>
-                <Ionicons name={exerciseTimerPaused ? 'play' : 'pause'} size={14} color={Colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.timerControlBtn} onPress={stopExerciseTimer}>
-                <Ionicons name="stop" size={14} color={Colors.danger} />
-              </TouchableOpacity>
+          {/* Exercise countdown with pause/stop */}
+          {isTimerRunning && (
+            <View style={styles.exerciseCountdown}>
+              <Ionicons name="timer" size={16} color={Colors.primary} />
+              <ThemedText style={styles.exerciseCountdownText}>
+                {formatTime(exerciseTimerRemaining)} remaining
+                {exerciseTimerPaused ? '  (paused)' : ''}
+              </ThemedText>
+              <View style={styles.timerControls}>
+                <TouchableOpacity style={styles.timerControlBtn} onPress={exerciseTimerPaused ? resumeExerciseTimer : pauseExerciseTimer}>
+                  <Ionicons name={exerciseTimerPaused ? 'play' : 'pause'} size={14} color={Colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.timerControlBtn} onPress={stopExerciseTimer}>
+                  <Ionicons name="stop" size={14} color={Colors.danger} />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Logged sets */}
-        {setsLogged > 0 && (
-          <View style={styles.loggedSets}>
-            {loggedSets
-              .filter(s => s.exerciseId === exercise.id)
-              .map(s => (
-                <View key={s.setNumber} style={styles.loggedSetRow}>
-                  <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
-                  <ThemedText style={styles.loggedSetText}>
-                    Set {s.setNumber}
-                    {s.durationSeconds ? ` · ${formatTime(s.durationSeconds)}` : ''}
-                    {s.reps ? ` · ${s.reps} reps` : ''}
-                    {s.weightKg ? ` · ${s.weightKg} kg` : ''}
-                  </ThemedText>
-                  {/* Edit/delete only for non-timed sets */}
-                  {!s.durationSeconds && (
-                    <View style={styles.setActions}>
-                      <TouchableOpacity style={styles.setActionBtn} onPress={() => openEditModal(s)}>
-                        <Ionicons name="pencil" size={13} color={Colors.textMuted} />
-                      </TouchableOpacity>
+          {/* Logged sets */}
+          {setsLogged > 0 && (
+            <View style={styles.loggedSets}>
+              {loggedSets
+                .filter(s => s.exerciseId === exercise.id)
+                .map(s => (
+                  <View key={s.setNumber} style={styles.loggedSetRow}>
+                    <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
+                    <ThemedText style={styles.loggedSetText}>
+                      Set {s.setNumber}
+                      {s.durationSeconds ? ` · ${formatTime(s.durationSeconds)}` : ''}
+                      {s.reps ? ` · ${s.reps} reps` : ''}
+                      {s.weightKg ? ` · ${s.weightKg} kg` : ''}
+                    </ThemedText>
+                    {/* Edit/delete only for non-timed sets */}
+                    {!s.durationSeconds && (
+                      <View style={styles.setActions}>
+                        <TouchableOpacity style={styles.setActionBtn} onPress={() => openEditModal(s)}>
+                          <Ionicons name="pencil" size={13} color={Colors.textMuted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.setActionBtn} onPress={() => handleDeleteSet(s)}>
+                          <Ionicons name="trash-outline" size={13} color={Colors.danger} />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {s.durationSeconds && (
                       <TouchableOpacity style={styles.setActionBtn} onPress={() => handleDeleteSet(s)}>
                         <Ionicons name="trash-outline" size={13} color={Colors.danger} />
                       </TouchableOpacity>
-                    </View>
-                  )}
-                  {s.durationSeconds && (
-                    <TouchableOpacity style={styles.setActionBtn} onPress={() => handleDeleteSet(s)}>
-                      <Ionicons name="trash-outline" size={13} color={Colors.danger} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
-          </View>
-        )}
+                    )}
+                  </View>
+                ))}
+            </View>
+          )}
 
-        <TouchableOpacity
-          style={[styles.logSetButton, isTimerRunning && styles.logSetButtonDisabled]}
-          onPress={() => openLogModal(exercise)}
-          disabled={isTimerRunning}
-        >
-          <Ionicons name="add" size={16} color={Colors.white} />
-          <ThemedText style={styles.logSetButtonText}>
-            {isTimed ? 'Log Hold' : 'Log Set'}
-          </ThemedText>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.logSetButton, isTimerRunning && styles.logSetButtonDisabled]}
+            onPress={() => openLogModal(exercise)}
+            disabled={isTimerRunning}
+          >
+            <Ionicons name="add" size={16} color={Colors.white} />
+            <ThemedText style={styles.logSetButtonText}>
+              {isTimed ? 'Log Hold' : 'Log Set'}
+            </ThemedText>
+          </TouchableOpacity>
         </BlurView>
       </View>
     );
@@ -554,7 +554,6 @@ export default function ActiveWorkoutScreen() {
 
       {/* Stopwatch bar */}
       <View style={styles.statusBar}>
-        <Ionicons name="time-outline" size={18} color={Colors.primary} />
         <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>
       </View>
 
@@ -734,12 +733,10 @@ const styles = StyleSheet.create({
   },
   playerContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 16,
     left: 0,
     right: 0,
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    alignItems: 'center',
   },
   headerSheen: {
     ...StyleSheet.absoluteFillObject,
@@ -784,11 +781,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.white,
+    backgroundColor: 'transparent',
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.60)',
   },
   stopwatchText: {
     fontSize: 28,
