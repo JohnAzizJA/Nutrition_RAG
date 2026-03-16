@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, Dimensions, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Svg, { Line, Circle, Text as SvgText } from 'react-native-svg';
@@ -243,71 +244,83 @@ export default function HomeScreen() {
           <ThemedText style={styles.sectionTitle}>Overview</ThemedText>
 
           {/* Calorie ring card */}
-          <View style={styles.calorieCard}>
-            <View style={styles.calorieLeft}>
-              <CalorieRing consumed={consumedCalories} target={targetCalories} />
-            </View>
-            <View style={styles.calorieRight}>
-              <ThemedText style={styles.calorieCardTitle}>Calories Today</ThemedText>
-              <View style={styles.calorieStatRow}>
-                <ThemedText style={styles.calorieStatValue}>{consumedCalories}</ThemedText>
-                <ThemedText style={styles.calorieStatLabel}> consumed</ThemedText>
+          <View style={styles.calorieCardOuter}>
+            <BlurView intensity={60} tint="light" style={styles.calorieCard}>
+              <View style={styles.glassSheen} />
+              <View style={styles.calorieLeft}>
+                <CalorieRing consumed={consumedCalories} target={targetCalories} />
               </View>
-              <View style={styles.calorieStatRow}>
-                <ThemedText style={[styles.calorieStatValue, { color: Colors.textMuted, fontSize: 16 }]}>
-                  {Math.max(0, targetCalories - consumedCalories)}
-                </ThemedText>
-                <ThemedText style={styles.calorieStatLabel}> remaining</ThemedText>
+              <View style={styles.calorieRight}>
+                <ThemedText style={styles.calorieCardTitle}>Calories Today</ThemedText>
+                <View style={styles.calorieStatRow}>
+                  <ThemedText style={styles.calorieStatValue}>{consumedCalories}</ThemedText>
+                  <ThemedText style={styles.calorieStatLabel}> consumed</ThemedText>
+                </View>
+                <View style={styles.calorieStatRow}>
+                  <ThemedText style={[styles.calorieStatValue, { color: Colors.textMuted, fontSize: 16 }]}>
+                    {Math.max(0, targetCalories - consumedCalories)}
+                  </ThemedText>
+                  <ThemedText style={styles.calorieStatLabel}> remaining</ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={styles.logMealBtn}
+                  onPress={() => router.push('/(tabs)/calories')}
+                >
+                  <Ionicons name="add" size={14} color={Colors.white} />
+                  <ThemedText style={styles.logMealBtnText}>Log Meal</ThemedText>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.logMealBtn}
-                onPress={() => router.push('/(tabs)/calories')}
-              >
-                <Ionicons name="add" size={14} color={Colors.white} />
-                <ThemedText style={styles.logMealBtnText}>Log Meal</ThemedText>
-              </TouchableOpacity>
-            </View>
+            </BlurView>
           </View>
 
           {/* Weight Progress Graph */}
-          <View style={styles.weightCard}>
-            <View style={styles.weightHeader}>
-              <ThemedText style={styles.weightTitle}>Weight Progress</ThemedText>
-              <TouchableOpacity onPress={() => router.push('/profile')}>
-                <ThemedText style={styles.logWeightLink}>+ Log Weight</ThemedText>
-              </TouchableOpacity>
-            </View>
-            {hasAnyWeight ? (
-              <WeightProgressChart data={rawWeightHistory} width={WEIGHT_CHART_W} />
-            ) : (
-              <View style={styles.chartEmpty}>
-                <ThemedText style={styles.chartEmptyText}>Log your weight to see progress</ThemedText>
+          <View style={styles.weightCardOuter}>
+            <BlurView intensity={60} tint="light" style={styles.weightCard}>
+              <View style={styles.glassSheen} />
+              <View style={styles.weightHeader}>
+                <ThemedText style={styles.weightTitle}>Weight Progress</ThemedText>
+                <TouchableOpacity onPress={() => router.push('/profile')}>
+                  <ThemedText style={styles.logWeightLink}>+ Log Weight</ThemedText>
+                </TouchableOpacity>
               </View>
-            )}
+              {hasAnyWeight ? (
+                <WeightProgressChart data={rawWeightHistory} width={WEIGHT_CHART_W} />
+              ) : (
+                <View style={styles.chartEmpty}>
+                  <ThemedText style={styles.chartEmptyText}>Log your weight to see progress</ThemedText>
+                </View>
+              )}
+            </BlurView>
           </View>
 
           <View style={styles.overviewRow}>
             {/* Streak */}
-            <View style={styles.overviewCard}>
-              <Ionicons name="flame" size={24} color={Colors.iconStreak} />
-              <ThemedText style={styles.cardValue}>{dashboardData?.streak || 0}</ThemedText>
-              <ThemedText style={styles.cardLabel}>Day Streak</ThemedText>
+            <View style={styles.overviewCardOuter}>
+              <BlurView intensity={60} tint="light" style={styles.overviewCard}>
+                <View style={styles.glassSheen} />
+                <Ionicons name="flame" size={24} color={Colors.iconStreak} />
+                <ThemedText style={styles.cardValue}>{dashboardData?.streak || 0}</ThemedText>
+                <ThemedText style={styles.cardLabel}>Day Streak</ThemedText>
+              </BlurView>
             </View>
 
             {/* Workouts this week */}
-            <View style={styles.overviewCard}>
-              <Ionicons name="barbell" size={24} color={Colors.primary} />
-              <ThemedText style={styles.cardValue}>
-                {workoutsThisWeek}/{workoutsGoal}
-              </ThemedText>
-              <ThemedText style={styles.cardLabel}>Workouts / week</ThemedText>
-              <View style={styles.workoutBarTrack}>
-                <View style={[
-                  styles.workoutBarFill,
-                  { width: `${workoutPct * 100}%` as any },
-                  workoutPct >= 1 && styles.workoutBarComplete,
-                ]} />
-              </View>
+            <View style={styles.overviewCardOuter}>
+              <BlurView intensity={60} tint="light" style={styles.overviewCard}>
+                <View style={styles.glassSheen} />
+                <Ionicons name="barbell" size={24} color={Colors.primary} />
+                <ThemedText style={styles.cardValue}>
+                  {workoutsThisWeek}/{workoutsGoal}
+                </ThemedText>
+                <ThemedText style={styles.cardLabel}>Workouts / week</ThemedText>
+                <View style={styles.workoutBarTrack}>
+                  <View style={[
+                    styles.workoutBarFill,
+                    { width: `${workoutPct * 100}%` as any },
+                    workoutPct >= 1 && styles.workoutBarComplete,
+                  ]} />
+                </View>
+              </BlurView>
             </View>
           </View>
         </View>
@@ -317,44 +330,50 @@ export default function HomeScreen() {
           <ThemedText style={styles.sectionTitle}>Today</ThemedText>
 
           {/* Water — full width */}
-          <View style={styles.waterCard}>
-            <View style={[styles.liquidFill, { height: waterPct * 120, backgroundColor: Colors.iconWater + '25' }]} />
-            <View style={styles.waterInner}>
-              <View style={styles.waterLeft}>
-                <Ionicons name="water" size={26} color={Colors.iconWater} />
-                <View style={styles.waterTextGroup}>
-                  <ThemedText style={[styles.cardValue, { color: Colors.iconWater }]}>
-                    {waterGlasses}
-                    <ThemedText style={styles.cardLabel}> / {WATER_GOAL}</ThemedText>
-                  </ThemedText>
-                  <ThemedText style={styles.cardLabel}>glasses of water</ThemedText>
+          <View style={styles.waterCardOuter}>
+            <BlurView intensity={60} tint="light" style={styles.waterCard}>
+              <View style={styles.glassSheen} />
+              <View style={[styles.liquidFill, { height: waterPct * 120, backgroundColor: Colors.iconWater + '25' }]} />
+              <View style={styles.waterInner}>
+                <View style={styles.waterLeft}>
+                  <Ionicons name="water" size={26} color={Colors.iconWater} />
+                  <View style={styles.waterTextGroup}>
+                    <ThemedText style={[styles.cardValue, { color: Colors.iconWater }]}>
+                      {waterGlasses}
+                      <ThemedText style={styles.cardLabel}> / {WATER_GOAL}</ThemedText>
+                    </ThemedText>
+                    <ThemedText style={styles.cardLabel}>glasses of water</ThemedText>
+                  </View>
+                </View>
+                <View style={styles.waterControls}>
+                  <TouchableOpacity
+                    style={styles.waterButton}
+                    onPress={() => updateWater(-1)}
+                    disabled={!waterGlasses}
+                  >
+                    <Ionicons name="remove" size={16} color={waterGlasses ? Colors.primary : Colors.inactive} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.waterButton} onPress={() => updateWater(1)}>
+                    <Ionicons name="add" size={16} color={Colors.primary} />
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.waterControls}>
-                <TouchableOpacity
-                  style={styles.waterButton}
-                  onPress={() => updateWater(-1)}
-                  disabled={!waterGlasses}
-                >
-                  <Ionicons name="remove" size={16} color={waterGlasses ? Colors.primary : Colors.inactive} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.waterButton} onPress={() => updateWater(1)}>
-                  <Ionicons name="add" size={16} color={Colors.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            </BlurView>
           </View>
 
           {/* Apple Health coming soon */}
-          <View style={styles.comingSoonCard}>
-            <Ionicons name="heart-circle-outline" size={22} color={Colors.danger} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <ThemedText style={styles.comingSoonTitle}>Apple Health Sync</ThemedText>
-              <ThemedText style={styles.comingSoonSub}>Steps, sleep & calories burned — coming soon</ThemedText>
-            </View>
-            <View style={styles.comingSoonBadge}>
-              <ThemedText style={styles.comingSoonBadgeText}>Soon</ThemedText>
-            </View>
+          <View style={styles.comingSoonCardOuter}>
+            <BlurView intensity={60} tint="light" style={styles.comingSoonCard}>
+              <View style={styles.glassSheen} />
+              <Ionicons name="heart-circle-outline" size={22} color={Colors.danger} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <ThemedText style={styles.comingSoonTitle}>Apple Health Sync</ThemedText>
+                <ThemedText style={styles.comingSoonSub}>Steps, sleep & calories burned — coming soon</ThemedText>
+              </View>
+              <View style={styles.comingSoonBadge}>
+                <ThemedText style={styles.comingSoonBadgeText}>Soon</ThemedText>
+              </View>
+            </BlurView>
           </View>
         </View>
       </ScrollView>
@@ -404,19 +423,29 @@ const styles = StyleSheet.create({
     color: Colors.dark,
     marginBottom: 14,
   },
+  // ─── Shared glass sheen ───
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.76)' : 'rgba(255,255,255,0.26)',
+  },
   // ─── Calorie ring card ───
-  calorieCard: {
-    backgroundColor: Colors.white,
+  calorieCardOuter: {
     borderRadius: 16,
-    padding: 16,
     marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  calorieCard: {
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.52)',
   },
   calorieLeft: {
     marginRight: 20,
@@ -480,17 +509,21 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   // ─── Weight chart ───
-  weightCard: {
-    backgroundColor: Colors.white,
+  weightCardOuter: {
     borderRadius: 16,
-    padding: 16,
     marginBottom: 14,
-    overflow: 'hidden',
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  weightCard: {
+    borderRadius: 16,
+    padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.52)',
   },
   chartEmpty: {
     height: 80,
@@ -523,17 +556,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  overviewCard: {
+  overviewCardOuter: {
     flex: 1,
-    backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  overviewCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.52)',
   },
   cardValue: {
     fontSize: 24,
@@ -563,18 +602,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.iconStreak,
   },
   // ─── Water card (full width) ───
-  waterCard: {
-    backgroundColor: Colors.white,
+  waterCardOuter: {
     borderRadius: 16,
     height: 120,
-    overflow: 'hidden',
     marginBottom: 12,
-    justifyContent: 'center',
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  waterCard: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.52)',
   },
   liquidFill: {
     position: 'absolute',
@@ -612,17 +656,22 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   // ─── Coming soon banner ───
-  comingSoonCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
+  comingSoonCardOuter: {
     borderRadius: 14,
-    padding: 14,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  comingSoonCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.52)',
   },
   comingSoonTitle: {
     fontSize: 14,
