@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, View, ActivityIndicator, Alert, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,27 +110,29 @@ export default function ChatScreen() {
               <Swipeable
                 renderRightActions={() => renderDeleteAction(item.thread_id)}
               >
-                <TouchableOpacity
-                  style={styles.conversationItem}
-                  onPress={() => handleOpenChat(item.thread_id)}
-                >
-                  <View style={styles.conversationIcon}>
-                    <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
+                <TouchableOpacity onPress={() => handleOpenChat(item.thread_id)}>
+                  <View style={styles.conversationItemOuter}>
+                    <BlurView intensity={85} tint="light" style={styles.conversationItem}>
+                      <View style={styles.glassSheen} />
+                      <View style={styles.conversationIcon}>
+                        <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
+                      </View>
+                      <View style={styles.conversationContent}>
+                        <View style={styles.conversationTopRow}>
+                          <ThemedText style={styles.conversationPreview} numberOfLines={1}>
+                            {item.last_message}
+                          </ThemedText>
+                          <ThemedText style={styles.conversationTime}>
+                            {relativeTime(item.last_message_time)}
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={styles.conversationCount}>
+                          {item.message_count} {item.message_count === 1 ? 'message' : 'messages'}
+                        </ThemedText>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.inactive} />
+                    </BlurView>
                   </View>
-                  <View style={styles.conversationContent}>
-                    <View style={styles.conversationTopRow}>
-                      <ThemedText style={styles.conversationPreview} numberOfLines={1}>
-                        {item.last_message}
-                      </ThemedText>
-                      <ThemedText style={styles.conversationTime}>
-                        {relativeTime(item.last_message_time)}
-                      </ThemedText>
-                    </View>
-                    <ThemedText style={styles.conversationCount}>
-                      {item.message_count} {item.message_count === 1 ? 'message' : 'messages'}
-                    </ThemedText>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.inactive} />
                 </TouchableOpacity>
               </Swipeable>
             )}
@@ -187,21 +190,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  conversationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  conversationItemOuter: {
     marginHorizontal: 20,
     marginBottom: 8,
-    backgroundColor: Colors.white,
     borderRadius: 14,
-    gap: 12,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  conversationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    gap: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   conversationIcon: {
     width: 40,

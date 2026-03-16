@@ -13,18 +13,18 @@ const BAR_WIDTH = SCREEN_WIDTH - H_INSET * 2;
 const BAR_HEIGHT = 64;
 
 const TAB_ICONS: Record<string, { active: string; inactive: string }> = {
-  index:     { active: 'home',         inactive: 'home-outline' },
-  calories:  { active: 'nutrition',    inactive: 'nutrition-outline' },
-  workouts:  { active: 'barbell',      inactive: 'barbell-outline' },
-  chat:      { active: 'chatbubble',   inactive: 'chatbubble-outline' },
-  community: { active: 'people',       inactive: 'people-outline' },
+  index: { active: 'home', inactive: 'home-outline' },
+  calories: { active: 'nutrition', inactive: 'nutrition-outline' },
+  workouts: { active: 'barbell', inactive: 'barbell-outline' },
+  chat: { active: 'chatbubble', inactive: 'chatbubble-outline' },
+  community: { active: 'people', inactive: 'people-outline' },
 };
 
 const TAB_LABELS: Record<string, string> = {
-  index:     'Home',
-  calories:  'Calories',
-  workouts:  'Workouts',
-  chat:      'Chat',
+  index: 'Home',
+  calories: 'Calories',
+  workouts: 'Workouts',
+  chat: 'Chat',
   community: 'Community',
 };
 

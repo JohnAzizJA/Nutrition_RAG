@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
@@ -32,20 +33,24 @@ export default function CommunityScreen() {
 
   const renderCommunity = ({ item }: { item: Community }) => (
     <TouchableOpacity
-      style={styles.card}
       onPress={() => router.push({ pathname: '/community/[id]', params: { id: item.id } })}
       activeOpacity={0.8}
     >
-      <View style={styles.cardIcon}>
-        <Ionicons name="people" size={22} color={Colors.primary} />
+      <View style={styles.cardOuter}>
+        <BlurView intensity={85} tint="light" style={styles.card}>
+          <View style={styles.glassSheen} />
+          <View style={styles.cardIcon}>
+            <Ionicons name="people" size={22} color={Colors.primary} />
+          </View>
+          <View style={styles.cardBody}>
+            <ThemedText style={styles.cardTitle}>{item.name}</ThemedText>
+            {item.description ? (
+              <ThemedText style={styles.cardDesc} numberOfLines={2}>{item.description}</ThemedText>
+            ) : null}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+        </BlurView>
       </View>
-      <View style={styles.cardBody}>
-        <ThemedText style={styles.cardTitle}>{item.name}</ThemedText>
-        {item.description ? (
-          <ThemedText style={styles.cardDesc} numberOfLines={2}>{item.description}</ThemedText>
-        ) : null}
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
     </TouchableOpacity>
   );
 
@@ -120,13 +125,22 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     gap: 12,
   },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  cardOuter: {
+    borderRadius: 16,
+  },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   cardIcon: {
     width: 44,

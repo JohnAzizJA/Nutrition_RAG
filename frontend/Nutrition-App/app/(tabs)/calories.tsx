@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, View, ScrollView, Alert, Animated, Modal, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ScrollView, Alert, Animated, Modal, ActivityIndicator, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -190,40 +191,43 @@ export default function CaloriesScreen() {
   // ── Shared top section ─────────────────────────────────────────────────────
   const TopSection = (
     <>
-      <View style={styles.dateContainer}>
-        <View style={styles.dateHeader}>
-          <TouchableOpacity onPress={() => {
-            const o = weekOffset - 1;
-            setWeekOffset(o);
-            const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
-            const last = new Date(s); last.setDate(s.getDate() + 6);
-            setSelectedDate(last);
-          }}>
-            <Ionicons name="chevron-back" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-          <ThemedText style={styles.dateText}>{fmt(selectedDate)}</ThemedText>
-          <TouchableOpacity onPress={() => {
-            const o = weekOffset + 1;
-            setWeekOffset(o);
-            const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
-            setSelectedDate(s);
-          }}>
-            <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.weekContainer}>
-          {getWeekDays().map((day, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[styles.dayCircle, isSelected(day) && styles.dayCircleSelected, isToday(day) && styles.dayCircleToday]}
-              onPress={() => setSelectedDate(day)}
-            >
-              <ThemedText style={[styles.dayText, isSelected(day) && styles.dayTextSelected]}>
-                {abbr(day)}
-              </ThemedText>
+      <View style={styles.dateContainerOuter}>
+        <BlurView intensity={85} tint="light" style={styles.dateContainer}>
+          <View style={styles.glassSheen} />
+          <View style={styles.dateHeader}>
+            <TouchableOpacity onPress={() => {
+              const o = weekOffset - 1;
+              setWeekOffset(o);
+              const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
+              const last = new Date(s); last.setDate(s.getDate() + 6);
+              setSelectedDate(last);
+            }}>
+              <Ionicons name="chevron-back" size={24} color={Colors.primary} />
             </TouchableOpacity>
-          ))}
-        </View>
+            <ThemedText style={styles.dateText}>{fmt(selectedDate)}</ThemedText>
+            <TouchableOpacity onPress={() => {
+              const o = weekOffset + 1;
+              setWeekOffset(o);
+              const s = new Date(); s.setDate(s.getDate() - s.getDay() + o * 7);
+              setSelectedDate(s);
+            }}>
+              <Ionicons name="chevron-forward" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.weekContainer}>
+            {getWeekDays().map((day, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.dayCircle, isSelected(day) && styles.dayCircleSelected, isToday(day) && styles.dayCircleToday]}
+                onPress={() => setSelectedDate(day)}
+              >
+                <ThemedText style={[styles.dayText, isSelected(day) && styles.dayTextSelected]}>
+                  {abbr(day)}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </BlurView>
       </View>
 
       <View style={styles.macroGrid}>
@@ -237,13 +241,16 @@ export default function CaloriesScreen() {
           const isOver = target > 0 && current > target;
           const fillColor = isOver ? Colors.danger : color;
           return (
-            <View key={label} style={styles.macroBox}>
-              <View style={[styles.macroFill, { height: pct * 140, backgroundColor: fillColor + '30' }]} />
-              <View style={styles.macroContent}>
-                <ThemedText style={[styles.macroValue, { color: fillColor }]}>{current}</ThemedText>
-                <ThemedText style={styles.macroGoal}>/ {target} {unit}</ThemedText>
-                <ThemedText style={styles.macroLabel}>{label}</ThemedText>
-              </View>
+            <View key={label} style={styles.macroBoxOuter}>
+              <BlurView intensity={85} tint="light" style={styles.macroBox}>
+                <View style={styles.glassSheen} />
+                <View style={[styles.macroFill, { height: pct * 140, backgroundColor: fillColor + '30' }]} />
+                <View style={styles.macroContent}>
+                  <ThemedText style={[styles.macroValue, { color: fillColor }]}>{current}</ThemedText>
+                  <ThemedText style={styles.macroGoal}>/ {target} {unit}</ThemedText>
+                  <ThemedText style={styles.macroLabel}>{label}</ThemedText>
+                </View>
+              </BlurView>
             </View>
           );
         })}
@@ -299,39 +306,42 @@ export default function CaloriesScreen() {
                     </TouchableOpacity>
                   )}
                 >
-                  <View style={[styles.planCard, plan.completed && styles.planCardDone]}>
-                    <View style={styles.planCardHeader}>
-                      <TouchableOpacity style={styles.checkBtn} onPress={() => togglePlanComplete(plan)}>
-                        <Ionicons
-                          name={plan.completed ? 'checkmark-circle' : 'ellipse-outline'}
-                          size={26}
-                          color={plan.completed ? Colors.primary : Colors.inactive}
-                        />
-                      </TouchableOpacity>
-                      <View style={styles.planCardTitle}>
-                        <ThemedText style={[styles.planName, plan.completed && styles.planNameDone]}>
-                          {plan.name}
-                        </ThemedText>
-                        <ThemedText style={styles.planTotals}>
-                          {Math.round(plan.total_calories)} kcal · {plan.total_protein_g}g P · {plan.total_carbs_g}g C
-                        </ThemedText>
+                  <View style={styles.planCardOuter}>
+                    <BlurView intensity={85} tint="light" style={[styles.planCard, plan.completed && styles.planCardDone]}>
+                      <View style={styles.glassSheen} />
+                      <View style={styles.planCardHeader}>
+                        <TouchableOpacity style={styles.checkBtn} onPress={() => togglePlanComplete(plan)}>
+                          <Ionicons
+                            name={plan.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={26}
+                            color={plan.completed ? Colors.primary : Colors.inactive}
+                          />
+                        </TouchableOpacity>
+                        <View style={styles.planCardTitle}>
+                          <ThemedText style={[styles.planName, plan.completed && styles.planNameDone]}>
+                            {plan.name}
+                          </ThemedText>
+                          <ThemedText style={styles.planTotals}>
+                            {Math.round(plan.total_calories)} kcal · {plan.total_protein_g}g P · {plan.total_carbs_g}g C
+                          </ThemedText>
+                        </View>
+                        <TouchableOpacity onPress={() => router.push({
+                          pathname: '/create-meal-plan' as any,
+                          params: { planId: plan.id, planName: plan.name },
+                        })}>
+                          <Ionicons name="pencil-outline" size={18} color={Colors.textMuted} />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity onPress={() => router.push({
-                        pathname: '/create-meal-plan' as any,
-                        params: { planId: plan.id, planName: plan.name },
-                      })}>
-                        <Ionicons name="pencil-outline" size={18} color={Colors.textMuted} />
-                      </TouchableOpacity>
-                    </View>
 
-                    {plan.foods.map(food => (
-                      <View key={food.id} style={styles.planFoodRow}>
-                        <ThemedText style={styles.planFoodName} numberOfLines={1}>{food.food_name}</ThemedText>
-                        <ThemedText style={styles.planFoodMeta}>
-                          {food.grams ? `${Math.round(food.grams)}g · ` : ''}{Math.round(food.calories)} kcal
-                        </ThemedText>
-                      </View>
-                    ))}
+                      {plan.foods.map(food => (
+                        <View key={food.id} style={styles.planFoodRow}>
+                          <ThemedText style={styles.planFoodName} numberOfLines={1}>{food.food_name}</ThemedText>
+                          <ThemedText style={styles.planFoodMeta}>
+                            {food.grams ? `${Math.round(food.grams)}g · ` : ''}{Math.round(food.calories)} kcal
+                          </ThemedText>
+                        </View>
+                      ))}
+                    </BlurView>
                   </View>
                 </Swipeable>
               ))
@@ -365,17 +375,23 @@ export default function CaloriesScreen() {
                   {mealItems.length > 0 ? (
                     mealItems.map((meal: any) => (
                       <Swipeable key={meal.id} renderRightActions={() => renderDeleteAction(meal.id)}>
-                        <View style={styles.mealItem}>
-                          <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
-                          <ThemedText style={styles.mealNutrients}>
-                            {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
-                          </ThemedText>
+                        <View style={styles.mealItemOuter}>
+                          <BlurView intensity={85} tint="light" style={styles.mealItem}>
+                            <View style={styles.glassSheen} />
+                            <ThemedText style={styles.mealName}>{meal.food_name}</ThemedText>
+                            <ThemedText style={styles.mealNutrients}>
+                              {meal.calories} kcal | {meal.protein_g}g P | {meal.carbs_g}g C | {meal.fat_g}g F
+                            </ThemedText>
+                          </BlurView>
                         </View>
                       </Swipeable>
                     ))
                   ) : (
-                    <View style={styles.emptyMealState}>
-                      <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                    <View style={styles.emptyMealStateOuter}>
+                      <BlurView intensity={85} tint="light" style={styles.emptyMealState}>
+                        <View style={styles.glassSheen} />
+                        <ThemedText style={styles.emptyMealText}>No {mealType.toLowerCase()} logged</ThemedText>
+                      </BlurView>
                     </View>
                   )}
                 </View>
@@ -463,12 +479,23 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: 'bold', color: Colors.dark },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
+  // Shared glass sheen
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+
   // Calendar
+  dateContainerOuter: {
+    borderRadius: 16,
+    marginBottom: 20,
+  },
   dateContainer: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   dateText: { fontSize: 18, fontWeight: 'bold', color: Colors.dark, textAlign: 'center' },
@@ -486,10 +513,19 @@ const styles = StyleSheet.create({
 
   // Macro grid
   macroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' },
+  macroBoxOuter: {
+    width: '47%',
+    borderRadius: 16,
+    height: 140,
+  },
   macroBox: {
-    width: '47%', backgroundColor: Colors.white,
-    borderRadius: 16, height: 140, overflow: 'hidden',
-    justifyContent: 'center', alignItems: 'center',
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   macroFill: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   macroContent: { alignItems: 'center', zIndex: 1 },
@@ -510,10 +546,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: Colors.primary,
   },
-  mealItem: { backgroundColor: Colors.white, borderRadius: 12, padding: 16, marginBottom: 8 },
+  mealItemOuter: { borderRadius: 12, marginBottom: 8 },
+  mealItem: { borderRadius: 12, padding: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.70)' },
   mealName: { fontSize: 16, fontWeight: '600', color: Colors.dark, marginBottom: 4 },
   mealNutrients: { fontSize: 14, color: Colors.textMuted },
-  emptyMealState: { backgroundColor: Colors.white, borderRadius: 12, padding: 16, alignItems: 'center' },
+  emptyMealStateOuter: { borderRadius: 12 },
+  emptyMealState: { borderRadius: 12, padding: 16, overflow: 'hidden', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.70)' },
   emptyMealText: { fontSize: 14, color: Colors.textMuted, fontStyle: 'italic' },
   deleteAction: {
     backgroundColor: Colors.danger,
@@ -538,15 +576,15 @@ const styles = StyleSheet.create({
   emptyPlans: { alignItems: 'center', padding: 32, gap: 8 },
   emptyPlansText: { fontSize: 17, fontWeight: '600', color: Colors.dark },
   emptyPlansSub: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  planCardOuter: { borderRadius: 14, marginBottom: 14 },
   planCard: {
-    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 14,
-    marginBottom: 14,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
-  planCardDone: { borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '06' },
+  planCardDone: { borderColor: Colors.primary + '40' },
   planCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
   checkBtn: { padding: 2 },
   planCardTitle: { flex: 1 },

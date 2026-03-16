@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator, FlatList, Alert, Dimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, FlatList, Alert, Dimensions, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { BarChart } from 'react-native-gifted-charts';
@@ -91,34 +92,36 @@ export default function WorkoutsScreen() {
 
   const renderRoutine = ({ item }: { item: WorkoutRoutine }) => (
     <Swipeable renderRightActions={() => renderDeleteAction(() => deleteRoutine(item.id))}>
-      <TouchableOpacity
-        style={styles.routineCard}
-        onPress={() => router.push(`/workout-detail?id=${item.id}`)}
-      >
-        <View style={styles.routineHeader}>
-          <ThemedText style={styles.routineName}>{item.name}</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
-        </View>
-        {item.description && (
-          <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
-        )}
-        <View style={styles.routineFooter}>
-          <View style={styles.statItem}>
-            <Ionicons name="fitness" size={16} color={Colors.primary} />
-            <ThemedText style={styles.statText}>{item.exercise_count} exercises</ThemedText>
-          </View>
-          {(item.exercise_count ?? 0) > 0 && (
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                router.push(`/active-workout?routineId=${item.id}&routineName=${encodeURIComponent(item.name)}`);
-              }}
-            >
-              <Ionicons name="play" size={14} color={Colors.white} />
-              <ThemedText style={styles.startButtonText}>Start</ThemedText>
-            </TouchableOpacity>
-          )}
+      <TouchableOpacity onPress={() => router.push(`/workout-detail?id=${item.id}`)}>
+        <View style={styles.routineCardOuter}>
+          <BlurView intensity={85} tint="light" style={styles.routineCard}>
+            <View style={styles.glassSheen} />
+            <View style={styles.routineHeader}>
+              <ThemedText style={styles.routineName}>{item.name}</ThemedText>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+            </View>
+            {item.description && (
+              <ThemedText style={styles.routineDescription}>{item.description}</ThemedText>
+            )}
+            <View style={styles.routineFooter}>
+              <View style={styles.statItem}>
+                <Ionicons name="fitness" size={16} color={Colors.primary} />
+                <ThemedText style={styles.statText}>{item.exercise_count} exercises</ThemedText>
+              </View>
+              {(item.exercise_count ?? 0) > 0 && (
+                <TouchableOpacity
+                  style={styles.startButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    router.push(`/active-workout?routineId=${item.id}&routineName=${encodeURIComponent(item.name)}`);
+                  }}
+                >
+                  <Ionicons name="play" size={14} color={Colors.white} />
+                  <ThemedText style={styles.startButtonText}>Start</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+          </BlurView>
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -127,50 +130,54 @@ export default function WorkoutsScreen() {
   const renderSession = (item: WorkoutSession) => (
     <Swipeable renderRightActions={() => renderDeleteAction(() => deleteSession(item.id))}>
       <TouchableOpacity
-        style={styles.sessionCard}
         onPress={() => router.push(`/session-detail?id=${item.id}`)}
         activeOpacity={0.8}
       >
-        <View style={styles.sessionHeader}>
-          <ThemedText style={styles.sessionName}>{item.routine_name}</ThemedText>
-          <View style={styles.sessionDateRow}>
-            <ThemedText style={styles.sessionDate}>{formatDate(item.started_at)}</ThemedText>
-            <Ionicons name="chevron-forward" size={14} color={Colors.inactive} style={{ marginLeft: 2 }} />
-          </View>
-        </View>
-
-        <View style={styles.sessionStats}>
-          <View style={styles.sessionStat}>
-            <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-            <ThemedText style={styles.sessionStatText}>{formatDuration(item.duration_seconds)}</ThemedText>
-          </View>
-          {(item.total_volume_kg ?? 0) > 0 && (
-            <View style={styles.sessionStat}>
-              <Ionicons name="barbell-outline" size={13} color={Colors.textMuted} />
-              <ThemedText style={styles.sessionStatText}>
-                {(item.total_volume_kg ?? 0) >= 1000
-                  ? `${((item.total_volume_kg ?? 0) / 1000).toFixed(1)}t`
-                  : `${item.total_volume_kg}kg`} vol
-              </ThemedText>
-            </View>
-          )}
-          <View style={styles.sessionStat}>
-            <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
-            <ThemedText style={styles.sessionStatText}>{item.set_count} sets</ThemedText>
-          </View>
-        </View>
-
-        {item.exercises_summary && item.exercises_summary.length > 0 && (
-          <View style={styles.exercisePills}>
-            {item.exercises_summary.map(ex => (
-              <View key={ex.name} style={styles.exercisePill}>
-                <ThemedText style={styles.exercisePillText}>
-                  {ex.name} × {ex.sets_logged}
-                </ThemedText>
+        <View style={styles.sessionCardOuter}>
+          <BlurView intensity={85} tint="light" style={styles.sessionCard}>
+            <View style={styles.glassSheen} />
+            <View style={styles.sessionHeader}>
+              <ThemedText style={styles.sessionName}>{item.routine_name}</ThemedText>
+              <View style={styles.sessionDateRow}>
+                <ThemedText style={styles.sessionDate}>{formatDate(item.started_at)}</ThemedText>
+                <Ionicons name="chevron-forward" size={14} color={Colors.inactive} style={{ marginLeft: 2 }} />
               </View>
-            ))}
-          </View>
-        )}
+            </View>
+
+            <View style={styles.sessionStats}>
+              <View style={styles.sessionStat}>
+                <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
+                <ThemedText style={styles.sessionStatText}>{formatDuration(item.duration_seconds)}</ThemedText>
+              </View>
+              {(item.total_volume_kg ?? 0) > 0 && (
+                <View style={styles.sessionStat}>
+                  <Ionicons name="barbell-outline" size={13} color={Colors.textMuted} />
+                  <ThemedText style={styles.sessionStatText}>
+                    {(item.total_volume_kg ?? 0) >= 1000
+                      ? `${((item.total_volume_kg ?? 0) / 1000).toFixed(1)}t`
+                      : `${item.total_volume_kg}kg`} vol
+                  </ThemedText>
+                </View>
+              )}
+              <View style={styles.sessionStat}>
+                <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
+                <ThemedText style={styles.sessionStatText}>{item.set_count} sets</ThemedText>
+              </View>
+            </View>
+
+            {item.exercises_summary && item.exercises_summary.length > 0 && (
+              <View style={styles.exercisePills}>
+                {item.exercises_summary.map(ex => (
+                  <View key={ex.name} style={styles.exercisePill}>
+                    <ThemedText style={styles.exercisePillText}>
+                      {ex.name} × {ex.sets_logged}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            )}
+          </BlurView>
+        </View>
       </TouchableOpacity>
     </Swipeable>
   );
@@ -189,33 +196,36 @@ export default function WorkoutsScreen() {
   const ListHeader = () => (
     <>
       {/* Volume Chart */}
-      <View style={styles.chartCard}>
-        <ThemedText style={styles.chartTitle}>Weekly Volume (kg)</ThemedText>
-        <View style={styles.chartCenter}>
-          <BarChart
-            data={volumeChartData}
-            height={100}
-            width={CHART_W}
-            barWidth={barW}
-            spacing={volSpacing}
-            yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
-            xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
-            noOfSections={3}
-            maxValue={hasAnyVolume ? undefined : 100}
-            initialSpacing={20}
-            yAxisColor="transparent"
-            xAxisColor={Colors.border}
-            rulesColor={Colors.border}
-            yAxisLabelWidth={38}
-            isAnimated
-            animationDuration={500}
-          />
-        </View>
-        {!hasAnyVolume && (
-          <View style={styles.chartEmpty}>
-            <ThemedText style={styles.chartEmptyText}>Complete your first workout to start tracking weekly volume</ThemedText>
+      <View style={styles.chartCardOuter}>
+        <BlurView intensity={85} tint="light" style={styles.chartCard}>
+          <View style={styles.glassSheen} />
+          <ThemedText style={styles.chartTitle}>Weekly Volume (kg)</ThemedText>
+          <View style={styles.chartCenter}>
+            <BarChart
+              data={volumeChartData}
+              height={100}
+              width={CHART_W}
+              barWidth={barW}
+              spacing={volSpacing}
+              yAxisTextStyle={{ fontSize: 9, color: Colors.textMuted as string }}
+              xAxisLabelTextStyle={{ fontSize: 8, color: Colors.textMuted as string }}
+              noOfSections={3}
+              maxValue={hasAnyVolume ? undefined : 100}
+              initialSpacing={20}
+              yAxisColor="transparent"
+              xAxisColor={Colors.border}
+              rulesColor={Colors.border}
+              yAxisLabelWidth={38}
+              isAnimated
+              animationDuration={500}
+            />
           </View>
-        )}
+          {!hasAnyVolume && (
+            <View style={styles.chartEmpty}>
+              <ThemedText style={styles.chartEmptyText}>Complete your first workout to start tracking weekly volume</ThemedText>
+            </View>
+          )}
+        </BlurView>
       </View>
 
       {/* Routines section */}
@@ -333,12 +343,20 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 20,
   },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.12)',
+  },
+  chartCardOuter: {
+    borderRadius: 16,
+    marginBottom: 20,
+  },
   chartCard: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    marginBottom: 20,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   chartTitle: {
     fontSize: 15,
@@ -372,16 +390,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.dark,
   },
-  routineCard: {
-    backgroundColor: Colors.white,
+  routineCardOuter: {
     borderRadius: 14,
-    padding: 16,
     marginBottom: 12,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  routineCard: {
+    borderRadius: 14,
+    padding: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   routineHeader: {
     flexDirection: 'row',
@@ -457,16 +480,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  sessionCard: {
-    backgroundColor: Colors.white,
+  sessionCardOuter: {
     borderRadius: 14,
-    padding: 14,
     marginBottom: 10,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  sessionCard: {
+    borderRadius: 14,
+    padding: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.70)',
   },
   sessionHeader: {
     flexDirection: 'row',
