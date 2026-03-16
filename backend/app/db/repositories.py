@@ -2,6 +2,7 @@ from db.database import get_db
 from db.models import User, Conversation, WeightLog, MealLog, WorkoutRoutine, Exercise, FoodItem, Follow, WaterLog, MealPlan, MealPlanFood, MealPlanCompletion, WorkoutSession, WorkoutSessionSet, Community, CommunityMember, UserPoints, CommunityAnnouncement, AnnouncementReaction, UserPRLog, UserWeightGoalAward, UserStreakState, UserWeeklyCheck, UserCalorieCheck
 from typing import Optional, List
 from datetime import datetime, date, timedelta, timezone
+from sqlalchemy import func, desc
 
 class UserRepository:
     """Repository for User database operations"""
@@ -211,6 +212,47 @@ class ConversationRepository:
                 Conversation.user_id == user_id
             ).distinct().all()
             return [t[0] for t in threads]
+
+    def get_conversations_summary(self, user_id: int) -> List[dict]:
+        """Get conversation summaries in a single query (no N+1)."""
+        with get_db() as db:
+            # Subquery: last message time + count per thread
+            sub = (
+                db.query(
+                    Conversation.thread_id,
+                    func.max(Conversation.created_at).label("last_time"),
+                    func.count(Conversation.id).label("msg_count"),
+                )
+                .filter(Conversation.user_id == user_id)
+                .group_by(Conversation.thread_id)
+                .subquery()
+            )
+            # Join back to get the content of the last message
+            rows = (
+                db.query(
+                    Conversation.thread_id,
+                    Conversation.content,
+                    sub.c.last_time,
+                    sub.c.msg_count,
+                )
+                .join(
+                    sub,
+                    (Conversation.thread_id == sub.c.thread_id)
+                    & (Conversation.created_at == sub.c.last_time)
+                    & (Conversation.user_id == user_id),
+                )
+                .order_by(desc(sub.c.last_time))
+                .all()
+            )
+            return [
+                {
+                    "thread_id": r.thread_id,
+                    "last_message": r.content[:100],
+                    "last_message_time": r.last_time,
+                    "message_count": r.msg_count,
+                }
+                for r in rows
+            ]
     
     def delete_thread(self, thread_id: str, user_id: int) -> bool:
         """Delete all messages in a thread for specific user"""

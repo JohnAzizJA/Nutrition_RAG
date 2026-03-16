@@ -60,6 +60,11 @@ export const authService = {
     return response.data;
   },
 
+  async getProfile(): Promise<UserResponse> {
+    const response = await axios.get(ENDPOINTS.AUTH.PROFILE);
+    return response.data;
+  },
+
   async logout(): Promise<void> {
     await axios.post(ENDPOINTS.AUTH.LOGOUT);
   },

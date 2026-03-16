@@ -9,6 +9,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { communityService } from '@/src/services/communityService';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 export default function CreateCommunityScreen() {
   const router = useRouter();
@@ -29,8 +30,8 @@ export default function CreateCommunityScreen() {
         description: description.trim() || undefined,
       });
       router.replace({ pathname: '/community/[id]', params: { id: community.id } });
-    } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.detail ?? 'Failed to create community.');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to create community. Please try again.'));
     } finally {
       setLoading(false);
     }

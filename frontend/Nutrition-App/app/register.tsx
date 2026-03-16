@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/src/components/themed-text';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Colors } from '@/constants/theme';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -110,7 +111,7 @@ export default function RegisterScreen() {
       });
       router.replace('/(tabs)');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,7 @@ import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { calculationService, nutritionService, mealPlanService, MealPlan } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 import { VoiceLogResult } from '@/src/services/nutritionService';
 import { Swipeable } from 'react-native-gesture-handler';
 
@@ -133,8 +134,8 @@ export default function CaloriesScreen() {
     try {
       await nutritionService.deleteMeal(mealId);
       loadAll();
-    } catch {
-      Alert.alert('Error', 'Failed to delete meal');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to delete meal. Please try again.'));
     }
   };
 
@@ -154,8 +155,8 @@ export default function CaloriesScreen() {
     try {
       await mealPlanService.deletePlan(planId);
       setPlans(prev => prev.filter(p => p.id !== planId));
-    } catch {
-      Alert.alert('Error', 'Failed to delete meal plan');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to delete meal plan. Please try again.'));
     }
   };
 

@@ -9,6 +9,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { communityService, CommunityInfo, CommunityMember } from '@/src/services/communityService';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function CommunityInfoScreen() {
@@ -51,8 +52,8 @@ export default function CommunityInfoScreen() {
       setAddUsername('');
       setShowAddModal(false);
       loadInfo();
-    } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.detail ?? 'Could not add member.');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Could not add member. Please try again.'));
     } finally {
       setAdding(false);
     }
@@ -78,8 +79,8 @@ export default function CommunityInfoScreen() {
               } else {
                 loadInfo();
               }
-            } catch (err: any) {
-              Alert.alert('Error', err?.response?.data?.detail ?? 'Failed to remove member.');
+            } catch (err) {
+              Alert.alert('Error', getErrorMessage(err, 'Failed to remove member. Please try again.'));
             }
           },
         },
@@ -100,8 +101,8 @@ export default function CommunityInfoScreen() {
             try {
               await communityService.deleteCommunity(communityId);
               router.replace('/(tabs)/community');
-            } catch (err: any) {
-              Alert.alert('Error', err?.response?.data?.detail ?? 'Failed to delete community.');
+            } catch (err) {
+              Alert.alert('Error', getErrorMessage(err, 'Failed to delete community. Please try again.'));
             }
           },
         },

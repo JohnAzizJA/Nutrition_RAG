@@ -6,6 +6,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutService } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 export default function AddExerciseScreen() {
   const router = useRouter();
@@ -54,8 +55,8 @@ export default function AddExerciseScreen() {
         Alert.alert('Success', 'Exercise added successfully', [
           { text: 'OK', onPress: () => router.back() }
         ]);
-      } catch {
-        Alert.alert('Error', 'Failed to add exercise');
+      } catch (err) {
+        Alert.alert('Error', getErrorMessage(err, 'Failed to add exercise. Please try again.'));
       } finally {
         setLoading(false);
       }

@@ -6,6 +6,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutService, WorkoutRoutine, Exercise } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 import { Swipeable } from 'react-native-gesture-handler';
 
 type EditField = {
@@ -43,8 +44,7 @@ export default function WorkoutDetailScreen() {
       const data = await workoutService.getRoutine(Number(id));
       setRoutine(data);
     } catch (error) {
-      console.error('Failed to fetch routine:', error);
-      Alert.alert('Error', 'Failed to load workout routine');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to load workout routine.'));
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function WorkoutDetailScreen() {
       setIsEditing(false);
       fetchRoutine();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save changes');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to save changes. Please try again.'));
     }
   };
 
@@ -97,7 +97,7 @@ export default function WorkoutDetailScreen() {
       await workoutService.deleteExercise(Number(id), exerciseId);
       fetchRoutine();
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete exercise');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to delete exercise. Please try again.'));
     }
   };
 

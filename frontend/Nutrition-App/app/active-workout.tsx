@@ -12,6 +12,7 @@ import { SpotifyMiniPlayer } from '@/src/components/SpotifyMiniPlayer';
 import { Colors } from '@/constants/theme';
 import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { workoutService, workoutSessionService, Exercise, WorkoutRoutine } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,8 +113,8 @@ export default function ActiveWorkoutScreen() {
       ]);
       setRoutine(routineData);
       setSessionId(session.id);
-    } catch {
-      Alert.alert('Error', 'Failed to start workout session', [
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to start workout session.'), [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } finally {
@@ -215,8 +216,8 @@ export default function ActiveWorkoutScreen() {
         setExerciseTimerActive(true);
         setTimedExerciseId(activeExercise.id);
       }
-    } catch {
-      Alert.alert('Error', 'Failed to log set');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to log set. Please try again.'));
     }
   };
 
@@ -250,8 +251,8 @@ export default function ActiveWorkoutScreen() {
     try {
       await workoutSessionService.endSession(sessionId, elapsed);
       router.back();
-    } catch {
-      Alert.alert('Error', 'Failed to save session');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to save session. Please try again.'));
       setFinishing(false);
     }
   };

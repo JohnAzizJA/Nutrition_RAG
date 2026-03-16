@@ -7,6 +7,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { chatService, ConversationSummary } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Swipeable } from 'react-native-gesture-handler';
 
@@ -48,7 +49,7 @@ export default function ChatScreen() {
       await chatService.deleteConversation(threadId);
       loadConversations();
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete conversation');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to delete conversation. Please try again.'));
     }
   };
 

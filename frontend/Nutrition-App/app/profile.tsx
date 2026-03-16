@@ -10,6 +10,7 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useSpotify } from '@/src/contexts/SpotifyContext';
 import { calculationService, userService } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 // Spotify brand green — Spotify Brand Guidelines
 const SPOTIFY_GREEN = '#1DB954';
@@ -67,8 +68,8 @@ export default function ProfileScreen() {
         week_start_day: day,
       });
       await updateUser(updatedUser);
-    } catch {
-      Alert.alert('Error', 'Failed to update week start day');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to update week start day.'));
     }
   };
 
@@ -120,7 +121,7 @@ export default function ProfileScreen() {
       setEditModal({visible: false, field: '', value: ''});
       fetchTargets();
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to update profile. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -165,7 +166,7 @@ export default function ProfileScreen() {
               await logout();
               router.replace('/welcome');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
+              Alert.alert('Error', getErrorMessage(error, 'Failed to delete account. Please try again.'));
             }
           }
         }

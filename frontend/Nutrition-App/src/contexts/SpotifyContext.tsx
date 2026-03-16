@@ -40,7 +40,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
       if (isSeekingRef.current) return;
       const state = await spotifyService.getPlayerState();
       setPlayerState(state);
-    }, 1000);
+    }, 3000);
   }, []);
 
   const stopPolling = useCallback(() => {

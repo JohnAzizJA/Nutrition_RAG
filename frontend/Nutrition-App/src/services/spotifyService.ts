@@ -8,7 +8,7 @@ import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const CLIENT_ID = '09d3fca81b77405080b871dc84cc0f1c';
+const CLIENT_ID = process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID ?? '';
 const SCOPES = [
   'user-read-playback-state',
   'user-modify-playback-state',

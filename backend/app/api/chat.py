@@ -39,27 +39,10 @@ class ConversationDetail(BaseModel):
 async def get_conversations(current_user: User = Depends(get_current_user)):
     """Get list of all conversations for current user"""
     try:
-        # Get all unique thread IDs for user
-        thread_ids = conversation_repo.get_user_threads(current_user.id)
-        
-        conversations = []
-        for thread_id in thread_ids:
-            # Get messages for this thread
-            messages = conversation_repo.get_by_thread(thread_id)
-            if messages:
-                last_msg = messages[-1]
-                conversations.append(ConversationSummary(
-                    thread_id=thread_id,
-                    last_message=last_msg.content[:100],  # Preview first 100 chars
-                    last_message_time=last_msg.created_at,
-                    message_count=len(messages)
-                ))
-        
-        # Sort by most recent first
-        conversations.sort(key=lambda x: x.last_message_time, reverse=True)
-        return conversations
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get conversations: {str(e)}")
+        rows = conversation_repo.get_conversations_summary(current_user.id)
+        return [ConversationSummary(**r) for r in rows]
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to load conversations.")
 
 @router.get("/conversations/{thread_id}", response_model=ConversationDetail)
 async def get_conversation_history(
@@ -87,8 +70,8 @@ async def get_conversation_history(
         )
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get conversation: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to load conversation.")
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
@@ -142,8 +125,8 @@ async def chat(
             response=response,
             thread_id=thread_id
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Chat request failed. Please try again.")
 
 @router.delete("/conversations/{thread_id}")
 async def delete_conversation(
@@ -158,5 +141,5 @@ async def delete_conversation(
         return {"message": "Conversation deleted successfully"}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to delete conversation.")

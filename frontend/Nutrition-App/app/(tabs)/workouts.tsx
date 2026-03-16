@@ -7,6 +7,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutService, workoutSessionService, WorkoutRoutine, WorkoutSession } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 import { VolumeHistoryPoint } from '@/src/services/workoutSessionService';
 import { Swipeable } from 'react-native-gesture-handler';
 
@@ -68,8 +69,8 @@ export default function WorkoutsScreen() {
     try {
       await workoutService.deleteRoutine(routineId);
       fetchAll();
-    } catch {
-      Alert.alert('Error', 'Failed to delete routine');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to delete routine. Please try again.'));
     }
   };
 
@@ -77,8 +78,8 @@ export default function WorkoutsScreen() {
     try {
       await workoutSessionService.deleteSession(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
-    } catch {
-      Alert.alert('Error', 'Failed to delete workout');
+    } catch (err) {
+      Alert.alert('Error', getErrorMessage(err, 'Failed to delete workout. Please try again.'));
     }
   };
 

@@ -6,6 +6,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import { ThemedView } from '@/src/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { workoutService } from '@/src/services';
+import { getErrorMessage } from '@/src/utils/errorUtils';
 
 export default function CreateWorkoutScreen() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function CreateWorkoutScreen() {
         { text: 'OK', onPress: () => router.replace(`/workout-detail?id=${routine.id}`) }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to create workout routine');
+      Alert.alert('Error', getErrorMessage(error, 'Failed to create workout routine. Please try again.'));
     } finally {
       setLoading(false);
     }
