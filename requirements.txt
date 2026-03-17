@@ -7,7 +7,6 @@ langchain-text-splitters
 langgraph
 langgraph-checkpoint-postgres
 pgvector
-sentence-transformers
 python-dotenv
 pydantic
 pydantic-settings

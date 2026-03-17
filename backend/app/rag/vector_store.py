@@ -1,11 +1,12 @@
+import math
 import os
 from contextlib import contextmanager
 from pathlib import Path
 
+import httpx
 import psycopg2
 from pgvector.psycopg2 import register_vector
 from psycopg2.pool import ThreadedConnectionPool
-from sentence_transformers import SentenceTransformer
 
 from rag.document_processor import DocumentProcessor
 
@@ -22,9 +23,25 @@ class VectorStore:
     def __init__(self):
         db_url = os.getenv("DATABASE_URL")
         self._pool = ThreadedConnectionPool(1, 5, db_url)
-        self.embedding_model = SentenceTransformer(_EMBEDDING_MODEL)
+        self._hf_token = os.getenv("HUGGINGFACE_API_KEY")
+        self._hf_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{_EMBEDDING_MODEL}"
         self.doc_processor = DocumentProcessor()
         self._setup_table()
+
+    def _embed(self, texts: list[str]) -> list[list[float]]:
+        r = httpx.post(
+            self._hf_url,
+            headers={"Authorization": f"Bearer {self._hf_token}"},
+            json={"inputs": texts, "options": {"wait_for_model": True}},
+            timeout=60.0,
+        )
+        r.raise_for_status()
+        raw = r.json()
+        result = []
+        for emb in raw:
+            norm = math.sqrt(sum(x * x for x in emb))
+            result.append([x / norm for x in emb] if norm > 0 else emb)
+        return result
 
     @contextmanager
     def _conn(self):
@@ -68,7 +85,7 @@ class VectorStore:
                 """)
 
     def add_documents(self, texts: list[str], metadatas: list[dict], ids: list[str]):
-        embeddings = self.embedding_model.encode(texts, normalize_embeddings=True).tolist()
+        embeddings = self._embed(texts)
         with self._conn() as conn:
             with conn.cursor() as cur:
                 for doc_id, text, emb, meta in zip(ids, texts, embeddings, metadatas):
@@ -82,9 +99,7 @@ class VectorStore:
                     """, (doc_id, text, emb, meta.get("source", "")))
 
     def query(self, query_text: str, n_results: int = 3) -> list[str]:
-        query_embedding = self.embedding_model.encode(
-            [_QUERY_PREFIX + query_text], normalize_embeddings=True
-        )[0].tolist()
+        query_embedding = self._embed([_QUERY_PREFIX + query_text])[0]
         with self._conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
