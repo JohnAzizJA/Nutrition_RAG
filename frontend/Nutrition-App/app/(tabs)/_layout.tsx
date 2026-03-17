@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { FloatingTabBar } from '@/src/components/FloatingTabBar';
+import { Colors } from '@/constants/theme';
 
 export default function TabLayout() {
   return (
@@ -7,15 +8,7 @@ export default function TabLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        sceneStyle: { paddingBottom: 100 },
-        tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 0,
-        },
+        sceneStyle: { backgroundColor: Colors.background, paddingBottom: 100 },
       }}
     >
       <Tabs.Screen name="index" />

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -24,9 +24,14 @@ export default function CommunityScreen() {
     }
   }, []);
 
+  const isFirstLoadRef = useRef(true);
+
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      if (isFirstLoadRef.current) {
+        setLoading(true);
+        isFirstLoadRef.current = false;
+      }
       fetchCommunities();
     }, [fetchCommunities])
   );

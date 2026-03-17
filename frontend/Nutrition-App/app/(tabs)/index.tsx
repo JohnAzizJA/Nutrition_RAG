@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, Dimensions, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -152,14 +152,18 @@ export default function HomeScreen() {
   const [todayNutrition, setTodayNutrition] = useState<DailyNutritionResponse | null>(null);
   const [targetCalories, setTargetCalories] = useState(0);
 
+  const isFirstLoadRef = useRef(true);
+
   useFocusEffect(
     useCallback(() => {
-      fetchDashboardData();
+      fetchDashboardData(isFirstLoadRef.current);
+      isFirstLoadRef.current = false;
     }, [])
   );
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isFirstLoad = false) => {
     try {
+      if (isFirstLoad) setLoading(true);
       const today = new Date().toISOString().split('T')[0];
       const [dash, nutrition, targets] = await Promise.all([
         dashboardService.getDashboard(),

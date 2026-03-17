@@ -332,11 +332,16 @@ class MealLogRepository:
             db.refresh(log)
             return log
     
-    def get_user_logs(self, user_id: int, date: Optional[datetime] = None) -> List[MealLog]:
-        """Get user's meal logs, optionally filtered by date"""
+    def get_user_logs(self, user_id: int, date: Optional[datetime] = None, target_date: Optional[date] = None) -> List[MealLog]:
+        """Get user's meal logs, optionally filtered by date.
+        - target_date: exact calendar day filter (SQL-side)
+        - date: lower-bound filter (>= date)
+        """
         with get_db() as db:
             query = db.query(MealLog).filter(MealLog.user_id == user_id)
-            if date:
+            if target_date is not None:
+                query = query.filter(func.date(MealLog.logged_at) == target_date)
+            elif date is not None:
                 query = query.filter(MealLog.logged_at >= date)
             return query.order_by(MealLog.logged_at.desc()).all()
     
@@ -1207,6 +1212,19 @@ class ScoringRepository:
             else:
                 db.add(UserStreakState(user_id=user_id, last_known_streak=streak))
             db.commit()
+
+    def get_and_update_streak_state(self, user_id: int, new_streak: int) -> int:
+        """Reads previous streak and writes new streak in a single DB session. Returns previous value."""
+        with get_db() as db:
+            record = db.query(UserStreakState).filter(UserStreakState.user_id == user_id).first()
+            previous = record.last_known_streak if record else 0
+            if record:
+                record.last_known_streak = new_streak
+                record.updated_at = datetime.now()
+            else:
+                db.add(UserStreakState(user_id=user_id, last_known_streak=new_streak))
+            db.commit()
+            return previous
 
     # ── Weight goal award ──────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authStorage } from '@/src/utils/authStorage';
 import { authService, UserResponse } from '@/src/services';
+import { clearTokenCache } from '@/src/api/axios';
 
 interface AuthContextType {
   user: UserResponse | null;
@@ -26,16 +27,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       const token = await authStorage.getToken();
+      setIsLoading(false); // Unblock app immediately after token check
       if (token) {
-        const user = await authService.getProfile();
-        setUser(user);
+        authService.getProfile().then(setUser).catch(async (error: any) => {
+          if (error?.response?.status === 401 || error?.response?.status === 403) {
+            clearTokenCache();
+            await authStorage.clearAll();
+          }
+        });
       }
-    } catch (error: any) {
-      // Only log out on auth errors (invalid/expired token), not network errors
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
-        await authStorage.clearAll();
-      }
-    } finally {
+    } catch {
       setIsLoading(false);
     }
   };
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await authService.logout();
+    clearTokenCache();
     await authStorage.clearAll();
     setUser(null);
   };

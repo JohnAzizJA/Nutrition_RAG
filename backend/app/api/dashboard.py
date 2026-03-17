@@ -4,6 +4,7 @@ from auth.middleware import get_current_user
 from db.models import User
 from db.repositories import MealLogRepository, WaterLogRepository, MealPlanRepository, WeightLogRepository, WorkoutSessionRepository
 from datetime import datetime, timezone, timedelta, date
+import asyncio
 import scoring
 
 
@@ -38,10 +39,11 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
     try:
         streak = calculate_logging_streak(current_user.id)
 
-        # Scoring checks (non-blocking – errors caught inside each function)
-        scoring.check_streak_state(current_user, streak)
-        scoring.check_weekly_workouts(current_user)
-        scoring.check_calorie_miss(current_user)
+        # Scoring checks — run in thread pool so they don't block the response
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, scoring.check_streak_state, current_user, streak)
+        loop.run_in_executor(None, scoring.check_weekly_workouts, current_user)
+        loop.run_in_executor(None, scoring.check_calorie_miss, current_user)
 
         today = date.today()
         water_log = water_repo.get_by_date(current_user.id, today)
@@ -85,7 +87,8 @@ def calculate_logging_streak(user_id: int) -> int:
     on which the user logged a meal or completed a meal plan.
     """
     try:
-        meals = meal_repo.get_user_logs(user_id)
+        since = datetime.now(CAIRO_TZ) - timedelta(days=60)
+        meals = meal_repo.get_user_logs(user_id, date=since)
         timestamps = [
             m.logged_at.replace(tzinfo=timezone.utc) if m.logged_at.tzinfo is None else m.logged_at
             for m in meals

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from db.repositories import UserRepository, WeightLogRepository
 from auth.utils import hash_password, verify_password, create_access_token, create_refresh_token, decode_refresh_token
-from auth.middleware import get_current_user
+from auth.middleware import get_current_user, invalidate_user_cache
 from db.models import User
 from typing import Literal
 import re
@@ -191,6 +191,7 @@ async def update_profile(request: UpdateProfileRequest, current_user: User = Dep
             weight_loss_per_week=request.weight_loss_per_week,
             week_start_day=request.week_start_day
         )
+        invalidate_user_cache(current_user.id)
         if weight_changed:
             weight_log_repo.create(current_user.id, request.weight_kg)
             scoring.on_weight_logged(updated_user, request.weight_kg)
