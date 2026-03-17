@@ -12,12 +12,21 @@ const axiosInstance = axios.create({
   },
 });
 
+// In-memory token cache — avoids SecureStore disk I/O on every request
+let _cachedToken: string | null = null;
+
+export function clearTokenCache() {
+  _cachedToken = null;
+}
+
 // Request interceptor - Add token to requests
 axiosInstance.interceptors.request.use(
   async (config) => {
-    const token = await authStorage.getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!_cachedToken) {
+      _cachedToken = await authStorage.getToken();
+    }
+    if (_cachedToken) {
+      config.headers.Authorization = `Bearer ${_cachedToken}`;
     }
     return config;
   },
@@ -42,11 +51,13 @@ axiosInstance.interceptors.response.use(
 
           await authStorage.saveToken(data.access_token);
           await authStorage.saveRefreshToken(data.refresh_token);
+          _cachedToken = data.access_token;
 
           originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
           return axiosInstance(originalRequest);
         }
       } catch (refreshError) {
+        _cachedToken = null;
         await authStorage.clearAll();
         return Promise.reject(refreshError);
       }

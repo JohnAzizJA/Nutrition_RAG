@@ -45,7 +45,7 @@ export default function CaloriesScreen() {
     setMealPlanEnabled(enabled);
     const dateStr = selectedDate.toISOString().split('T')[0];
     try {
-      const [targetsData, nutritionData] = await Promise.all([
+      const [targetsData, nutritionData, plansData] = await Promise.all([
         calculationService.calculateTargets({
           weight_kg: user?.weight_kg!,
           height_cm: user?.height_cm!,
@@ -56,10 +56,10 @@ export default function CaloriesScreen() {
           weight_loss_per_week: user?.weight_loss_per_week || 0.5,
         }),
         nutritionService.getDailyNutrition(dateStr),
+        mealPlanService.getPlans(dateStr),
       ]);
       setTargets(targetsData);
       setNutrition(nutritionData);
-      const plansData = await mealPlanService.getPlans(dateStr);
       setPlans(plansData);
     } catch (e) {
       console.error('Failed to fetch data:', e);

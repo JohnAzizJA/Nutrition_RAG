@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet, View, TouchableOpacity, Alert, ScrollView,
   TextInput, Modal, AppState, KeyboardAvoidingView, Platform, BackHandler,
@@ -37,6 +37,23 @@ const formatTime = (seconds: number) => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
+// ─── Stopwatch — isolated so its 1s tick doesn't re-render exercise cards ─────
+
+function WorkoutStopwatch({ elapsedRef }: { elapsedRef: React.MutableRefObject<number> }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setElapsed(prev => {
+        const next = prev + 1;
+        elapsedRef.current = next;
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ActiveWorkoutScreen() {
@@ -63,8 +80,8 @@ export default function ActiveWorkoutScreen() {
   const [loading, setLoading] = useState(true);
   const [finishing, setFinishing] = useState(false);
 
-  // Stopwatch
-  const [elapsed, setElapsed] = useState(0);
+  // Stopwatch — state lives in WorkoutStopwatch; parent only needs the ref for finish
+  const elapsedRef = useRef(0);
 
   // Rest timer
   const [restActive, setRestActive] = useState(false);
@@ -152,8 +169,6 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      setElapsed(prev => prev + 1);
-
       setRestRemaining(prev => {
         if (prev <= 1) {
           setRestActive(false);
@@ -375,7 +390,7 @@ export default function ActiveWorkoutScreen() {
     }
     Alert.alert(
       'Finish Workout',
-      `Great work! You completed ${loggedSets.length} set${loggedSets.length !== 1 ? 's' : ''} in ${formatTime(elapsed)}.`,
+      `Great work! You completed ${loggedSets.length} set${loggedSets.length !== 1 ? 's' : ''} in ${formatTime(elapsedRef.current)}.`,
       [
         { text: 'Keep Going', style: 'cancel' },
         { text: 'Finish', onPress: finishWorkout },
@@ -387,7 +402,7 @@ export default function ActiveWorkoutScreen() {
     if (!sessionId) return;
     setFinishing(true);
     try {
-      await workoutSessionService.endSession(sessionId, elapsed);
+      await workoutSessionService.endSession(sessionId, elapsedRef.current);
       router.back();
     } catch (err) {
       Alert.alert('Error', getErrorMessage(err, 'Failed to save session. Please try again.'));
@@ -554,7 +569,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Stopwatch bar */}
       <View style={styles.statusBar}>
-        <ThemedText style={styles.stopwatchText}>{formatTime(elapsed)}</ThemedText>
+        <WorkoutStopwatch elapsedRef={elapsedRef} />
       </View>
 
       {/* Rest timer banner */}

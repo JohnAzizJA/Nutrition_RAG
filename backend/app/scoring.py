@@ -199,15 +199,15 @@ def check_streak_state(user, current_streak: int):
     """
     Called on dashboard fetch.
     Detects if the streak broke (went from >0 to 0) since last check.
+    Uses a single DB session for both read and write.
     """
     try:
-        last_streak = _scoring_repo.get_streak_state(user.id)
+        last_streak = _scoring_repo.get_and_update_streak_state(user.id, current_streak)
         if last_streak > 0 and current_streak == 0:
             _fan_out(user.id, user.name, "streak_break", {
                 "previous_streak": last_streak,
                 "points": POINTS_STREAK_BREAK,
             }, POINTS_STREAK_BREAK)
-        _scoring_repo.update_streak_state(user.id, current_streak)
     except Exception as e:
         print(f"[scoring] check_streak_state error: {e}")
 

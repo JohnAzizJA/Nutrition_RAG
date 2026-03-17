@@ -171,7 +171,7 @@ export default function ConversationScreen() {
           <FlatList
             ref={flatListRef}
             data={messages}
-            keyExtractor={(_, index) => index.toString()}
+            keyExtractor={(item, index) => `${item.created_at}-${item.role}-${index}`}
             contentContainerStyle={styles.messagesList}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
             renderItem={({ item }) => (
