@@ -41,7 +41,7 @@ export const chatService = {
   },
 
   async sendMessage(data: ChatRequest): Promise<ChatResponse> {
-    const response = await axios.post(ENDPOINTS.CHAT.SEND, data);
+    const response = await axios.post(ENDPOINTS.CHAT.SEND, data, { timeout: 120000 });
     return response.data;
   },
 
