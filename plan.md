@@ -59,4 +59,4 @@
 * [x] **Spotify Integration:** Integrate with Spotify to allow the user to switch between songs during workouts.
 * [ ] **Franco-Arabic RAG:** Ensure the AI coach system parses and converses robustly in Franco-Arabic when helping users with dietary and workout questions.
 * [ ] **Apple Health Integration:** Integrate with Apple Health to fetch user's health data (steps, sleep, calories burned, etc.) and sync it with the app, and log workouts to Apple Health.
-* [ ] Deploy FastAPI backend to a cloud provider (e.g., Render, Railway, AWS).
+* [x] Deploy FastAPI backend to a cloud provider (e.g., Render, Railway, AWS).

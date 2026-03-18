@@ -8,12 +8,14 @@ langgraph
 langgraph-checkpoint-postgres
 pgvector
 python-dotenv
-pydantic
+pydantic[email]
 pydantic-settings
 httpx
 pypdf
 langchain-groq
 sqlalchemy
 psycopg2-binary
+psycopg[binary]
+python-multipart
 pwdlib[argon2]
 pyjwt
