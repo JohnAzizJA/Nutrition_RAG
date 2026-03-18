@@ -19,3 +19,4 @@ psycopg[binary]
 python-multipart
 pwdlib[argon2]
 pyjwt
+sentence-transformers
