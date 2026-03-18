@@ -8,7 +8,7 @@ langgraph
 langgraph-checkpoint-postgres
 pgvector
 python-dotenv
-pydantic
+pydantic[email]
 pydantic-settings
 httpx
 pypdf
