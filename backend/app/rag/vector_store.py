@@ -1,11 +1,12 @@
+import math
 import os
 from contextlib import contextmanager
 from pathlib import Path
 
+import httpx
 import psycopg2
 from pgvector.psycopg2 import register_vector
 from psycopg2.pool import ThreadedConnectionPool
-from sentence_transformers import SentenceTransformer
 
 from rag.document_processor import DocumentProcessor
 
@@ -22,13 +23,25 @@ class VectorStore:
     def __init__(self):
         db_url = os.getenv("DATABASE_URL")
         self._pool = ThreadedConnectionPool(1, 5, db_url)
-        self._model = SentenceTransformer(_EMBEDDING_MODEL)
+        self._hf_token = os.getenv("HUGGINGFACE_API_KEY")
+        self._hf_url = f"https://api-inference.huggingface.co/models/{_EMBEDDING_MODEL}"
         self.doc_processor = DocumentProcessor()
         self._setup_table()
 
     def _embed(self, texts: list[str]) -> list[list[float]]:
-        embeddings = self._model.encode(texts, normalize_embeddings=True)
-        return embeddings.tolist()
+        r = httpx.post(
+            self._hf_url,
+            headers={"Authorization": f"Bearer {self._hf_token}"},
+            json={"inputs": texts, "options": {"wait_for_model": True}},
+            timeout=60.0,
+        )
+        r.raise_for_status()
+        raw = r.json()
+        result = []
+        for emb in raw:
+            norm = math.sqrt(sum(x * x for x in emb))
+            result.append([x / norm for x in emb] if norm > 0 else emb)
+        return result
 
     @contextmanager
     def _conn(self):
