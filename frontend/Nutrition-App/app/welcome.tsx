@@ -22,8 +22,8 @@ export default function WelcomeScreen() {
           source={require('@/assets/images/nibbles.png')}
           style={styles.logo}
         />
-        <ThemedText style={styles.appName}>Nutrition App</ThemedText>
-        <ThemedText style={styles.tagline}>Your personalized nutrition journey</ThemedText>
+        <ThemedText style={styles.appName}>Nibbles</ThemedText>
+        <ThemedText style={styles.tagline}>Your personalized nutrition & fitness journey</ThemedText>
       </View>
 
       <View style={styles.buttonContainer}>

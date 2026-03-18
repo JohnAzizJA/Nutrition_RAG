@@ -125,8 +125,10 @@ async def chat(
             response=response,
             thread_id=thread_id
         )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Chat request failed. Please try again.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Chat request failed: {str(e)}")
 
 @router.delete("/conversations/{thread_id}")
 async def delete_conversation(
