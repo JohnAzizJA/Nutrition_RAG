@@ -16,5 +16,6 @@ langchain-groq
 sqlalchemy
 psycopg2-binary
 psycopg[binary]
+python-multipart
 pwdlib[argon2]
 pyjwt
